@@ -1,0 +1,138 @@
+/* src/components/Dashboard/Dashboard.css */
+:root {
+    --primary-blue: #1e88e5;
+    --dark-blue: #1565c0;
+    --light-blue: #64b5f6;
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 64px;
+    --header-height: 60px;
+  }
+  
+  .dashboard-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--dark-blue);
+    color: white;
+    transition: width 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+  }
+  
+  .sidebar-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background-color: var(--primary-blue);
+    justify-content: space-between;
+  }
+  
+  .sidebar-header h2 {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .toggle-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-section {
+    padding: 16px 0;
+  }
+  
+  .nav-title {
+    padding: 8px 16px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .nav-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .nav-items li {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .nav-items li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .nav-items li.active {
+    background-color: var(--primary-blue);
+  }
+  
+  .icon {
+    width: 24px;
+    font-size: 18px;
+    margin-right: 12px;
+    text-align: center;
+  }
+  
+  .sidebar.collapsed .icon {
+    margin-right: 0;
+  }
+  
+  .nav-items li span {
+    white-space: nowrap;
+  }
+  
+  .content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .content-header {
+    height: var(--header-height);
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    background-color: white;
+  }
+  
+  .content-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+  }
+  
+  .content-body {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    background-color: #f5f5f5;
+  }
