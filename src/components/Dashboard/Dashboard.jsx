@@ -5,6 +5,7 @@ import DashboardContent from './DashboardContent';
 import MonatContent from './MonatContent';
 import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
+import ImportContent from './ImportContent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faChartLine, 
@@ -12,7 +13,8 @@ import {
   faChalkboardTeacher, 
   faUserGraduate,
   faChevronLeft,
-  faChevronRight
+  faChevronRight,
+  faFileExcel // Add Excel icon
 } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
@@ -33,6 +35,8 @@ const Dashboard = () => {
         return <KlassenContent />;
       case 'schuler':
         return <SchulerContent />;
+      case 'import':
+        return <ImportContent />; // You'll need to create this component
       default:
         return <DashboardContent />;
     }
@@ -46,6 +50,20 @@ const Dashboard = () => {
           <button className="toggle-btn" onClick={toggleSidebar}>
             <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} />
           </button>
+        </div>
+        
+        {/* Add Import Excel section above Lehrer */}
+        <div className="nav-section">
+          <div className="nav-title">{collapsed ? 'I' : 'Import'}</div>
+          <ul className="nav-items">
+            <li 
+              className={activeTab === 'import' ? 'active' : ''} 
+              onClick={() => setActiveTab('import')}
+            >
+              <FontAwesomeIcon icon={faFileExcel} className="icon" />
+              {!collapsed && <span>Excel Import</span>}
+            </li>
+          </ul>
         </div>
         
         <div className="nav-section">
