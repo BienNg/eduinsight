@@ -52,7 +52,158 @@ const ImportContent = () => {
   };
 
   const handleImport = async () => {
-    if (!file) return;
+    if (!file) return;// Function to process B1.1 course file
+    const processB1CourseFile = (data, filename) => {
+      console.log('Raw data from Excel:', data.slice(0, 15)); // Show first 15 rows for debugging
+      
+      // Extract course level properly from filename
+      const levelMatch = filename.match(/B[0-9]\.[0-9]/i);
+      const level = levelMatch ? levelMatch[0] : 'unknown';
+      
+      // Extract group from filename
+      const groupMatch = filename.match(/G(\d+)/i);
+      const group = groupMatch ? `G${groupMatch[1]}` : '';
+      
+      console.log('Extracted level:', level, 'group:', group);
+      
+      const courseName = `${group} ${level}`;
+      
+      // Student names are in row 4 (index 3) starting from column K (index 10)
+      const studentsRowIndex = 3; // Row 4 (0-based index)
+      const studentsStartColumn = 10; // Column K (0-based index)
+      
+      // Make sure we have enough rows of data
+      if (data.length <= studentsRowIndex) {
+        throw new Error(`Excel file doesn't have row 4 (index ${studentsRowIndex}) where student names should be`);
+      }
+      
+      console.log('Looking for students in row 4 (index 3):', data[studentsRowIndex].slice(studentsStartColumn));
+      
+      // Extract student names
+      const students = [];
+      for (let j = studentsStartColumn; j < data[studentsRowIndex].length; j++) {
+        const studentName = data[studentsRowIndex][j];
+        if (studentName && studentName.trim() !== '') {
+          // Skip any column headers that might be in this row
+          if (studentName === "Anwesenheitsliste" || 
+              studentName === "Nachrichten von/ für NaNu NaNa" ||
+              studentName === "Folien" ||
+              studentName === "Inhalt") {
+            continue;
+          }
+          
+          students.push({
+            id: `student_${j}`,
+            name: studentName,
+            group: group
+          });
+          
+          console.log(`Found student in column ${j}: ${studentName}`);
+        }
+      }
+      
+      console.log('Extracted students:', students);
+      
+      // Find the row with column headers (Folien, Inhalt, etc.)
+      let headerRowIndex = -1;
+      for (let i = 0; i < data.length && i < 30; i++) { // Check first 30 rows
+        // Looking for the row containing "Folien" as first column
+        if (data[i][0] === "Folien") {
+          headerRowIndex = i;
+          break;
+        }
+      }
+      
+      if (headerRowIndex === -1) {
+        throw new Error("Could not find header row with 'Folien' in the Excel file");
+      }
+      
+      console.log('Found header row at index:', headerRowIndex);
+      
+      // Find sessions data - starts after the header row
+      const sessionsStartRow = headerRowIndex + 1;
+      
+      // Process sessions
+      const sessions = [];
+      let currentSession = null;
+      
+      for (let i = sessionsStartRow; i < data.length; i++) {
+        const row = data[i];
+        
+        // Skip empty rows
+        if (!row || row.every(cell => !cell || cell.trim() === '')) {
+          continue;
+        }
+        
+        // If we have a value in the Folien column (column 0), this is a new session
+        if (row[0] && row[0].trim() !== '') {
+          // If we already have a current session, add it to our sessions array
+          if (currentSession) {
+            sessions.push(currentSession);
+          }
+          
+          // Start a new session
+          currentSession = {
+            title: row[0],
+            content: row[1] || '',
+            notes: row[2] || '',
+            checked: row[3] === 'TRUE',
+            completed: row[4] === 'TRUE',
+            date: row[5] || '',
+            startTime: row[6] || '',
+            endTime: row[7] || '',
+            teacher: row[8] || '',
+            message: row[9] || '',
+            attendance: {}
+          };
+        } else if (currentSession && row[1]) {
+          // This is a content row for the current session
+          currentSession.additionalContent = currentSession.additionalContent || [];
+          currentSession.additionalContent.push({
+            content: row[1],
+            notes: row[2] || '',
+            checked: row[3] === 'TRUE'
+          });
+        }
+        
+        // Add attendance data if this is a session row
+        if (currentSession && students.length > 0) {
+          for (let s = 0; s < students.length; s++) {
+            const student = students[s];
+            const studentColumn = parseInt(student.id.split('_')[1]); // Get the column index from student id
+            
+            if (row[studentColumn]) {
+              // Process attendance value
+              let attendanceValue = row[studentColumn];
+              
+              // Convert common attendance values
+              if (attendanceValue === 'TRUE' || attendanceValue.toLowerCase() === 'anwesend') {
+                attendanceValue = 'present';
+              } else if (attendanceValue === 'FALSE' || attendanceValue.toLowerCase().includes('abwesend')) {
+                attendanceValue = 'absent';
+              }
+              
+              currentSession.attendance[student.id] = attendanceValue;
+            }
+          }
+        }
+      }
+      
+      // Add the last session if we have one
+      if (currentSession) {
+        sessions.push(currentSession);
+      }
+      
+      console.log('Extracted sessions:', sessions);
+      
+      return {
+        name: courseName,
+        level: level,
+        group: group,
+        students: students,
+        sessions: sessions
+      };
+    };
     
     setLoading(true);
     try {
@@ -63,6 +214,7 @@ const ImportContent = () => {
         try {
           const data = e.target.result;
           const workbook = XLSX.read(data, { type: 'array' });
+          console.log('XLSX parse successful, sheets:', workbook.SheetNames);
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
           
@@ -72,6 +224,9 @@ const ImportContent = () => {
             raw: false,
             defval: ""
           });
+
+          // Inspect the raw data structure
+          console.log('First 10 rows from Excel:', jsonData.slice(0, 10));
           
           // Process and save the data
           if (file.name.includes('B1.1_ONLINE_VN')) {
@@ -113,70 +268,157 @@ const ImportContent = () => {
   };
 
   // Function to process B1.1 course file
-  const processB1CourseFile = (data, filename) => {
-    // Extract course name from filename
-    const courseName = filename.replace(/\.(csv|xlsx)$/, '');
-    
-    // Find header row and student names
-    let studentsStartColumn = 10; // Default value based on your Excel structure
-    let studentsRowIndex = 1;
-    
-    const sessions = [];
-    const students = [];
-    
-    // Process sessions (rows starting from index 5)
-    for (let i = 5; i < data.length; i++) {
-      const row = data[i];
+const processB1CourseFile = (data, filename) => {
+  console.log('Raw data from Excel:', data.slice(0, 15)); // Show first 15 rows for debugging
+  
+  // Extract course level properly from filename
+  const levelMatch = filename.match(/B[0-9]\.[0-9]/i);
+  const level = levelMatch ? levelMatch[0] : 'unknown';
+  
+  // Extract group from filename
+  const groupMatch = filename.match(/G(\d+)/i);
+  const group = groupMatch ? `G${groupMatch[1]}` : '';
+  
+  console.log('Extracted level:', level, 'group:', group);
+  
+  const courseName = `${group} ${level}`;
+  
+  // Student names are in row 4 (index 3) starting from column K (index 10)
+  const studentsRowIndex = 3; // Row 4 (0-based index)
+  const studentsStartColumn = 10; // Column K (0-based index)
+  
+  // Make sure we have enough rows of data
+  if (data.length <= studentsRowIndex) {
+    throw new Error(`Excel file doesn't have row 4 (index ${studentsRowIndex}) where student names should be`);
+  }
+  
+  console.log('Looking for students in row 4 (index 3):', data[studentsRowIndex].slice(studentsStartColumn));
+  
+  // Extract student names
+  const students = [];
+  for (let j = studentsStartColumn; j < data[studentsRowIndex].length; j++) {
+    const studentName = data[studentsRowIndex][j];
+    if (studentName && studentName.trim() !== '') {
+      // Skip any column headers that might be in this row
+      if (studentName === "Anwesenheitsliste" || 
+          studentName === "Nachrichten von/ für NaNu NaNa" ||
+          studentName === "Folien" ||
+          studentName === "Inhalt") {
+        continue;
+      }
       
-      // Skip empty rows
-      if (!row[0] && !row[1]) continue;
+      students.push({
+        id: `student_${j}`,
+        name: studentName,
+        group: group
+      });
       
-      if (row[0] || row[1]) {
-        // This is a session row
-        const sessionData = {
-          title: row[0] || row[1],
-          notes: row[2] || '',
-          checked: row[3] === 'TRUE',
-          completed: row[4] === 'TRUE',
-          date: row[5] || '',
-          startTime: row[6] || '',
-          endTime: row[7] || '',
-          teacher: row[8] || '',
-          attendance: {}
-        };
+      console.log(`Found student in column ${j}: ${studentName}`);
+    }
+  }
+  
+  console.log('Extracted students:', students);
+  
+  // Find the row with column headers (Folien, Inhalt, etc.)
+  let headerRowIndex = -1;
+  for (let i = 0; i < data.length && i < 30; i++) { // Check first 30 rows
+    // Looking for the row containing "Folien" as first column
+    if (data[i][0] === "Folien") {
+      headerRowIndex = i;
+      break;
+    }
+  }
+  
+  if (headerRowIndex === -1) {
+    throw new Error("Could not find header row with 'Folien' in the Excel file");
+  }
+  
+  console.log('Found header row at index:', headerRowIndex);
+  
+  // Find sessions data - starts after the header row
+  const sessionsStartRow = headerRowIndex + 1;
+  
+  // Process sessions
+  const sessions = [];
+  let currentSession = null;
+  
+  for (let i = sessionsStartRow; i < data.length; i++) {
+    const row = data[i];
+    
+    // Skip empty rows
+    if (!row || row.every(cell => !cell || cell.trim() === '')) {
+      continue;
+    }
+    
+    // If we have a value in the Folien column (column 0), this is a new session
+    if (row[0] && row[0].trim() !== '') {
+      // If we already have a current session, add it to our sessions array
+      if (currentSession) {
+        sessions.push(currentSession);
+      }
+      
+      // Start a new session
+      currentSession = {
+        title: row[0],
+        content: row[1] || '',
+        notes: row[2] || '',
+        checked: row[3] === 'TRUE',
+        completed: row[4] === 'TRUE',
+        date: row[5] || '',
+        startTime: row[6] || '',
+        endTime: row[7] || '',
+        teacher: row[8] || '',
+        message: row[9] || '',
+        attendance: {}
+      };
+    } else if (currentSession && row[1]) {
+      // This is a content row for the current session
+      currentSession.additionalContent = currentSession.additionalContent || [];
+      currentSession.additionalContent.push({
+        content: row[1],
+        notes: row[2] || '',
+        checked: row[3] === 'TRUE'
+      });
+    }
+    
+    // Add attendance data if this is a session row
+    if (currentSession && students.length > 0) {
+      for (let s = 0; s < students.length; s++) {
+        const student = students[s];
+        const studentColumn = parseInt(student.id.split('_')[1]); // Get the column index from student id
         
-        // Add attendance data
-        for (let j = 0; j < students.length; j++) {
-          const studentColumn = studentsStartColumn + j;
-          if (row[studentColumn]) {
-            sessionData.attendance[students[j].id] = row[studentColumn];
+        if (row[studentColumn]) {
+          // Process attendance value
+          let attendanceValue = row[studentColumn];
+          
+          // Convert common attendance values
+          if (attendanceValue === 'TRUE' || attendanceValue.toLowerCase() === 'anwesend') {
+            attendanceValue = 'present';
+          } else if (attendanceValue === 'FALSE' || attendanceValue.toLowerCase().includes('abwesend')) {
+            attendanceValue = 'absent';
           }
+          
+          currentSession.attendance[student.id] = attendanceValue;
         }
-        
-        sessions.push(sessionData);
       }
     }
-    
-    // Extract students from the header row
-    for (let j = studentsStartColumn; j < data[studentsRowIndex].length; j++) {
-      const studentName = data[studentsRowIndex][j];
-      if (studentName) {
-        students.push({
-          id: `student_${j}`, // Temporary ID
-          name: studentName,
-          group: extractGroupFromFilename(filename),
-        });
-      }
-    }
-    
-    return {
-      name: courseName,
-      level: extractLevelFromFilename(filename),
-      group: extractGroupFromFilename(filename),
-      students,
-      sessions
-    };
+  }
+  
+  // Add the last session if we have one
+  if (currentSession) {
+    sessions.push(currentSession);
+  }
+  
+  console.log('Extracted sessions:', sessions);
+  
+  return {
+    name: courseName,
+    level: level,
+    group: group,
+    students: students,
+    sessions: sessions
   };
+};
 
   // Helper function to extract level from filename
   const extractLevelFromFilename = (filename) => {
