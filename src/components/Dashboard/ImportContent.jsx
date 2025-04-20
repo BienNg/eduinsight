@@ -1,5 +1,7 @@
 // src/components/Dashboard/ImportContent.jsx
 import { useState, useRef } from 'react';
+import * as XLSX from 'xlsx'; // Add this import for the XLSX library
+import { createRecord } from '../../firebase/database'; // Add this import for Firebase functions
 import './Content.css';
 
 const ImportContent = () => {
@@ -54,25 +56,138 @@ const ImportContent = () => {
     
     setLoading(true);
     try {
-      // Here you would handle the Excel import logic
-      // For example, using a library like xlsx to parse the file
-      // Then send the data to Firebase
+      // Read the Excel file
+      const reader = new FileReader();
       
-      // Simulate processing time
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      reader.onload = async (e) => {
+        try {
+          const data = e.target.result;
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1,
+            raw: false,
+            defval: ""
+          });
+          
+          // Process and save the data
+          if (file.name.includes('B1.1_ONLINE_VN')) {
+            // Process as a course file
+            const courseData = processB1CourseFile(jsonData, file.name);
+            await createRecord('courses', courseData);
+          }
+          
+          setResult({
+            success: true,
+            message: `File "${file.name}" successfully imported!`
+          });
+        } catch (error) {
+          setResult({
+            success: false,
+            message: `Error processing file: ${error.message}`
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
       
-      setResult({
-        success: true,
-        message: `File "${file.name}" successfully imported!`
-      });
+      reader.onerror = (error) => {
+        setResult({
+          success: false,
+          message: `Error reading file: ${error}`
+        });
+        setLoading(false);
+      };
+      
+      reader.readAsArrayBuffer(file);
     } catch (error) {
       setResult({
         success: false,
         message: `Error importing file: ${error.message}`
       });
-    } finally {
       setLoading(false);
     }
+  };
+
+  // Function to process B1.1 course file
+  const processB1CourseFile = (data, filename) => {
+    // Extract course name from filename
+    const courseName = filename.replace(/\.(csv|xlsx)$/, '');
+    
+    // Find header row and student names
+    let studentsStartColumn = 10; // Default value based on your Excel structure
+    let studentsRowIndex = 1;
+    
+    const sessions = [];
+    const students = [];
+    
+    // Process sessions (rows starting from index 5)
+    for (let i = 5; i < data.length; i++) {
+      const row = data[i];
+      
+      // Skip empty rows
+      if (!row[0] && !row[1]) continue;
+      
+      if (row[0] || row[1]) {
+        // This is a session row
+        const sessionData = {
+          title: row[0] || row[1],
+          notes: row[2] || '',
+          checked: row[3] === 'TRUE',
+          completed: row[4] === 'TRUE',
+          date: row[5] || '',
+          startTime: row[6] || '',
+          endTime: row[7] || '',
+          teacher: row[8] || '',
+          attendance: {}
+        };
+        
+        // Add attendance data
+        for (let j = 0; j < students.length; j++) {
+          const studentColumn = studentsStartColumn + j;
+          if (row[studentColumn]) {
+            sessionData.attendance[students[j].id] = row[studentColumn];
+          }
+        }
+        
+        sessions.push(sessionData);
+      }
+    }
+    
+    // Extract students from the header row
+    for (let j = studentsStartColumn; j < data[studentsRowIndex].length; j++) {
+      const studentName = data[studentsRowIndex][j];
+      if (studentName) {
+        students.push({
+          id: `student_${j}`, // Temporary ID
+          name: studentName,
+          group: extractGroupFromFilename(filename),
+        });
+      }
+    }
+    
+    return {
+      name: courseName,
+      level: extractLevelFromFilename(filename),
+      group: extractGroupFromFilename(filename),
+      students,
+      sessions
+    };
+  };
+
+  // Helper function to extract level from filename
+  const extractLevelFromFilename = (filename) => {
+    const levelMatch = filename.match(/([A-Z][0-9](\.[0-9])?)/i);
+    return levelMatch ? levelMatch[1] : 'unknown';
+  };
+
+  // Helper function to extract group from filename
+  const extractGroupFromFilename = (filename) => {
+    const groupMatch = filename.match(/G(\d+)/i);
+    return groupMatch ? `G${groupMatch[1]}` : '';
   };
 
   const triggerFileInput = () => {
