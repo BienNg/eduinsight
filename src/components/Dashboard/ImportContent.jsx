@@ -259,56 +259,59 @@ const processB1CourseFile = (data, filename) => {
 
 // New function to process Excel file with color detection
 const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
-  // First use XLSX to get the basic structure - it's better at handling CSV-like structures
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
+  console.log('Processing Excel file with simplified session detection...');
   
-  // Convert to JSON to extract the structure
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-    header: 1,
-    raw: false,
-    defval: ""
-  });
-  
-  console.log('Processing Excel file with color detection...');
-  
-  // Extract course level from filename
+  // Extract course level and group from filename
   const levelMatch = filename.match(/B[0-9]\.[0-9]/i);
   const level = levelMatch ? levelMatch[0] : 'unknown';
   
-  // Extract group from filename
   const groupMatch = filename.match(/G(\d+)/i);
   const group = groupMatch ? `G${groupMatch[1]}` : '';
   
-  console.log('Extracted level:', level, 'group:', group);
-  
   const courseName = `${group} ${level}`;
   
-  // Now use ExcelJS to get the color information
-  const colorWorkbook = new ExcelJS.Workbook();
-  await colorWorkbook.xlsx.load(arrayBuffer);
-  const colorWorksheet = colorWorkbook.worksheets[0];
+  // Use XLSX for basic structure extraction
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
   
-  // Student names are in row 4 (index 3) starting from column K (index 10)
-  const studentsRowIndex = 3; // Row 4 (0-based index)
-  const studentsStartColumn = 10; // Column K (0-based index)
+  // Use ExcelJS for color information
+  const excelWorkbook = new ExcelJS.Workbook();
+  await excelWorkbook.xlsx.load(arrayBuffer);
+  const excelWorksheet = excelWorkbook.worksheets[0];
   
-  // Get the students row
-  const studentsRow = colorWorksheet.getRow(studentsRowIndex + 1); // ExcelJS is 1-based
+  // Log the first few rows to debug
+  console.log('First 10 rows:', jsonData.slice(0, 10));
   
-  // Extract student names
+  // Find the header row with "Folien" as the first column
+  let headerRowIndex = -1;
+  for (let i = 0; i < jsonData.length; i++) {
+    if (jsonData[i][0] === "Folien") {
+      headerRowIndex = i;
+      break;
+    }
+  }
+  
+  if (headerRowIndex === -1) {
+    console.error("Could not find header row with 'Folien'");
+    // Just use row 4 (index 3) as fallback
+    headerRowIndex = 3;
+  }
+  
+  console.log('Using header row index:', headerRowIndex);
+  
+  // Extract student names from the header row
   const students = [];
-  for (let j = studentsStartColumn; j < 50; j++) { // Limit to 50 columns to avoid infinite loop
-    const cell = studentsRow.getCell(j + 1); // ExcelJS is 1-based
-    const studentName = cell.value;
-    
+  const headerRow = jsonData[headerRowIndex];
+  
+  // Students typically start from column K (index 10)
+  for (let j = 10; j < headerRow.length; j++) {
+    const studentName = headerRow[j];
     if (studentName && typeof studentName === 'string' && studentName.trim() !== '') {
-      // Skip any column headers that might be in this row
+      // Skip any column headers
       if (studentName === "Anwesenheitsliste" || 
-          studentName === "Nachrichten von/ für NaNu NaNa" ||
-          studentName === "Folien" ||
-          studentName === "Inhalt") {
+          studentName === "Nachrichten von/ für NaNu NaNa") {
         continue;
       }
       
@@ -317,114 +320,125 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
         name: studentName,
         group: group
       });
-      
-      console.log(`Found student in column ${j}: ${studentName}`);
     }
   }
   
-  console.log('Extracted students:', students);
+  console.log(`Found ${students.length} students`);
   
-  // Find the row with column headers (Folien, Inhalt, etc.)
-  let headerRowIndex = -1;
-  colorWorksheet.eachRow((row, rowNumber) => {
-    const firstCellValue = row.getCell(1).value;
-    if (firstCellValue === "Folien") {
-      headerRowIndex = rowNumber - 1; // Convert to 0-based index
-      return false; // Stop iteration
-    }
-  });
-  
-  if (headerRowIndex === -1) {
-    throw new Error("Could not find header row with 'Folien' in the Excel file");
-  }
-  
-  console.log('Found header row at index:', headerRowIndex);
-  
-  // Process sessions
+  // Process sessions - start from the row after the header
   const sessions = [];
+  let currentSessionTitle = null;
   let currentSession = null;
   
-  for (let i = headerRowIndex + 1; i <= colorWorksheet.rowCount; i++) {
-    const row = colorWorksheet.getRow(i);
+  for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
     
     // Skip empty rows
-    if (!row.hasValues) continue;
+    if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+      continue;
+    }
     
-    // If we have a value in the Folien column (column 1 in ExcelJS), this is a new session
-    const folienCell = row.getCell(1);
-    if (folienCell.value) {
-      // If we already have a current session, add it to our sessions array
-      if (currentSession) {
-        sessions.push(currentSession);
+    const folienTitle = row[0]; // Column A - Folien
+    const contentValue = row[1]; // Column B - Inhalt
+    
+    // If we have a value in column A (Folien), this starts a new session
+    if (folienTitle && folienTitle.toString().trim() !== '') {
+      // If it's a different title than our current session, create a new session
+      if (folienTitle !== currentSessionTitle) {
+        // Save previous session if we have one
+        if (currentSession) {
+          sessions.push(currentSession);
+        }
+        
+        // Extract date, time and teacher info
+        const dateValue = row[5] || ''; // Column F
+        const startTimeValue = row[6] || ''; // Column G
+        const endTimeValue = row[7] || ''; // Column H
+        const teacherValue = row[8] || ''; // Column I
+        
+        // Create new session
+        currentSessionTitle = folienTitle;
+        currentSession = {
+          title: folienTitle,
+          content: contentValue || '',
+          notes: row[2] || '', // Column C - Notizen
+          checked: row[3] === 'TRUE', // Column D - die Folien gecheckt
+          completed: row[4] === 'TRUE', // Column E - gemacht
+          date: dateValue,
+          startTime: startTimeValue,
+          endTime: endTimeValue,
+          teacher: teacherValue,
+          message: row[9] || '', // Column J - Nachrichten
+          contentItems: [],
+          attendance: {}
+        };
+        
+        console.log(`New session: ${folienTitle} on ${dateValue}`);
       }
-      
-      // Start a new session
-      currentSession = {
-        title: folienCell.value || '',
-        content: row.getCell(2).value || '',
-        notes: row.getCell(3).value || '',
-        checked: row.getCell(4).value === 'TRUE',
-        completed: row.getCell(5).value === 'TRUE',
-        date: row.getCell(6).value || '',
-        startTime: row.getCell(7).value || '',
-        endTime: row.getCell(8).value || '',
-        teacher: row.getCell(9).value || '',
-        message: row.getCell(10).value || '',
-        attendance: {}
-      };
-    } else if (currentSession && row.getCell(2).value) {
-      // This is a content row for the current session
-      currentSession.additionalContent = currentSession.additionalContent || [];
-      currentSession.additionalContent.push({
-        content: row.getCell(2).value || '',
-        notes: row.getCell(3).value || '',
-        checked: row.getCell(4).value === 'TRUE'
+    } else if (currentSession && contentValue) {
+      // This is additional content for the current session
+      currentSession.contentItems.push({
+        content: contentValue,
+        notes: row[2] || '',
+        checked: row[3] === 'TRUE'
       });
     }
     
-    // Process attendance data based on cell colors
+    // Process attendance for this row if we have a current session
     if (currentSession && students.length > 0) {
-      for (let s = 0; s < students.length; s++) {
-        const student = students[s];
-        const studentColumn = parseInt(student.id.split('_')[1]);
-        const cell = row.getCell(studentColumn + 1); // Convert to 1-based index for ExcelJS
+      // Get the Excel row for color information
+      const excelRow = excelWorksheet.getRow(i + 1); // +1 because ExcelJS is 1-based
+      
+      for (const student of students) {
+        const columnIndex = parseInt(student.id.split('_')[1]);
+        const cellValue = row[columnIndex];
         
-        if (cell && cell.value !== null && cell.value !== undefined) {
+        if (cellValue !== undefined && cellValue !== null) {
           let attendanceValue = 'unknown';
           
-          // Check for cell fill color
-          if (cell.fill && cell.fill.type === 'pattern' && cell.fill.fgColor) {
-            const color = cell.fill.fgColor.argb;
+          // Try to get color information from ExcelJS
+          const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
+          
+          if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
+            const color = excelCell.fill.fgColor.argb || '';
             
-            // Green cells (present)
-            if (color && 
-                (color.includes('FF00FF00') || // Pure green
-                 color.includes('FF92D050') || // Light green
-                 color.includes('FF00B050') || // Medium green
-                 color.includes('FF00B640'))) { // Another green variant
+            // Green colors (present)
+            if (color && (
+                color.includes('FF00FF00') || // Pure green
+                color.includes('FF92D050') || // Light green
+                color.includes('FF00B050') || // Medium green
+                color.includes('FF00B0') ||   // Another green variant
+                color.includes('FF00B640'))) { // Another green variant
               attendanceValue = 'present';
             }
-            // Red/Pink cells (absent)
-            else if (color && 
-                    (color.includes('FFFF0000') || // Pure red
-                     color.includes('FFFF00FF') || // Pure magenta/pink
-                     color.includes('FFFF66CC') || // Light pink
-                     color.includes('FFFF99CC'))) { // Very light pink
+            // Red/Pink colors (absent)
+            else if (color && (
+                color.includes('FFFF0000') || // Pure red
+                color.includes('FFFF00FF') || // Pure magenta/pink
+                color.includes('FFFF66CC') || // Light pink
+                color.includes('FFFF99CC'))) { // Very light pink
               attendanceValue = 'absent';
             }
           }
           
           // If we couldn't determine from color, try text values
-          if (attendanceValue === 'unknown' && cell.value) {
-            const cellValue = String(cell.value).toLowerCase();
-            if (cellValue === 'true' || cellValue === 'anwesend' || cellValue === 'present') {
+          if (attendanceValue === 'unknown' && cellValue) {
+            const cellText = cellValue.toString().toLowerCase();
+            if (cellText === 'true' || cellText === 'anwesend' || cellText === 'present') {
               attendanceValue = 'present';
-            } else if (cellValue === 'false' || cellValue === 'abwesend' || cellValue === 'absent') {
+            } else if (cellText === 'false' || cellText === 'abwesend' || cellText === 'absent') {
               attendanceValue = 'absent';
+            } else if (cellText.includes('krank') || cellText.includes('sick')) {
+              attendanceValue = 'sick';
+            } else if (cellText.includes('kamera aus') || cellText.includes('mic aus')) {
+              attendanceValue = 'technical_issues';
             }
           }
           
-          currentSession.attendance[student.id] = attendanceValue;
+          // Record attendance - use the first value we find for each student
+          if (attendanceValue !== 'unknown' && !currentSession.attendance[student.id]) {
+            currentSession.attendance[student.id] = attendanceValue;
+          }
         }
       }
     }
@@ -435,7 +449,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
     sessions.push(currentSession);
   }
   
-  console.log('Extracted sessions:', sessions);
+  console.log('Final extracted sessions:', sessions.length);
   
   return {
     name: courseName,
