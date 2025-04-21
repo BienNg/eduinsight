@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { getRecordById } from '../../firebase/database';
 import SessionDetailModal from './SessionDetailModal';
+import StudentDetailModal from './StudentDetailModal';
 import './CourseDetail.css';
 
 const CourseDetail = ({ courseId, onClose }) => {
@@ -13,6 +14,7 @@ const CourseDetail = ({ courseId, onClose }) => {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedSession, setSelectedSession] = useState(null);
+    const [selectedStudent, setSelectedStudent] = useState(null);
 
     useEffect(() => {
         const fetchCourseDetails = async () => {
@@ -73,6 +75,7 @@ const CourseDetail = ({ courseId, onClose }) => {
             fetchCourseDetails();
         }
     }, [courseId]);
+    
 
     // Helper function to parse German date format (DD.MM.YYYY)
     const parseGermanDate = (dateStr) => {
@@ -91,6 +94,15 @@ const CourseDetail = ({ courseId, onClose }) => {
 
     const closeSessionDetail = () => {
         setSelectedSession(null);
+    };
+
+    // Add new functions to handle student details
+    const openStudentDetail = (student) => {
+        setSelectedStudent(student);
+    };
+
+    const closeStudentDetail = () => {
+        setSelectedStudent(null);
     };
 
     // Calculate attendance for a student across all sessions
@@ -274,6 +286,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                                     <th>Attendance</th>
                                     <th>Info</th>
                                     <th>Notes</th>
+                                    <th>Actions</th> 
                                 </tr>
                             </thead>
                             <tbody>
@@ -285,6 +298,15 @@ const CourseDetail = ({ courseId, onClose }) => {
                                         </td>
                                         <td>{student.info || '-'}</td>
                                         <td>{student.notes || '-'}</td>
+                                        <td>
+                                            <button
+                                                className="btn-details"
+                                                onClick={() => openStudentDetail(student)}
+                                            >
+                                                View Details
+                                            </button>
+                                        </td>
+
                                     </tr>
                                 ))}
                             </tbody>
@@ -343,6 +365,13 @@ const CourseDetail = ({ courseId, onClose }) => {
                     students={students}
                     teacher={teacher}
                     onClose={closeSessionDetail}
+                />
+            )}
+            {selectedStudent && (
+                <StudentDetailModal
+                    student={selectedStudent}
+                    sessions={sessions}
+                    onClose={closeStudentDetail}
                 />
             )}
         </div>
