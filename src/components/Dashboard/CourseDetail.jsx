@@ -20,33 +20,33 @@ const CourseDetail = ({ courseId, onClose }) => {
         const fetchCourseDetails = async () => {
             try {
                 setLoading(true);
-                
+
                 // Fetch course data
                 const courseData = await getRecordById('courses', courseId);
                 if (!courseData) {
                     throw new Error("Course not found");
                 }
                 setCourse(courseData);
-                
+
                 // Fetch teacher data if available
                 if (courseData.teacherId) {
                     const teacherData = await getRecordById('teachers', courseData.teacherId);
                     setTeacher(teacherData);
                 }
-                
+
                 // Fetch student data
-                const studentPromises = (courseData.studentIds || []).map(studentId => 
+                const studentPromises = (courseData.studentIds || []).map(studentId =>
                     getRecordById('students', studentId)
                 );
                 const studentData = await Promise.all(studentPromises);
                 setStudents(studentData.filter(s => s !== null)); // Filter out any null results
-                
+
                 // Fetch session data
-                const sessionPromises = (courseData.sessionIds || []).map(sessionId => 
+                const sessionPromises = (courseData.sessionIds || []).map(sessionId =>
                     getRecordById('sessions', sessionId)
                 );
                 const sessionData = await Promise.all(sessionPromises);
-                
+
                 // Sort sessions by date
                 const sortedSessions = sessionData
                     .filter(s => s !== null)
@@ -54,14 +54,14 @@ const CourseDetail = ({ courseId, onClose }) => {
                         // Try to parse dates and compare them
                         const dateA = parseGermanDate(a.date);
                         const dateB = parseGermanDate(b.date);
-                        
+
                         if (dateA && dateB) {
                             return dateA - dateB;
                         }
                         // Fallback to string comparison
                         return a.date.localeCompare(b.date);
                     });
-                    
+
                 setSessions(sortedSessions);
             } catch (err) {
                 console.error("Error fetching course details:", err);
@@ -75,15 +75,15 @@ const CourseDetail = ({ courseId, onClose }) => {
             fetchCourseDetails();
         }
     }, [courseId]);
-    
+
 
     // Helper function to parse German date format (DD.MM.YYYY)
     const parseGermanDate = (dateStr) => {
         if (!dateStr) return null;
-        
+
         const parts = dateStr.split('.');
         if (parts.length !== 3) return null;
-        
+
         // Note: JS months are 0-indexed
         return new Date(parts[2], parts[1] - 1, parts[0]);
     };
@@ -108,27 +108,27 @@ const CourseDetail = ({ courseId, onClose }) => {
     // Calculate attendance for a student across all sessions
     const calculateStudentAttendance = (studentId) => {
         if (!sessions || sessions.length === 0) return 0;
-        
+
         let presentCount = 0;
         let totalSessions = 0;
-        
+
         sessions.forEach(session => {
             if (session.attendance && session.attendance[studentId]) {
                 totalSessions++;
-                
+
                 if (session.attendance[studentId] === 'present') {
                     presentCount++;
                 }
             }
         });
-        
+
         if (totalSessions === 0) return 0;
         return Math.round((presentCount / totalSessions) * 100);
     };
 
     // Calculate attendance for a session across all students
     const calculateSessionAttendance = (session) => {
-        if (!session.attendance || !students || students.length === 0) return 0;
+        if (!session.attendance || !students || students.length === 0) return "0/0";
         
         let presentCount = 0;
         let totalStudents = 0;
@@ -137,14 +137,17 @@ const CourseDetail = ({ courseId, onClose }) => {
             if (session.attendance[student.id]) {
                 totalStudents++;
                 
-                if (session.attendance[student.id] === 'present') {
+                // Handle both string and object formats for attendance
+                const attendanceData = session.attendance[student.id];
+                const status = typeof attendanceData === 'object' ? attendanceData.status : attendanceData;
+                
+                if (status === 'present') {
                     presentCount++;
                 }
             }
         });
         
-        if (totalStudents === 0) return 0;
-        return Math.round((presentCount / totalStudents) * 100);
+        return `${presentCount}/${totalStudents}`;
     };
 
     // Helper function to safely render any type of value
@@ -266,9 +269,9 @@ const CourseDetail = ({ courseId, onClose }) => {
                                 <div className="info-item">
                                     <span className="label">Average Attendance:</span>
                                     <span className="value">
-                                        {students.length > 0 ? 
-                                            Math.round(students.reduce((sum, student) => 
-                                                sum + calculateStudentAttendance(student.id), 0) / students.length) + '%' 
+                                        {students.length > 0 ?
+                                            Math.round(students.reduce((sum, student) =>
+                                                sum + calculateStudentAttendance(student.id), 0) / students.length)
                                             : '-'}
                                     </span>
                                 </div>
@@ -286,7 +289,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                                     <th>Attendance</th>
                                     <th>Info</th>
                                     <th>Notes</th>
-                                    <th>Actions</th> 
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -294,7 +297,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                                     <tr key={student.id}>
                                         <td>{student.name}</td>
                                         <td>
-                                            {calculateStudentAttendance(student.id)}%
+                                            {calculateStudentAttendance(student.id)}
                                         </td>
                                         <td>{student.info || '-'}</td>
                                         <td>{student.notes || '-'}</td>
@@ -333,15 +336,15 @@ const CourseDetail = ({ courseId, onClose }) => {
                                         <td>{safelyRenderValue(session.title)}</td>
                                         <td>{safelyRenderValue(session.date)}</td>
                                         <td>
-                                            {teacher && session.teacherId === teacher.id ? 
-                                                teacher.name : 
+                                            {teacher && session.teacherId === teacher.id ?
+                                                teacher.name :
                                                 (session.teacherId ? 'Different Teacher' : '-')}
                                         </td>
                                         <td>
                                             {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
                                         </td>
                                         <td>
-                                            {calculateSessionAttendance(session)}%
+                                            {calculateSessionAttendance(session)}
                                         </td>
                                         <td>
                                             <button
@@ -358,7 +361,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                     </div>
                 )}
             </div>
-            
+
             {selectedSession && (
                 <SessionDetailModal
                     session={selectedSession}
