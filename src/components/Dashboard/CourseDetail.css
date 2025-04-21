@@ -144,3 +144,41 @@
   .btn-details:hover {
     background-color: var(--dark-blue);
   }
+
+  /* Add this to your CourseDetail.css file */
+.course-info-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .course-info-card h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: var(--primary-blue);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+  
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .info-item .label {
+    font-weight: 500;
+    color: #666;
+  }
+  
+  .info-item .value {
+    font-weight: 600;
+    color: #333;
+  }

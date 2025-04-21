@@ -1,8 +1,8 @@
 // src/components/Dashboard/ImportContent.jsx
 import { useState, useRef } from 'react';
-import * as XLSX from 'xlsx'; // Add this import for the XLSX library
+import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
-import { createRecord } from '../../firebase/database'; // Add this import for Firebase functions
+import { createRecord, updateRecord, getAllRecords, getRecordById } from '../../firebase/database';
 import './Content.css';
 
 const ImportContent = () => {
@@ -57,7 +57,6 @@ const ImportContent = () => {
 
     setLoading(true);
     try {
-      // Read the Excel file
       const reader = new FileReader();
 
       reader.onload = async (e) => {
@@ -78,17 +77,22 @@ const ImportContent = () => {
             return;
           }
 
-          // If validation passes, process the file
+          // If validation passes, process the file with new structure
           if (file.name.includes('B1.1_ONLINE_VN')) {
-            // Process as a course file using ExcelJS for color detection
+            // Process the course file using our new function
             const courseData = await processB1CourseFileWithColors(arrayBuffer, file.name);
-            await createRecord('courses', courseData);
-          }
 
-          setResult({
-            success: true,
-            message: `File "${file.name}" successfully validated and imported!`
-          });
+            setResult({
+              success: true,
+              message: `File "${file.name}" successfully imported into new database structure!`,
+              details: `Created course ${courseData.name} with ${courseData.sessionIds.length} sessions`
+            });
+          } else {
+            setResult({
+              success: false,
+              message: "Unsupported file format. Please use a compatible course template."
+            });
+          }
         } catch (error) {
           console.error("Error details:", error);
           setResult({
@@ -118,7 +122,97 @@ const ImportContent = () => {
     }
   };
 
-  // Add this validation function to your ImportContent.jsx file
+  // Function to create a teacher record
+  const createTeacherRecord = async (teacherName) => {
+    try {
+      // Check if teacher already exists
+      const teachers = await getAllRecords('teachers');
+      const existingTeacher = teachers.find(t => t.name === teacherName);
+
+      if (existingTeacher) {
+        return existingTeacher;
+      }
+
+      // Create new teacher
+      return await createRecord('teachers', {
+        name: teacherName,
+        email: '', // Default empty, can be updated later
+        courseIds: [] // Will be updated when courses are created
+      });
+    } catch (error) {
+      console.error("Error creating teacher record:", error);
+      throw error;
+    }
+  };
+
+  // Function to create a student record
+  const createStudentRecord = async (studentName, studentInfo = '') => {
+    try {
+      // Check if student already exists
+      const students = await getAllRecords('students');
+      const existingStudent = students.find(s => s.name === studentName);
+
+      if (existingStudent) {
+        return existingStudent;
+      }
+
+      // Create new student
+      return await createRecord('students', {
+        name: studentName,
+        info: studentInfo,
+        courseIds: [], // Will be updated when courses are created
+        notes: ''
+      });
+    } catch (error) {
+      console.error("Error creating student record:", error);
+      throw error;
+    }
+  };
+
+  // Function to create a month record if it doesn't exist
+  const getOrCreateMonthRecord = async (date) => {
+    try {
+      if (!date) return null;
+
+      // Extract year and month from date string (format: DD.MM.YYYY)
+      const parts = date.split('.');
+      if (parts.length !== 3) return null;
+
+      const year = parts[2];
+      const month = parts[1];
+      const monthId = `${year}-${month}`;
+
+      // Check if month record exists
+      const monthRecord = await getRecordById('months', monthId);
+
+      if (monthRecord) {
+        return monthRecord;
+      }
+
+      // Create new month record
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+
+      const monthName = `${monthNames[parseInt(month) - 1]} ${year}`;
+
+      return await createRecord('months', {
+        id: monthId,
+        name: monthName,
+        sessionCount: 0,
+        courseIds: [],
+        teacherIds: [],
+        statistics: {
+          attendanceRate: 0,
+          sessionCount: 0
+        }
+      });
+    } catch (error) {
+      console.error("Error creating month record:", error);
+      throw error;
+    }
+  };
 
   const validateExcelFile = async (arrayBuffer, filename) => {
     const errors = [];
@@ -233,9 +327,6 @@ const ImportContent = () => {
         errors.push("No sessions found in the Excel file. The Folien column should contain session titles.");
       }
 
-      // 8. Check for attendance data formatting
-      // This is more complex and might need special handling depending on your exact needs
-
       return errors;
 
     } catch (error) {
@@ -244,163 +335,8 @@ const ImportContent = () => {
     }
   };
 
-  // Function to process B1.1 course file
-  const processB1CourseFile = (data, filename) => {
-    console.log('Raw data from Excel:', data.slice(0, 15)); // Show first 15 rows for debugging
-
-    // Extract course level properly from filename
-    const levelMatch = filename.match(/B[0-9]\.[0-9]/i);
-    const level = levelMatch ? levelMatch[0] : 'unknown';
-
-    // Extract group from filename
-    const groupMatch = filename.match(/G(\d+)/i);
-    const group = groupMatch ? `G${groupMatch[1]}` : '';
-
-    console.log('Extracted level:', level, 'group:', group);
-
-    const courseName = `${group} ${level}`;
-
-    // Student names are in row 4 (index 3) starting from column K (index 10)
-    const studentsRowIndex = 3; // Row 4 (0-based index)
-    const studentsStartColumn = 10; // Column K (0-based index)
-
-    // Make sure we have enough rows of data
-    if (data.length <= studentsRowIndex) {
-      throw new Error(`Excel file doesn't have row 4 (index ${studentsRowIndex}) where student names should be`);
-    }
-
-    console.log('Looking for students in row 4 (index 3):', data[studentsRowIndex].slice(studentsStartColumn));
-
-    // Extract student names
-    const students = [];
-    for (let j = studentsStartColumn; j < data[studentsRowIndex].length; j++) {
-      const studentName = data[studentsRowIndex][j];
-      if (studentName && studentName.trim() !== '') {
-        // Skip any column headers that might be in this row
-        if (studentName === "Anwesenheitsliste" ||
-          studentName === "Nachrichten von/ für NaNu NaNa" ||
-          studentName === "Folien" ||
-          studentName === "Inhalt") {
-          continue;
-        }
-
-        students.push({
-          id: `student_${j}`,
-          name: studentName,
-          group: group
-        });
-
-        console.log(`Found student in column ${j}: ${studentName}`);
-      }
-    }
-
-    console.log('Extracted students:', students);
-
-    // Find the row with column headers (Folien, Inhalt, etc.)
-    let headerRowIndex = -1;
-    for (let i = 0; i < data.length && i < 30; i++) { // Check first 30 rows
-      // Looking for the row containing "Folien" as first column
-      if (data[i][0] === "Folien") {
-        headerRowIndex = i;
-        break;
-      }
-    }
-
-    if (headerRowIndex === -1) {
-      throw new Error("Could not find header row with 'Folien' in the Excel file");
-    }
-
-    console.log('Found header row at index:', headerRowIndex);
-
-    // Find sessions data - starts after the header row
-    const sessionsStartRow = headerRowIndex + 1;
-
-    // Process sessions
-    const sessions = [];
-    let currentSession = null;
-
-    for (let i = sessionsStartRow; i < data.length; i++) {
-      const row = data[i];
-
-      // Skip empty rows
-      if (!row || row.every(cell => !cell || cell.trim() === '')) {
-        continue;
-      }
-
-      // If we have a value in the Folien column (column 0), this is a new session
-      if (row[0] && row[0].trim() !== '') {
-        // If we already have a current session, add it to our sessions array
-        if (currentSession) {
-          sessions.push(currentSession);
-        }
-
-        // Start a new session
-        currentSession = {
-          title: row[0],
-          content: row[1] || '',
-          notes: row[2] || '',
-          checked: row[3] === 'TRUE',
-          completed: row[4] === 'TRUE',
-          date: row[5] || '',
-          startTime: row[6] || '',
-          endTime: row[7] || '',
-          teacher: row[8] || '',
-          message: row[9] || '',
-          attendance: {}
-        };
-      } else if (currentSession && row[1]) {
-        // This is a content row for the current session
-        currentSession.additionalContent = currentSession.additionalContent || [];
-        currentSession.additionalContent.push({
-          content: row[1],
-          notes: row[2] || '',
-          checked: row[3] === 'TRUE'
-        });
-      }
-
-      // Add attendance data if this is a session row
-      if (currentSession && students.length > 0) {
-        for (let s = 0; s < students.length; s++) {
-          const student = students[s];
-          const studentColumn = parseInt(student.id.split('_')[1]); // Get the column index from student id
-
-          if (row[studentColumn]) {
-            // Process attendance value
-            let attendanceValue = row[studentColumn];
-
-            // Convert common attendance values
-            if (attendanceValue === 'TRUE' || attendanceValue.toLowerCase() === 'anwesend') {
-              attendanceValue = 'present';
-            } else if (attendanceValue === 'FALSE' || attendanceValue.toLowerCase().includes('abwesend')) {
-              attendanceValue = 'absent';
-            }
-
-            currentSession.attendance[student.id] = attendanceValue;
-          }
-        }
-      }
-    }
-
-    // Add the last session if we have one
-    if (currentSession) {
-      sessions.push(currentSession);
-    }
-
-    console.log('Extracted sessions:', sessions);
-
-    return {
-      name: courseName,
-      level: level,
-      group: group,
-      students: students,
-      sessions: sessions
-    };
-  };
-
-  // Add these helper functions at the top of your ImportContent.jsx file or in a separate utils file
+  // Helper functions
   const excelDateToJSDate = (excelDate) => {
-    // Excel dates are number of days since 1900-01-01
-    // Excel has a leap year bug where it thinks 1900 was a leap year, so we need to adjust for dates after Feb 28, 1900
     if (!excelDate) return '';
 
     const date = new Date((excelDate - 1) * 24 * 60 * 60 * 1000 + new Date(1900, 0, 1).getTime());
@@ -417,302 +353,33 @@ const ImportContent = () => {
     return `${day}.${month}.${year}`;
   };
 
-  const formatTime = (jsDate) => {
-    if (!jsDate || !(jsDate instanceof Date) || isNaN(jsDate)) return '';
+  const formatTime = (value) => {
+    if (!value) return '';
 
-    const hours = jsDate.getHours().toString().padStart(2, '0');
-    const minutes = jsDate.getMinutes().toString().padStart(2, '0');
-
-    return `${hours}:${minutes}`;
-  };
-
-  // Function to convert Excel time (decimal fraction of day) to formatted time
-  const excelTimeToFormatted = (excelTime) => {
-    if (excelTime === undefined || excelTime === null || excelTime === '') return '';
-
-    // Convert decimal time to hours and minutes
-    const totalMinutes = Math.round(excelTime * 24 * 60);
-    const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
-    const minutes = (totalMinutes % 60).toString().padStart(2, '0');
-
-    return `${hours}:${minutes}`;
-  };
-
-  // New function to process Excel file with color detection
-  // New function to process Excel file with color detection
-  const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
-    console.log('Starting Excel file processing with color detection...');
-
-    // Extract course level and group from filename
-    const levelMatch = filename.match(/B[0-9]\.[0-9]/i);
-    const level = levelMatch ? levelMatch[0] : 'unknown';
-
-    const groupMatch = filename.match(/G(\d+)/i);
-    const group = groupMatch ? `G${groupMatch[1]}` : '';
-
-    const courseName = `${group} ${level}`;
-
-    // Use XLSX for basic structure extraction
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-    // Use ExcelJS for color information
-    const excelWorkbook = new ExcelJS.Workbook();
-    await excelWorkbook.xlsx.load(arrayBuffer);
-    const excelWorksheet = excelWorkbook.worksheets[0];
-
-    // Log the first few rows to debug
-    console.log('First 10 rows:', jsonData.slice(0, 10));
-
-    // Find the header row with "Folien" as the first column
-    let headerRowIndex = -1;
-    for (let i = 0; i < jsonData.length; i++) {
-      if (jsonData[i][0] === "Folien") {
-        headerRowIndex = i;
-        break;
-      }
+    // If it's already a string in HH:MM format
+    if (typeof value === 'string' && value.includes(':')) {
+      return value;
     }
 
-    if (headerRowIndex === -1) {
-      console.error("Could not find header row with 'Folien'");
-      // Just use row 4 (index 3) as fallback
-      headerRowIndex = 3;
+    // If it's a JS Date object
+    if (value instanceof Date) {
+      const hours = value.getHours().toString().padStart(2, '0');
+      const minutes = value.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
     }
 
-    console.log('Using header row index:', headerRowIndex);
-
-    // Extract student names from the header row
-    const students = [];
-    const headerRow = jsonData[headerRowIndex];
-
-    // Students typically start from column K (index 10)
-    for (let j = 10; j < headerRow.length; j++) {
-      const studentName = headerRow[j];
-      if (studentName && typeof studentName === 'string' && studentName.trim() !== '') {
-        // Skip any column headers
-        if (studentName === "Anwesenheitsliste" ||
-          studentName === "Nachrichten von/ für NaNu NaNa") {
-          continue;
-        }
-
-        students.push({
-          id: `student_${j}`,
-          name: studentName,
-          group: group
-        });
-      }
+    // If it's an Excel time (decimal fraction of day)
+    if (typeof value === 'number') {
+      const totalMinutes = Math.round(value * 24 * 60);
+      const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+      const minutes = (totalMinutes % 60).toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
     }
 
-    console.log(`Found ${students.length} students`);
-
-    // Process sessions - start from the row after the header
-    const sessions = [];
-    let currentSessionTitle = null;
-    let currentSession = null;
-
-    for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
-      const row = jsonData[i];
-
-      // Skip empty rows
-      if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
-        continue;
-      }
-
-      const folienTitle = row[0]; // Column A - Folien
-      const contentValue = row[1]; // Column B - Inhalt
-
-      // If we have a value in column A (Folien), this could be a new session
-      if (folienTitle && folienTitle.toString().trim() !== '') {
-        // If it's a new session title or different from current one, start a new session
-        if (folienTitle !== currentSessionTitle) {
-          // Save previous session if we have one
-          if (currentSession) {
-            console.log(`Pushing existing session: ${currentSession.title} on ${currentSession.date}`);
-            sessions.push({ ...currentSession }); // Create a copy to avoid reference issues
-          }
-
-          // Extract date, time and teacher info
-          const dateValue = row[5]; // Column F - Date
-          const startTimeValue = row[6]; // Column G - Start time
-          const endTimeValue = row[7]; // Column H - End time
-          const teacherValue = row[8] || ''; // Column I - Teacher
-
-          // Process date - Check if it's an Excel numeric date
-          let formattedDate = '';
-          if (dateValue) {
-            // If it's already formatted as string like "18.02.2025", use it directly
-            if (typeof dateValue === 'string' && dateValue.includes('.')) {
-              formattedDate = dateValue;
-            } else {
-              // Otherwise, treat it as Excel numeric date
-              try {
-                const jsDate = excelDateToJSDate(dateValue);
-                formattedDate = formatDate(jsDate);
-              } catch (e) {
-                console.warn('Error formatting date:', e);
-                formattedDate = String(dateValue); // Fallback to original value
-              }
-            }
-          }
-
-          // Process times - Check if they're Excel decimal times
-          let formattedStartTime = '';
-          if (startTimeValue) {
-            if (typeof startTimeValue === 'string' && startTimeValue.includes(':')) {
-              formattedStartTime = startTimeValue;
-            } else {
-              // Treat as Excel time
-              formattedStartTime = excelTimeToFormatted(startTimeValue);
-            }
-          }
-
-          let formattedEndTime = '';
-          if (endTimeValue) {
-            if (typeof endTimeValue === 'string' && endTimeValue.includes(':')) {
-              formattedEndTime = endTimeValue;
-            } else {
-              // Treat as Excel time
-              formattedEndTime = excelTimeToFormatted(endTimeValue);
-            }
-          }
-
-          // Create new session with properly formatted date and times
-          currentSessionTitle = folienTitle;
-          currentSession = {
-            title: folienTitle,
-            content: contentValue || '',
-            notes: row[2] || '', // Column C - Notizen
-            checked: row[3] === 'TRUE', // Column D - die Folien gecheckt
-            completed: row[4] === 'TRUE', // Column E - gemacht
-            date: formattedDate,
-            startTime: formattedStartTime,
-            endTime: formattedEndTime,
-            teacher: teacherValue,
-            message: row[9] || '', // Column J - Nachrichten
-            contentItems: [],
-            attendance: {}
-          };
-
-          console.log(`Created new session: ${folienTitle} on ${formattedDate} (total sessions: ${sessions.length})`);
-        }
-        // If it's the same title but a new row with content, we might need to update the current session
-        else if (contentValue && contentValue.trim() !== '') {
-          // Update current session with new content
-          if (!currentSession.contentItems) {
-            currentSession.contentItems = [];
-          }
-          currentSession.contentItems.push({
-            content: contentValue,
-            notes: row[2] || '',
-            checked: row[3] === 'TRUE'
-          });
-        }
-      } else if (currentSession && contentValue) {
-        // This is additional content for the current session
-        currentSession.contentItems.push({
-          content: contentValue,
-          notes: row[2] || '',
-          checked: row[3] === 'TRUE'
-        });
-      }
-
-      // Process attendance for this row if we have a current session
-      if (currentSession && students.length > 0) {
-        // Get the Excel row for color information
-        const excelRow = excelWorksheet.getRow(i + 1); // +1 because ExcelJS is 1-based
-
-        // Add debugging
-        console.log(`Processing attendance for session: ${currentSession.title}, Row: ${i + 1}`);
-
-        for (const student of students) {
-          const columnIndex = parseInt(student.id.split('_')[1]);
-          const cellValue = row[columnIndex];
-
-          if (cellValue !== undefined && cellValue !== null) {
-            let attendanceValue = 'unknown';
-
-            // Try to get color information from ExcelJS
-            const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
-
-            // Debug cell info
-            console.log(`Student: ${student.name}, Cell Value: ${cellValue}`);
-            console.log(`Cell Fill:`, excelCell.fill);
-
-            // Update the color detection logic in your processB1CourseFileWithColors function
-            if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
-              const color = excelCell.fill.fgColor.argb || '';
-              console.log(`Cell Color: ${color}`);
-
-              // Use the helper functions for detection
-              if (color && isGreenColor(color)) {
-                attendanceValue = 'present';
-                console.log(`Detected green color: ${color} -> present`);
-              }
-              else if (color && isRedColor(color)) {
-                attendanceValue = 'absent';
-                console.log(`Detected red color: ${color} -> absent`);
-              }
-            }
-
-            // If we couldn't determine from color, try text values
-            if (attendanceValue === 'unknown' && cellValue) {
-              const cellText = cellValue.toString().toLowerCase();
-              if (cellText === 'true' || cellText === 'anwesend' || cellText === 'present') {
-                attendanceValue = 'present';
-              } else if (cellText === 'false' || cellText === 'abwesend' || cellText === 'absent') {
-                attendanceValue = 'absent';
-              } else if (cellText.includes('krank') || cellText.includes('sick')) {
-                attendanceValue = 'sick';
-              } else if (cellText.includes('kamera aus') || cellText.includes('mic aus')) {
-                attendanceValue = 'technical_issues';
-              }
-            }
-
-            // Record attendance - use the first value we find for each student
-            if (attendanceValue !== 'unknown') {
-              // FIXED: Always set the attendance value, even if it's already set
-              currentSession.attendance[student.id] = attendanceValue;
-              console.log(`Set attendance for ${student.name} to "${attendanceValue}"`);
-            }
-          }
-        }
-      }
-    }
-
-    // Add the last session if we have one
-    if (currentSession) {
-      console.log(`Pushing final session: ${currentSession.title} on ${currentSession.date}`);
-      sessions.push({ ...currentSession }); // Create a copy to avoid reference issues
-    }
-
-    console.log('Returning course data with', sessions.length, 'sessions');
-    sessions.forEach((session, index) => {
-      console.log(`Session ${index + 1}: ${session.title} on ${session.date}`);
-    });
-
-    return {
-      name: courseName,
-      level: level,
-      group: group,
-      students: students,
-      sessions: sessions
-    };
+    return '';
   };
 
-  // Helper function to extract level from filename
-  const extractLevelFromFilename = (filename) => {
-    const levelMatch = filename.match(/([A-Z][0-9](\.[0-9])?)/i);
-    return levelMatch ? levelMatch[1] : 'unknown';
-  };
-
-  // Helper function to extract group from filename
-  const extractGroupFromFilename = (filename) => {
-    const groupMatch = filename.match(/G(\d+)/i);
-    return groupMatch ? `G${groupMatch[1]}` : '';
-  };
-  // Add this helper function to your ImportContent.jsx file
+  // Color detection helpers
   const isGreenColor = (argb) => {
     // Common green color codes in Excel
     const greenCodes = [
@@ -743,6 +410,350 @@ const ImportContent = () => {
     ];
 
     return redCodes.some(code => argb.includes(code));
+  };
+
+  // New function to process Excel file with the new database structure
+  const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
+    console.log('Starting Excel file processing with new database structure...');
+
+    // Use XLSX and ExcelJS to parse the file
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    const excelWorkbook = new ExcelJS.Workbook();
+    await excelWorkbook.xlsx.load(arrayBuffer);
+    const excelWorksheet = excelWorkbook.worksheets[0];
+
+    // Extract course level and group from filename
+    const levelMatch = filename.match(/B[0-9]\.[0-9]/i);
+    const level = levelMatch ? levelMatch[0] : 'unknown';
+
+    const groupMatch = filename.match(/G(\d+)/i);
+    const group = groupMatch ? `G${groupMatch[1]}` : '';
+
+    const courseName = `${group} ${level}`;
+
+    // Find the header row with "Folien"
+    let headerRowIndex = -1;
+    for (let i = 0; i < jsonData.length; i++) {
+      if (jsonData[i][0] === "Folien") {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      console.error("Could not find header row with 'Folien'");
+      headerRowIndex = 3; // Fallback
+    }
+
+    // Extract student information
+    const students = [];
+    const headerRow = jsonData[headerRowIndex];
+
+    // Students typically start from column K (index 10)
+    for (let j = 10; j < headerRow.length; j++) {
+      const studentName = headerRow[j];
+      if (studentName && typeof studentName === 'string' && studentName.trim() !== '') {
+        // Skip column headers
+        if (studentName === "Anwesenheitsliste" ||
+          studentName === "Nachrichten von/ für NaNu NaNa") {
+          continue;
+        }
+
+        // Create student record in Firebase
+        const studentRecord = await createStudentRecord(studentName);
+        students.push({
+          id: studentRecord.id,
+          name: studentRecord.name,
+          columnIndex: j
+        });
+      }
+    }
+
+    console.log(`Created ${students.length} student records`);
+
+    // Create the course record
+    const courseRecord = await createRecord('courses', {
+      name: courseName,
+      level: level,
+      group: group,
+      startDate: '', // Will be updated with the first session date
+      endDate: '', // Will be updated with the last session date
+      sessionIds: [],
+      studentIds: students.map(s => s.id),
+      teacherId: '' // Will be updated when we process sessions
+    });
+
+    console.log(`Created course record: ${courseRecord.id}`);
+
+    // Update student records with this course
+    for (const student of students) {
+      await updateRecord('students', student.id, {
+        courseIds: [courseRecord.id]
+      });
+    }
+
+    // Process sessions - start from the row after the header
+    const sessions = [];
+    let currentSessionTitle = null;
+    let currentSession = null;
+    let teacherIds = new Set();
+    let monthIds = new Set();
+    let firstSessionDate = null;
+    let lastSessionDate = null;
+
+    for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+      const row = jsonData[i];
+
+      // Skip empty rows
+      if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+        continue;
+      }
+
+      const folienTitle = row[0]; // Column A - Folien
+      const contentValue = row[1]; // Column B - Inhalt
+
+      // If we have a value in column A (Folien), this could be a new session
+      if (folienTitle && folienTitle.toString().trim() !== '') {
+        // If it's a new session title or different from current one, start a new session
+        if (folienTitle !== currentSessionTitle) {
+          // Save previous session if we have one
+          if (currentSession) {
+            console.log(`Creating session record: ${currentSession.title}`);
+            const sessionRecord = await createRecord('sessions', currentSession);
+
+            // Add to course's sessionIds
+            courseRecord.sessionIds.push(sessionRecord.id);
+
+            // Add to month's collection if we have a valid date
+            if (currentSession.monthId) {
+              let monthRecord = await getRecordById('months', currentSession.monthId);
+              if (monthRecord) {
+                // Update month courseIds if not already there
+                if (!monthRecord.courseIds.includes(courseRecord.id)) {
+                  monthRecord.courseIds.push(courseRecord.id);
+                }
+                // Increment session count
+                monthRecord.sessionCount = (monthRecord.sessionCount || 0) + 1;
+                await updateRecord('months', currentSession.monthId, monthRecord);
+              }
+            }
+
+            sessions.push(sessionRecord);
+          }
+
+          // Extract date, time and teacher info
+          const dateValue = row[5]; // Column F - Date
+          const startTimeValue = row[6]; // Column G - Start time
+          const endTimeValue = row[7]; // Column H - End time
+          const teacherValue = row[8] || ''; // Column I - Teacher
+
+          // Format date and times
+          let formattedDate = '';
+          if (dateValue) {
+            if (typeof dateValue === 'string' && dateValue.includes('.')) {
+              formattedDate = dateValue;
+            } else {
+              try {
+                const jsDate = excelDateToJSDate(dateValue);
+                formattedDate = formatDate(jsDate);
+              } catch (e) {
+                formattedDate = String(dateValue);
+              }
+            }
+
+            // Update first and last session dates
+            if (!firstSessionDate || formattedDate < firstSessionDate) {
+              firstSessionDate = formattedDate;
+            }
+            if (!lastSessionDate || formattedDate > lastSessionDate) {
+              lastSessionDate = formattedDate;
+            }
+          }
+
+          // Format times
+          let formattedStartTime = formatTime(startTimeValue);
+          let formattedEndTime = formatTime(endTimeValue);
+
+          // Create or get teacher record
+          let teacherId = '';
+          if (teacherValue) {
+            const teacherRecord = await createTeacherRecord(teacherValue);
+            teacherId = teacherRecord.id;
+            teacherIds.add(teacherId);
+
+            // If this is the first teacher we've found, set it as the course's teacher
+            if (!courseRecord.teacherId) {
+              courseRecord.teacherId = teacherId;
+            }
+          }
+
+          // Get or create month record
+          let monthId = null;
+          if (formattedDate) {
+            const monthRecord = await getOrCreateMonthRecord(formattedDate);
+            if (monthRecord) {
+              monthId = monthRecord.id;
+              monthIds.add(monthId);
+            }
+          }
+
+          // Create new session object
+          currentSessionTitle = folienTitle;
+          currentSession = {
+            courseId: courseRecord.id,
+            title: folienTitle,
+            content: contentValue || '',
+            notes: row[2] || '', // Column C - Notizen
+            checked: row[3] === 'TRUE', // Column D - die Folien gecheckt
+            completed: row[4] === 'TRUE', // Column E - gemacht
+            date: formattedDate,
+            startTime: formattedStartTime,
+            endTime: formattedEndTime,
+            teacherId: teacherId,
+            message: row[9] || '', // Column J - Nachrichten
+            contentItems: [],
+            attendance: {},
+            monthId: monthId
+          };
+
+          console.log(`Created new session: ${folienTitle} on ${formattedDate}`);
+        }
+        // If it's the same title but a new row with content, we might need to update the current session
+        else if (contentValue && contentValue.trim() !== '') {
+          // Update current session with new content
+          if (!currentSession.contentItems) {
+            currentSession.contentItems = [];
+          }
+          currentSession.contentItems.push({
+            content: contentValue,
+            notes: row[2] || '',
+            checked: row[3] === 'TRUE'
+          });
+        }
+      } else if (currentSession && contentValue) {
+        // This is additional content for the current session
+        currentSession.contentItems.push({
+          content: contentValue,
+          notes: row[2] || '',
+          checked: row[3] === 'TRUE'
+        });
+      }
+
+      // Process attendance for this row if we have a current session
+      if (currentSession && students.length > 0) {
+        // Get the Excel row for color information
+        const excelRow = excelWorksheet.getRow(i + 1); // +1 because ExcelJS is 1-based
+
+        for (const student of students) {
+          const columnIndex = student.columnIndex;
+          const cellValue = row[columnIndex];
+
+          if (cellValue !== undefined && cellValue !== null) {
+            let attendanceValue = 'unknown';
+
+            // Try to get color information from ExcelJS
+            const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
+
+            // Color-based detection
+            if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
+              const color = excelCell.fill.fgColor.argb || '';
+
+              // Green -> present, Red/Pink -> absent
+              if (isGreenColor(color)) {
+                attendanceValue = 'present';
+              }
+              else if (isRedColor(color)) {
+                attendanceValue = 'absent';
+              }
+            }
+
+            // If we couldn't determine from color, try text values
+            if (attendanceValue === 'unknown' && cellValue) {
+              const cellText = cellValue.toString().toLowerCase();
+              if (cellText === 'true' || cellText === 'anwesend' || cellText === 'present') {
+                attendanceValue = 'present';
+              } else if (cellText === 'false' || cellText === 'abwesend' || cellText === 'absent') {
+                attendanceValue = 'absent';
+              } else if (cellText.includes('krank') || cellText.includes('sick')) {
+                attendanceValue = 'sick';
+              } else if (cellText.includes('kamera aus') || cellText.includes('mic aus')) {
+                attendanceValue = 'technical_issues';
+              }
+            }
+
+            // Record attendance
+            if (attendanceValue !== 'unknown') {
+              currentSession.attendance[student.id] = attendanceValue;
+            }
+          }
+        }
+      }
+    }
+
+    // Add the last session if we have one
+    if (currentSession) {
+      console.log(`Creating final session record: ${currentSession.title}`);
+      const sessionRecord = await createRecord('sessions', currentSession);
+      courseRecord.sessionIds.push(sessionRecord.id);
+
+      // Add to month's collection if we have a valid date
+      if (currentSession.monthId) {
+        let monthRecord = await getRecordById('months', currentSession.monthId);
+        if (monthRecord) {
+          // Update month courseIds if not already there
+          if (!monthRecord.courseIds.includes(courseRecord.id)) {
+            monthRecord.courseIds.push(courseRecord.id);
+          }
+          // Increment session count
+          monthRecord.sessionCount = (monthRecord.sessionCount || 0) + 1;
+          await updateRecord('months', currentSession.monthId, monthRecord);
+        }
+      }
+
+      sessions.push(sessionRecord);
+    }
+
+    // Update course with session dates and teacher
+    await updateRecord('courses', courseRecord.id, {
+      startDate: firstSessionDate || '',
+      endDate: lastSessionDate || '',
+      sessionIds: courseRecord.sessionIds,
+      teacherId: courseRecord.teacherId
+    });
+
+    // Update teacher records with this course
+    for (const teacherId of teacherIds) {
+      const teacher = await getRecordById('teachers', teacherId);
+      if (teacher) {
+        const courseIds = teacher.courseIds || [];
+        if (!courseIds.includes(courseRecord.id)) {
+          courseIds.push(courseRecord.id);
+          await updateRecord('teachers', teacherId, { courseIds });
+        }
+      }
+    }
+
+    // Update month records with teachers
+    for (const monthId of monthIds) {
+      const monthRecord = await getRecordById('months', monthId);
+      if (monthRecord) {
+        const teacherIdsArray = Array.from(teacherIds);
+        const updatedTeacherIds = [...new Set([...(monthRecord.teacherIds || []), ...teacherIdsArray])];
+        await updateRecord('months', monthId, {
+          teacherIds: updatedTeacherIds
+        });
+      }
+    }
+
+    console.log('Completed database import with new structure');
+    return {
+      ...courseRecord,
+      sessionCount: sessions.length
+    };
   };
 
   const triggerFileInput = () => {
@@ -843,6 +854,10 @@ const ImportContent = () => {
               color: result.success ? '#2e7d32' : '#c62828'
             }}>
               <p><strong>{result.message}</strong></p>
+
+              {result.details && (
+                <p>{result.details}</p>
+              )}
 
               {result.errors && result.errors.length > 0 && (
                 <div style={{ marginTop: '10px' }}>

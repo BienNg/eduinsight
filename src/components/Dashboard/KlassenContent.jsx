@@ -1,6 +1,6 @@
-// Updated src/components/Dashboard/KlassenContent.jsx
+// src/components/Dashboard/KlassenContent.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords, deleteRecord } from '../../firebase/database';
+import { getAllRecords, deleteRecord, getRecordById, updateRecord } from '../../firebase/database';
 import CourseDetail from './CourseDetail';
 import './Content.css';
 
@@ -19,7 +19,30 @@ const KlassenContent = () => {
     try {
       setLoading(true);
       const coursesData = await getAllRecords('courses');
-      setCourses(coursesData);
+      
+      // Enrich course data with teacher and student info
+      const enrichedCourses = await Promise.all(coursesData.map(async (course) => {
+        // Get teacher if available
+        let teacher = null;
+        if (course.teacherId) {
+          teacher = await getRecordById('teachers', course.teacherId);
+        }
+        
+        // Get students count (we'll fetch full student data in CourseDetail)
+        const studentCount = course.studentIds ? course.studentIds.length : 0;
+        
+        // Get sessions count (we'll fetch full session data in CourseDetail)
+        const sessionCount = course.sessionIds ? course.sessionIds.length : 0;
+        
+        return {
+          ...course,
+          teacherName: teacher ? teacher.name : 'Not assigned',
+          studentCount: studentCount,
+          sessionCount: sessionCount
+        };
+      }));
+      
+      setCourses(enrichedCourses);
     } catch (err) {
       console.error("Error fetching courses:", err);
       setError("Failed to load courses. Please try again later.");
@@ -34,6 +57,8 @@ const KlassenContent = () => {
 
   const handleCloseDetails = () => {
     setSelectedCourseId(null);
+    // Refresh course list when returning from details
+    fetchCourses();
   };
 
   const handleDeleteCourse = async (courseId, courseName, event) => {
@@ -46,13 +71,44 @@ const KlassenContent = () => {
     if (confirmDelete) {
       try {
         setDeletingCourseId(courseId);
-        await deleteRecord('courses', courseId);
         
-        // Update the courses list by removing the deleted course
-        setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
+        // Get course data to clean up related records
+        const course = await getRecordById('courses', courseId);
         
-        // Show success notification (you could implement a toast notification system)
-        console.log(`Course "${courseName}" successfully deleted`);
+        if (course) {
+          // Delete related sessions
+          if (course.sessionIds && course.sessionIds.length > 0) {
+            for (const sessionId of course.sessionIds) {
+              await deleteRecord('sessions', sessionId);
+            }
+          }
+          
+          // Remove course from student records
+          if (course.studentIds && course.studentIds.length > 0) {
+            for (const studentId of course.studentIds) {
+              const student = await getRecordById('students', studentId);
+              if (student && student.courseIds) {
+                const updatedCourseIds = student.courseIds.filter(id => id !== courseId);
+                await updateRecord('students', studentId, { courseIds: updatedCourseIds });
+              }
+            }
+          }
+          
+          // Remove course from teacher record
+          if (course.teacherId) {
+            const teacher = await getRecordById('teachers', course.teacherId);
+            if (teacher && teacher.courseIds) {
+              const updatedCourseIds = teacher.courseIds.filter(id => id !== courseId);
+              await updateRecord('teachers', teacher.id, { courseIds: updatedCourseIds });
+            }
+          }
+          
+          // Delete the course itself
+          await deleteRecord('courses', courseId);
+          
+          // Update the courses list
+          setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
+        }
       } catch (err) {
         console.error("Error deleting course:", err);
         setError(`Failed to delete course: ${err.message}`);
@@ -83,7 +139,7 @@ const KlassenContent = () => {
       {!loading && !error && courses.length > 0 && (
         <div className="courses-grid">
           {courses.map((course) => (
-            <div className="course-card" key={course.id}>
+            <div className="course-card" key={course.id} onClick={() => handleViewDetails(course.id)}>
               <div className="course-header">
                 <h3>{course.name}</h3>
                 <span className="course-level">{course.level}</span>
@@ -91,20 +147,24 @@ const KlassenContent = () => {
               <div className="course-info">
                 <div className="info-item">
                   <span className="label">Schüler:</span>
-                  <span className="value">{course.students ? course.students.length : 0}</span>
+                  <span className="value">{course.studentCount}</span>
                 </div>
                 <div className="info-item">
                   <span className="label">Lektionen:</span>
-                  <span className="value">{course.sessions ? course.sessions.length : 0}</span>
+                  <span className="value">{course.sessionCount}</span>
                 </div>
                 <div className="info-item">
                   <span className="label">Lehrer:</span>
-                  <span className="value">
-                    {course.sessions && course.sessions.length > 0 
-                      ? course.sessions[course.sessions.length - 1].teacher || 'Nicht zugewiesen'
-                      : 'Nicht zugewiesen'}
-                  </span>
+                  <span className="value">{course.teacherName}</span>
                 </div>
+                {course.startDate && (
+                  <div className="info-item">
+                    <span className="label">Zeitraum:</span>
+                    <span className="value">
+                      {course.startDate} - {course.endDate || 'heute'}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="course-actions">
                 <button 
@@ -116,7 +176,10 @@ const KlassenContent = () => {
                 </button>
                 <button 
                   className="btn-details"
-                  onClick={() => handleViewDetails(course.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewDetails(course.id);
+                  }}
                 >
                   Details ansehen
                 </button>

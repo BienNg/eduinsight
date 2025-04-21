@@ -6,44 +6,183 @@ import './CourseDetail.css';
 
 const CourseDetail = ({ courseId, onClose }) => {
     const [course, setCourse] = useState(null);
+    const [teacher, setTeacher] = useState(null);
+    const [students, setStudents] = useState([]);
+    const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
-
     const [selectedSession, setSelectedSession] = useState(null);
 
-    // Add this function to handle opening the modal
-    const openSessionDetail = (session) => {
-        setSelectedSession(session);
-    };
-
-    // Add this function to handle closing the modal
-    const closeSessionDetail = () => {
-        setSelectedSession(null);
-    };
-
     useEffect(() => {
-        const fetchCourse = async () => {
+        const fetchCourseDetails = async () => {
             try {
+                setLoading(true);
+                
+                // Fetch course data
                 const courseData = await getRecordById('courses', courseId);
+                if (!courseData) {
+                    throw new Error("Course not found");
+                }
                 setCourse(courseData);
+                
+                // Fetch teacher data if available
+                if (courseData.teacherId) {
+                    const teacherData = await getRecordById('teachers', courseData.teacherId);
+                    setTeacher(teacherData);
+                }
+                
+                // Fetch student data
+                const studentPromises = (courseData.studentIds || []).map(studentId => 
+                    getRecordById('students', studentId)
+                );
+                const studentData = await Promise.all(studentPromises);
+                setStudents(studentData.filter(s => s !== null)); // Filter out any null results
+                
+                // Fetch session data
+                const sessionPromises = (courseData.sessionIds || []).map(sessionId => 
+                    getRecordById('sessions', sessionId)
+                );
+                const sessionData = await Promise.all(sessionPromises);
+                
+                // Sort sessions by date
+                const sortedSessions = sessionData
+                    .filter(s => s !== null)
+                    .sort((a, b) => {
+                        // Try to parse dates and compare them
+                        const dateA = parseGermanDate(a.date);
+                        const dateB = parseGermanDate(b.date);
+                        
+                        if (dateA && dateB) {
+                            return dateA - dateB;
+                        }
+                        // Fallback to string comparison
+                        return a.date.localeCompare(b.date);
+                    });
+                    
+                setSessions(sortedSessions);
             } catch (err) {
+                console.error("Error fetching course details:", err);
                 setError("Failed to load course details.");
-                console.error(err);
             } finally {
                 setLoading(false);
             }
         };
 
         if (courseId) {
-            fetchCourse();
+            fetchCourseDetails();
         }
     }, [courseId]);
+
+    // Helper function to parse German date format (DD.MM.YYYY)
+    const parseGermanDate = (dateStr) => {
+        if (!dateStr) return null;
+        
+        const parts = dateStr.split('.');
+        if (parts.length !== 3) return null;
+        
+        // Note: JS months are 0-indexed
+        return new Date(parts[2], parts[1] - 1, parts[0]);
+    };
+
+    const openSessionDetail = (session) => {
+        setSelectedSession(session);
+    };
+
+    const closeSessionDetail = () => {
+        setSelectedSession(null);
+    };
+
+    // Calculate attendance for a student across all sessions
+    const calculateStudentAttendance = (studentId) => {
+        if (!sessions || sessions.length === 0) return 0;
+        
+        let presentCount = 0;
+        let totalSessions = 0;
+        
+        sessions.forEach(session => {
+            if (session.attendance && session.attendance[studentId]) {
+                totalSessions++;
+                
+                if (session.attendance[studentId] === 'present') {
+                    presentCount++;
+                }
+            }
+        });
+        
+        if (totalSessions === 0) return 0;
+        return Math.round((presentCount / totalSessions) * 100);
+    };
+
+    // Calculate attendance for a session across all students
+    const calculateSessionAttendance = (session) => {
+        if (!session.attendance || !students || students.length === 0) return 0;
+        
+        let presentCount = 0;
+        let totalStudents = 0;
+        
+        students.forEach(student => {
+            if (session.attendance[student.id]) {
+                totalStudents++;
+                
+                if (session.attendance[student.id] === 'present') {
+                    presentCount++;
+                }
+            }
+        });
+        
+        if (totalStudents === 0) return 0;
+        return Math.round((presentCount / totalStudents) * 100);
+    };
+
+    // Helper function to safely render any type of value
+    const safelyRenderValue = (value) => {
+        if (value === null || value === undefined) {
+            return '-';
+        }
+
+        if (typeof value === 'string' || typeof value === 'number') {
+            return value;
+        }
+
+        // Handle objects with hyperlink & text properties (ExcelJS rich text)
+        if (value && typeof value === 'object') {
+            if (value.hyperlink && value.text) {
+                return value.text;
+            }
+            if (value.richText) {
+                return value.richText.map(rt => rt.text).join('');
+            }
+            if (value.text) {
+                return value.text;
+            }
+            if (value.formula) {
+                return value.result || '';
+            }
+            // Handle date objects
+            if (value instanceof Date) {
+                return value.toLocaleDateString();
+            }
+            // Last resort - convert to string
+            try {
+                return JSON.stringify(value);
+            } catch (e) {
+                return 'Complex value';
+            }
+        }
+
+        // Convert arrays to comma-separated strings
+        if (Array.isArray(value)) {
+            return value.map(item => safelyRenderValue(item)).join(', ');
+        }
+
+        // Last resort for any other type
+        return String(value);
+    };
 
     if (loading) return <div className="loading">Loading course details...</div>;
     if (error) return <div className="error">{error}</div>;
     if (!course) return <div className="error">Course not found</div>;
-
 
     return (
         <div className="course-detail-container">
@@ -80,23 +219,49 @@ const CourseDetail = ({ courseId, onClose }) => {
                         <div className="stats-row">
                             <div className="stat-box">
                                 <h3>Students</h3>
-                                <div className="stat-value">{course.students ? course.students.length : 0}</div>
+                                <div className="stat-value">{students.length}</div>
                             </div>
                             <div className="stat-box">
                                 <h3>Sessions</h3>
-                                <div className="stat-value">{course.sessions ? course.sessions.length : 0}</div>
+                                <div className="stat-value">{sessions.length}</div>
                             </div>
                             <div className="stat-box">
-                                <h3>Current Teacher</h3>
+                                <h3>Teacher</h3>
                                 <div className="stat-value">
-                                    {course.sessions && course.sessions.length > 0
-                                        ? course.sessions[course.sessions.length - 1].teacher || 'Not assigned'
-                                        : 'Not assigned'}
+                                    {teacher ? teacher.name : 'Not assigned'}
                                 </div>
                             </div>
                         </div>
-
-                        {/* Add more overview information as needed */}
+                        <div className="course-info-card">
+                            <h3>Course Information</h3>
+                            <div className="info-grid">
+                                <div className="info-item">
+                                    <span className="label">Level:</span>
+                                    <span className="value">{course.level}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Group:</span>
+                                    <span className="value">{course.group || '-'}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Start Date:</span>
+                                    <span className="value">{course.startDate || '-'}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">End Date:</span>
+                                    <span className="value">{course.endDate || '-'}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Average Attendance:</span>
+                                    <span className="value">
+                                        {students.length > 0 ? 
+                                            Math.round(students.reduce((sum, student) => 
+                                                sum + calculateStudentAttendance(student.id), 0) / students.length) + '%' 
+                                            : '-'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -107,17 +272,18 @@ const CourseDetail = ({ courseId, onClose }) => {
                                 <tr>
                                     <th>Name</th>
                                     <th>Attendance</th>
+                                    <th>Info</th>
                                     <th>Notes</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {course.students && course.students.map((student) => (
+                                {students.map((student) => (
                                     <tr key={student.id}>
                                         <td>{student.name}</td>
                                         <td>
-                                            {/* Calculate attendance percentage */}
-                                            {calculateAttendance(course.sessions, student.id)}%
+                                            {calculateStudentAttendance(student.id)}%
                                         </td>
+                                        <td>{student.info || '-'}</td>
                                         <td>{student.notes || '-'}</td>
                                     </tr>
                                 ))}
@@ -136,21 +302,24 @@ const CourseDetail = ({ courseId, onClose }) => {
                                     <th>Teacher</th>
                                     <th>Time</th>
                                     <th>Attendance</th>
-                                    <th>Actions</th> {/* New column for actions */}
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {course.sessions && course.sessions.map((session, index) => (
-                                    <tr key={index}>
+                                {sessions.map((session) => (
+                                    <tr key={session.id}>
                                         <td>{safelyRenderValue(session.title)}</td>
                                         <td>{safelyRenderValue(session.date)}</td>
-                                        <td>{safelyRenderValue(session.teacher)}</td>
+                                        <td>
+                                            {teacher && session.teacherId === teacher.id ? 
+                                                teacher.name : 
+                                                (session.teacherId ? 'Different Teacher' : '-')}
+                                        </td>
                                         <td>
                                             {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
                                         </td>
                                         <td>
-                                            {course.students &&
-                                                `${calculateSessionAttendance(session, course.students)}%`}
+                                            {calculateSessionAttendance(session)}%
                                         </td>
                                         <td>
                                             <button
@@ -167,118 +336,17 @@ const CourseDetail = ({ courseId, onClose }) => {
                     </div>
                 )}
             </div>
-            {/* Add the modal right here, before the closing div */}
+            
             {selectedSession && (
                 <SessionDetailModal
                     session={selectedSession}
-                    students={course.students}
+                    students={students}
+                    teacher={teacher}
                     onClose={closeSessionDetail}
                 />
             )}
         </div>
     );
-};
-
-// Helper function to calculate attendance percentage for a student
-const calculateAttendance = (sessions, studentId) => {
-    if (!sessions || sessions.length === 0) return 0;
-
-    let presentCount = 0;
-    let totalSessions = 0;
-
-    console.log(`Calculating attendance for student ID: ${studentId}`);
-    console.log(`Total sessions: ${sessions.length}`);
-
-    sessions.forEach((session, idx) => {
-        console.log(`Session ${idx}: ${session.title}, Attendance:`, session.attendance);
-
-        // Check if attendance exists and has data for this student
-        if (session.attendance && Object.keys(session.attendance).length > 0) {
-            console.log(`Student attendance value: ${session.attendance[studentId]}`);
-
-            // Only count sessions where attendance was tracked for this student
-            if (session.attendance[studentId]) {
-                totalSessions++;
-
-                // Check for both 'present' and 'Present' to handle case sensitivity
-                if (session.attendance[studentId].toLowerCase() === 'present') {
-                    presentCount++;
-                }
-            }
-        } else {
-            console.log(`No attendance data for this session`);
-        }
-    });
-
-    console.log(`Present count: ${presentCount}, Total sessions: ${totalSessions}`);
-
-    if (totalSessions === 0) return 0;
-    return Math.round((presentCount / totalSessions) * 100);
-};
-
-// Helper function to calculate attendance percentage for a session
-const calculateSessionAttendance = (session, students) => {
-    if (!session.attendance || !students || students.length === 0) return 0;
-
-    let presentCount = 0;
-    let totalStudents = 0;
-
-    students.forEach(student => {
-        if (session.attendance[student.id]) {
-            totalStudents++;
-            if (session.attendance[student.id] === 'present') {
-                presentCount++;
-            }
-        }
-    });
-
-    if (totalStudents === 0) return 0;
-    return Math.round((presentCount / totalStudents) * 100);
-};
-
-// Helper function to safely render any type of value
-const safelyRenderValue = (value) => {
-    if (value === null || value === undefined) {
-        return '-';
-    }
-
-    if (typeof value === 'string' || typeof value === 'number') {
-        return value;
-    }
-
-    // Handle objects with hyperlink & text properties (ExcelJS rich text)
-    if (value && typeof value === 'object') {
-        if (value.hyperlink && value.text) {
-            return value.text;
-        }
-        if (value.richText) {
-            return value.richText.map(rt => rt.text).join('');
-        }
-        if (value.text) {
-            return value.text;
-        }
-        if (value.formula) {
-            return value.result || '';
-        }
-        // Handle date objects
-        if (value instanceof Date) {
-            return value.toLocaleDateString();
-        }
-        // Last resort - convert to string
-        try {
-            return JSON.stringify(value);
-        } catch (e) {
-            return 'Complex value';
-        }
-    }
-
-    // Convert arrays to comma-separated strings
-    if (Array.isArray(value)) {
-        return value.map(item => safelyRenderValue(item)).join(', ');
-    }
-
-    // Last resort for any other type
-    return String(value);
 };
 
 export default CourseDetail;
