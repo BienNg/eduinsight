@@ -3,6 +3,8 @@ import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import { createRecord, updateRecord, getAllRecords, getRecordById } from '../../firebase/database';
+import { ref, push, set, get, update, remove, query, orderByChild, equalTo } from "firebase/database";
+import { database } from "../../firebase/config";
 import './Content.css';
 
 const ImportContent = () => {
@@ -170,6 +172,7 @@ const ImportContent = () => {
   };
 
   // Function to create a month record if it doesn't exist
+  // Update the getOrCreateMonthRecord function in ImportContent.jsx
   const getOrCreateMonthRecord = async (date) => {
     try {
       if (!date) return null;
@@ -186,6 +189,7 @@ const ImportContent = () => {
       const monthRecord = await getRecordById('months', monthId);
 
       if (monthRecord) {
+        console.log(`Found existing month record: ${monthId}`);
         return monthRecord;
       }
 
@@ -197,9 +201,13 @@ const ImportContent = () => {
 
       const monthName = `${monthNames[parseInt(month) - 1]} ${year}`;
 
-      return await createRecord('months', {
+      console.log(`Creating new month record: ${monthId} (${monthName})`);
+
+      const newMonth = {
         id: monthId,
         name: monthName,
+        year: year,
+        month: month, // Store the month number for easier sorting
         sessionCount: 0,
         courseIds: [],
         teacherIds: [],
@@ -207,7 +215,11 @@ const ImportContent = () => {
           attendanceRate: 0,
           sessionCount: 0
         }
-      });
+      };
+
+      // Instead of createRecord which generates a random ID, use set with the custom ID
+      await set(ref(database, `months/${monthId}`), newMonth);
+      return newMonth;
     } catch (error) {
       console.error("Error creating month record:", error);
       throw error;
@@ -528,17 +540,32 @@ const ImportContent = () => {
             // Add to course's sessionIds
             courseRecord.sessionIds.push(sessionRecord.id);
 
-            // Add to month's collection if we have a valid date
+            // After creating a session record, update the month's statistics
             if (currentSession.monthId) {
-              let monthRecord = await getRecordById('months', currentSession.monthId);
-              if (monthRecord) {
-                // Update month courseIds if not already there
-                if (!monthRecord.courseIds.includes(courseRecord.id)) {
-                  monthRecord.courseIds.push(courseRecord.id);
+              const monthRef = ref(database, `months/${currentSession.monthId}`);
+              const monthSnapshot = await get(monthRef);
+
+              if (monthSnapshot.exists()) {
+                const monthData = monthSnapshot.val();
+
+                // Initialize courseIds array if it doesn't exist
+                if (!monthData.courseIds) {
+                  monthData.courseIds = [];
                 }
+
+                // Update month course IDs if not already there
+                if (!monthData.courseIds.includes(courseRecord.id)) {
+                  monthData.courseIds.push(courseRecord.id);
+                }
+
                 // Increment session count
-                monthRecord.sessionCount = (monthRecord.sessionCount || 0) + 1;
-                await updateRecord('months', currentSession.monthId, monthRecord);
+                monthData.sessionCount = (monthData.sessionCount || 0) + 1;
+
+                // Update the month record
+                await update(monthRef, {
+                  courseIds: monthData.courseIds,
+                  sessionCount: monthData.sessionCount
+                });
               }
             }
 
@@ -594,10 +621,15 @@ const ImportContent = () => {
           // Get or create month record
           let monthId = null;
           if (formattedDate) {
-            const monthRecord = await getOrCreateMonthRecord(formattedDate);
-            if (monthRecord) {
-              monthId = monthRecord.id;
-              monthIds.add(monthId);
+            try {
+              const monthRecord = await getOrCreateMonthRecord(formattedDate);
+              if (monthRecord) {
+                monthId = monthRecord.id;
+                // Track the month in our set of months used in this course
+                monthIds.add(monthId);
+              }
+            } catch (error) {
+              console.error(`Error associating session with month for date ${formattedDate}:`, error);
             }
           }
 
@@ -700,17 +732,32 @@ const ImportContent = () => {
       const sessionRecord = await createRecord('sessions', currentSession);
       courseRecord.sessionIds.push(sessionRecord.id);
 
-      // Add to month's collection if we have a valid date
+      // After creating a session record, update the month's statistics
       if (currentSession.monthId) {
-        let monthRecord = await getRecordById('months', currentSession.monthId);
-        if (monthRecord) {
-          // Update month courseIds if not already there
-          if (!monthRecord.courseIds.includes(courseRecord.id)) {
-            monthRecord.courseIds.push(courseRecord.id);
+        const monthRef = ref(database, `months/${currentSession.monthId}`);
+        const monthSnapshot = await get(monthRef);
+
+        if (monthSnapshot.exists()) {
+          const monthData = monthSnapshot.val();
+
+          // Initialize courseIds array if it doesn't exist
+          if (!monthData.courseIds) {
+            monthData.courseIds = [];
           }
+
+          // Update month course IDs if not already there
+          if (!monthData.courseIds.includes(courseRecord.id)) {
+            monthData.courseIds.push(courseRecord.id);
+          }
+
           // Increment session count
-          monthRecord.sessionCount = (monthRecord.sessionCount || 0) + 1;
-          await updateRecord('months', currentSession.monthId, monthRecord);
+          monthData.sessionCount = (monthData.sessionCount || 0) + 1;
+
+          // Update the month record
+          await update(monthRef, {
+            courseIds: monthData.courseIds,
+            sessionCount: monthData.sessionCount
+          });
         }
       }
 
