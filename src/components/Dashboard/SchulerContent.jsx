@@ -299,7 +299,7 @@ const SchulerContent = () => {
               >
                 <option value="">Alle Anwesenheiten</option>
                 <option value="perfect">Keine Abwesenheit</option>
-                <option value="high">Hohe Abwesenheit (>20%)</option>
+                <option value="high">Hohe Abwesenheit (20%)</option>
               </select>
             </label>
           </div>

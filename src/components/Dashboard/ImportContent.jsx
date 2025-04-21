@@ -153,27 +153,45 @@ const ImportContent = () => {
     }
   };
 
-  // Function to create a student record
-  const createStudentRecord = async (studentName, studentInfo = '') => {
+  // Function to create or update a student record
+  const createOrUpdateStudentRecord = async (studentName, studentInfo = '', courseId) => {
     try {
       // Check if student already exists
       const students = await getAllRecords('students');
       const existingStudent = students.find(s => s.name === studentName);
 
       if (existingStudent) {
+        console.log(`Found existing student: ${studentName}`);
+
+        // Update the student's courseIds to include the new course if it doesn't already
+        let courseIds = existingStudent.courseIds || [];
+        if (!courseIds.includes(courseId)) {
+          courseIds.push(courseId);
+
+          // Update the student record with the new course
+          await updateRecord('students', existingStudent.id, {
+            courseIds: courseIds,
+            // Merge additional info if it's provided and the existing record doesn't have it
+            info: existingStudent.info || studentInfo
+          });
+
+          console.log(`Updated student ${studentName} with course ${courseId}`);
+        }
+
         return existingStudent;
       }
 
-      // Create new student
+      // Create new student if not found
+      console.log(`Creating new student: ${studentName}`);
       return await createRecord('students', {
         name: studentName,
         info: studentInfo,
-        courseIds: [], // Will be updated when courses are created
+        courseIds: [courseId], // Initialize with the current courseId
         notes: '',
         joinDates: {} // Will store when they joined each course
       });
     } catch (error) {
-      console.error("Error creating student record:", error);
+      console.error("Error creating/updating student record:", error);
       throw error;
     }
   };
@@ -518,6 +536,7 @@ const ImportContent = () => {
 
     // Extract student information
     const students = [];
+    const studentNames = []; // Add this to collect student names first
 
     // Students typically start from column K (index 10)
     for (let j = 10; j < headerRow.length; j++) {
@@ -529,19 +548,17 @@ const ImportContent = () => {
           continue;
         }
 
-        // Create student record in Firebase
-        const studentRecord = await createStudentRecord(studentName);
-        students.push({
-          id: studentRecord.id,
-          name: studentRecord.name,
+        // Just collect the names and column indices for now
+        studentNames.push({
+          name: studentName,
           columnIndex: j
         });
       }
     }
 
-    console.log(`Created ${students.length} student records`);
+    console.log(`Found ${studentNames.length} students in Excel file`);
 
-    // Create the course record
+    // Create the course record first
     const courseRecord = await createRecord('courses', {
       name: courseName,
       level: level,
@@ -549,18 +566,29 @@ const ImportContent = () => {
       startDate: '', // Will be updated with the first session date
       endDate: '', // Will be updated with the last session date
       sessionIds: [],
-      studentIds: students.map(s => s.id),
+      studentIds: [], // We'll update this after creating/getting students
       teacherId: '' // Will be updated when we process sessions
     });
 
     console.log(`Created course record: ${courseRecord.id}`);
 
-    // Update student records with this course
-    for (const student of students) {
-      await updateRecord('students', student.id, {
-        courseIds: [courseRecord.id]
+    // Now create/update student records with the course ID available
+    for (const studentInfo of studentNames) {
+      // Create student record in Firebase now that we have courseRecord.id
+      const studentRecord = await createOrUpdateStudentRecord(studentInfo.name, '', courseRecord.id);
+      students.push({
+        id: studentRecord.id,
+        name: studentRecord.name,
+        columnIndex: studentInfo.columnIndex
       });
     }
+
+    console.log(`Processed ${students.length} student records`);
+
+    // Update the course with the student IDs
+    await updateRecord('courses', courseRecord.id, {
+      studentIds: students.map(s => s.id)
+    });
 
     // Process sessions - start from the row after the header
     const sessions = [];
@@ -795,7 +823,7 @@ const ImportContent = () => {
               // Mark this session's date as the student's join date if we haven't recorded one yet
               // or if this date is earlier than the previously recorded one
               if (currentSession.date) {
-                // Update student join date if this is the first record of them
+                // Update student join date if this is the first record of them in this course
                 await get(ref(database, `students/${student.id}`)).then(snapshot => {
                   if (snapshot.exists()) {
                     const studentData = snapshot.val();
@@ -806,6 +834,7 @@ const ImportContent = () => {
                       parseDate(currentSession.date) < parseDate(joinDates[courseRecord.id])) {
                       joinDates[courseRecord.id] = currentSession.date;
                       update(ref(database, `students/${student.id}`), { joinDates });
+                      console.log(`Updated join date for student ${student.id} in course ${courseRecord.id} to ${currentSession.date}`);
                     }
                   }
                 });
