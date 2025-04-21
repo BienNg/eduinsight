@@ -468,7 +468,7 @@ const ImportContent = () => {
     const excelWorksheet = excelWorkbook.worksheets[0];
 
     // Extract course level and group from filename
-    const levelMatch = filename.match(/B[0-9]\.[0-9]/i);
+    const levelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
     const level = levelMatch ? levelMatch[0] : 'unknown';
 
     const groupMatch = filename.match(/G(\d+)/i);
