@@ -1,6 +1,7 @@
 // src/components/Dashboard/CourseDetail.jsx
 import { useState, useEffect } from 'react';
 import { getRecordById } from '../../firebase/database';
+import SessionDetailModal from './SessionDetailModal';
 import './CourseDetail.css';
 
 const CourseDetail = ({ courseId, onClose }) => {
@@ -8,6 +9,18 @@ const CourseDetail = ({ courseId, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+
+    const [selectedSession, setSelectedSession] = useState(null);
+
+    // Add this function to handle opening the modal
+    const openSessionDetail = (session) => {
+        setSelectedSession(session);
+    };
+
+    // Add this function to handle closing the modal
+    const closeSessionDetail = () => {
+        setSelectedSession(null);
+    };
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -30,6 +43,7 @@ const CourseDetail = ({ courseId, onClose }) => {
     if (loading) return <div className="loading">Loading course details...</div>;
     if (error) return <div className="error">{error}</div>;
     if (!course) return <div className="error">Course not found</div>;
+
 
     return (
         <div className="course-detail-container">
@@ -117,18 +131,19 @@ const CourseDetail = ({ courseId, onClose }) => {
                         <table className="sessions-table">
                             <thead>
                                 <tr>
-                                    <th>Title</th> {/* Switched position */}
-                                    <th>Date</th>  {/* Switched position */}
+                                    <th>Title</th>
+                                    <th>Date</th>
                                     <th>Teacher</th>
                                     <th>Time</th>
                                     <th>Attendance</th>
+                                    <th>Actions</th> {/* New column for actions */}
                                 </tr>
                             </thead>
                             <tbody>
                                 {course.sessions && course.sessions.map((session, index) => (
                                     <tr key={index}>
-                                        <td>{safelyRenderValue(session.title)}</td> {/* Switched position */}
-                                        <td>{safelyRenderValue(session.date)}</td>  {/* Switched position */}
+                                        <td>{safelyRenderValue(session.title)}</td>
+                                        <td>{safelyRenderValue(session.date)}</td>
                                         <td>{safelyRenderValue(session.teacher)}</td>
                                         <td>
                                             {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
@@ -137,6 +152,14 @@ const CourseDetail = ({ courseId, onClose }) => {
                                             {course.students &&
                                                 `${calculateSessionAttendance(session, course.students)}%`}
                                         </td>
+                                        <td>
+                                            <button
+                                                className="btn-details"
+                                                onClick={() => openSessionDetail(session)}
+                                            >
+                                                View Details
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -144,6 +167,14 @@ const CourseDetail = ({ courseId, onClose }) => {
                     </div>
                 )}
             </div>
+            {/* Add the modal right here, before the closing div */}
+            {selectedSession && (
+                <SessionDetailModal
+                    session={selectedSession}
+                    students={course.students}
+                    onClose={closeSessionDetail}
+                />
+            )}
         </div>
     );
 };
@@ -154,21 +185,21 @@ const calculateAttendance = (sessions, studentId) => {
 
     let presentCount = 0;
     let totalSessions = 0;
-    
+
     console.log(`Calculating attendance for student ID: ${studentId}`);
     console.log(`Total sessions: ${sessions.length}`);
 
     sessions.forEach((session, idx) => {
         console.log(`Session ${idx}: ${session.title}, Attendance:`, session.attendance);
-        
+
         // Check if attendance exists and has data for this student
         if (session.attendance && Object.keys(session.attendance).length > 0) {
             console.log(`Student attendance value: ${session.attendance[studentId]}`);
-            
+
             // Only count sessions where attendance was tracked for this student
             if (session.attendance[studentId]) {
                 totalSessions++;
-                
+
                 // Check for both 'present' and 'Present' to handle case sensitivity
                 if (session.attendance[studentId].toLowerCase() === 'present') {
                     presentCount++;
@@ -180,7 +211,7 @@ const calculateAttendance = (sessions, studentId) => {
     });
 
     console.log(`Present count: ${presentCount}, Total sessions: ${totalSessions}`);
-    
+
     if (totalSessions === 0) return 0;
     return Math.round((presentCount / totalSessions) * 100);
 };
