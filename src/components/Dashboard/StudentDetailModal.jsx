@@ -46,13 +46,13 @@ const StudentDetailModal = ({ student, sessions, onClose }) => {
     // Calculate attendance stats for this student
     const calculateAttendanceStats = () => {
         if (!sessions || sessions.length === 0) {
-            return { 
-                present: 0, 
-                absent: 0, 
-                sick: 0, 
-                technical: 0, 
+            return {
+                present: 0,
+                absent: 0,
+                sick: 0,
+                technical: 0,
                 unknown: 0,
-                rate: 0 
+                rate: 0
             };
         }
 
@@ -67,7 +67,7 @@ const StudentDetailModal = ({ student, sessions, onClose }) => {
             if (session.attendance && session.attendance[student.id]) {
                 total++;
                 const status = session.attendance[student.id];
-                
+
                 if (status === 'present') present++;
                 else if (status === 'absent') absent++;
                 else if (status === 'sick') sick++;
@@ -183,18 +183,35 @@ const StudentDetailModal = ({ student, sessions, onClose }) => {
                                         <th>Session</th>
                                         <th>Date</th>
                                         <th>Status</th>
+                                        <th>Comment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {attendanceHistory.map((session) => (
-                                        <tr key={session.id}>
-                                            <td>{safelyRenderValue(session.title)}</td>
-                                            <td>{safelyRenderValue(session.date)}</td>
-                                            <td className={`status-${session.attendance[student.id]}`}>
-                                                {getAttendanceStatus(session.attendance[student.id])}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {attendanceHistory.map((session) => {
+                                        // Get attendance data which could be a string or an object
+                                        const attendanceData = session.attendance[student.id];
+
+                                        // Determine status - could be a string or object.status
+                                        const status = typeof attendanceData === 'object' ?
+                                            attendanceData.status :
+                                            attendanceData;
+
+                                        // Get comment if available
+                                        const comment = typeof attendanceData === 'object' && attendanceData.comment ?
+                                            attendanceData.comment :
+                                            '';
+
+                                        return (
+                                            <tr key={session.id}>
+                                                <td>{safelyRenderValue(session.title)}</td>
+                                                <td>{safelyRenderValue(session.date)}</td>
+                                                <td className={`status-${status}`}>
+                                                    {getAttendanceStatus(status)}
+                                                </td>
+                                                <td>{comment}</td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

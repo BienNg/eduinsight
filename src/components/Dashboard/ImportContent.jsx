@@ -163,7 +163,8 @@ const ImportContent = () => {
         name: studentName,
         info: studentInfo,
         courseIds: [], // Will be updated when courses are created
-        notes: ''
+        notes: '',
+        joinDates: {} // Will store when they joined each course
       });
     } catch (error) {
       console.error("Error creating student record:", error);
@@ -422,6 +423,13 @@ const ImportContent = () => {
     ];
 
     return redCodes.some(code => argb.includes(code));
+  };
+
+  // Helper function to parse date strings in DD.MM.YYYY format
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    const [day, month, year] = dateString.split('.').map(Number);
+    return new Date(year, month - 1, day);
   };
 
   // New function to process Excel file with the new database structure
@@ -683,12 +691,18 @@ const ImportContent = () => {
         for (const student of students) {
           const columnIndex = student.columnIndex;
           const cellValue = row[columnIndex];
+          const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
 
-          if (cellValue !== undefined && cellValue !== null) {
+          if (cellValue !== undefined && cellValue !== null || excelCell.fill) {
             let attendanceValue = 'unknown';
+            let comment = '';
 
-            // Try to get color information from ExcelJS
-            const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
+            // Try to get cell comment if any
+            if (excelCell.note) {
+              comment = excelCell.note.texts.map(t => t.text).join('');
+            } else if (typeof cellValue === 'string' && cellValue.trim() !== '') {
+              comment = cellValue;
+            }
 
             // Color-based detection
             if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
@@ -717,9 +731,32 @@ const ImportContent = () => {
               }
             }
 
-            // Record attendance
-            if (attendanceValue !== 'unknown') {
-              currentSession.attendance[student.id] = attendanceValue;
+            // Non-empty cell means student has joined by this session date
+            if (attendanceValue !== 'unknown' || comment) {
+              // Record attendance with comment
+              currentSession.attendance[student.id] = {
+                status: attendanceValue,
+                comment: comment || ''
+              };
+
+              // Mark this session's date as the student's join date if we haven't recorded one yet
+              // or if this date is earlier than the previously recorded one
+              if (currentSession.date) {
+                // Update student join date if this is the first record of them
+                await get(ref(database, `students/${student.id}`)).then(snapshot => {
+                  if (snapshot.exists()) {
+                    const studentData = snapshot.val();
+                    const joinDates = studentData.joinDates || {};
+
+                    // If no join date for this course yet, or if this date is earlier
+                    if (!joinDates[courseRecord.id] ||
+                      parseDate(currentSession.date) < parseDate(joinDates[courseRecord.id])) {
+                      joinDates[courseRecord.id] = currentSession.date;
+                      update(ref(database, `students/${student.id}`), { joinDates });
+                    }
+                  }
+                });
+              }
             }
           }
         }

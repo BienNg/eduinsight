@@ -45,6 +45,11 @@ const SessionDetailModal = ({ session, students, onClose }) => {
 
     // Map attendance status to more readable format
     const getAttendanceStatus = (status) => {
+        // If status is an object, extract the status property
+        if (typeof status === 'object' && status !== null) {
+            status = status.status;
+        }
+
         const statusMap = {
             'present': 'Present',
             'absent': 'Absent',
@@ -139,18 +144,38 @@ const SessionDetailModal = ({ session, students, onClose }) => {
                                     <tr>
                                         <th>Student</th>
                                         <th>Status</th>
+                                        <th>Comment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {students.map((student) => (
-                                        <tr key={student.id}>
-                                            <td>{student.name}</td>
-                                            <td className={`status-${session.attendance && session.attendance[student.id] ? session.attendance[student.id] : 'unknown'}`}>
-                                                {getAttendanceStatus(session.attendance && session.attendance[student.id] ? session.attendance[student.id] : 'unknown')}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {students.map((student) => {
+                                        // Get the attendance data for this student
+                                        const attendanceData = session.attendance && session.attendance[student.id]
+                                            ? session.attendance[student.id]
+                                            : 'unknown';
+
+                                        // Determine the status - handle both string and object formats
+                                        const status = typeof attendanceData === 'object'
+                                            ? attendanceData.status
+                                            : attendanceData;
+
+                                        // Get the comment if available
+                                        const comment = typeof attendanceData === 'object' && attendanceData.comment
+                                            ? attendanceData.comment
+                                            : '';
+
+                                        return (
+                                            <tr key={student.id}>
+                                                <td>{student.name}</td>
+                                                <td className={`status-${status}`}>
+                                                    {getAttendanceStatus(status)}
+                                                </td>
+                                                <td>{comment}</td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
+
                             </table>
                         </div>
                     )}
