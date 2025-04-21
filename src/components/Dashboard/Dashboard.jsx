@@ -1,10 +1,11 @@
-// src/components/Dashboard/Dashboard.jsx
+// Update src/components/Dashboard/Dashboard.jsx
 import { useState } from 'react';
 import './Dashboard.css';
 import DashboardContent from './DashboardContent';
 import MonatContent from './MonatContent';
 import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
+import LehrerContent from './LehrerContent'; // Add this import
 import ImportContent from './ImportContent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -14,7 +15,8 @@ import {
   faUserGraduate,
   faChevronLeft,
   faChevronRight,
-  faFileExcel // Add Excel icon
+  faFileExcel,
+  faUserTie // Add this for teacher icon
 } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
@@ -33,10 +35,12 @@ const Dashboard = () => {
         return <MonatContent />;
       case 'klassen':
         return <KlassenContent />;
+      case 'lehrer': // Add this case
+        return <LehrerContent />;
       case 'schuler':
         return <SchulerContent />;
       case 'import':
-        return <ImportContent />; // You'll need to create this component
+        return <ImportContent />;
       default:
         return <DashboardContent />;
     }
@@ -91,6 +95,13 @@ const Dashboard = () => {
               {!collapsed && <span>Klassen</span>}
             </li>
             <li
+              className={activeTab === 'lehrer' ? 'active' : ''}
+              onClick={() => setActiveTab('lehrer')}
+            >
+              <FontAwesomeIcon icon={faUserTie} className="icon" />
+              {!collapsed && <span>Lehrer</span>}
+            </li>
+            <li
               className={activeTab === 'schuler' ? 'active' : ''}
               onClick={() => setActiveTab('schuler')}
             >
@@ -107,6 +118,7 @@ const Dashboard = () => {
             {activeTab === 'dashboard' && 'Dashboard'}
             {activeTab === 'monat' && 'Monat'}
             {activeTab === 'klassen' && 'Klassen'}
+            {activeTab === 'lehrer' && 'Lehrer'} {/* Add this line */}
             {activeTab === 'schuler' && 'Schüler'}
             {activeTab === 'import' && 'Excel Import'}
           </h1>

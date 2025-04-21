@@ -129,7 +129,7 @@
     color: #d32f2f;
   }
 
-  /* Add to src/components/Dashboard/CourseDetail.css if not already present */
+  /* Teacher View start */
 .btn-details {
     background-color: var(--primary-blue);
     color: white;
@@ -182,3 +182,42 @@
     font-weight: 600;
     color: #333;
   }
+
+  /* Add to src/components/Dashboard/Content.css */
+.month-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.month-header h4 {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 18px;
+}
+
+.month-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.month-stats span {
+  font-weight: 500;
+}
+
+.lehrer-content {
+  width: 100%;
+}
+
+/* Teacher View end */
