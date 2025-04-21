@@ -1,6 +1,9 @@
 // src/components/Dashboard/SessionDetailModal.jsx
 import React from 'react';
-import './SessionDetailModal.css'; // We'll create this next
+import './SessionDetailModal.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faClock } from '@fortawesome/free-solid-svg-icons';
+import { isLongSession } from '../../utils/sessionUtils';
 
 const SessionDetailModal = ({ session, students, onClose }) => {
     // Function to safely render any type of value (reusing from CourseDetail)
@@ -64,7 +67,15 @@ const SessionDetailModal = ({ session, students, onClose }) => {
         <div className="modal-backdrop">
             <div className="session-detail-modal">
                 <div className="modal-header">
-                    <h2>{safelyRenderValue(session.title)}</h2>
+                    <div>
+                        <h2>{safelyRenderValue(session.title)}</h2>
+                        {isLongSession(session.startTime, session.endTime) && (
+                            <div className="session-duration-badge long">
+                                <FontAwesomeIcon icon={faClock} />
+                                <span>2-Stunden Lektion</span>
+                            </div>
+                        )}
+                    </div>
                     <button className="close-button" onClick={onClose}>×</button>
                 </div>
 
@@ -95,6 +106,19 @@ const SessionDetailModal = ({ session, students, onClose }) => {
                             <div className="info-item">
                                 <span className="label">Status:</span>
                                 <span className="value">{session.completed ? 'Completed' : 'Not Completed'}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="label">Dauer:</span>
+                                <span className="value">
+                                    {isLongSession(session.startTime, session.endTime) ? (
+                                        <span className="long-session-indicator">
+                                            <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                            <span>Ungefähr 2 Stunden</span>
+                                        </span>
+                                    ) : (
+                                        'Standard Lektion'
+                                    )}
+                                </span>
                             </div>
                             {session.message && (
                                 <div className="info-item full-width">

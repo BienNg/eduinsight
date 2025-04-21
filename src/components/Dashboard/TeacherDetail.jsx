@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords } from '../../firebase/database';
 import './CourseDetail.css'; // Reuse existing styles
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faClock } from '@fortawesome/free-solid-svg-icons';
+import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
+
 const TeacherDetail = ({ teacherId, onClose }) => {
     const [teacher, setTeacher] = useState(null);
     const [courses, setCourses] = useState([]);
@@ -149,9 +153,13 @@ const TeacherDetail = ({ teacherId, onClose }) => {
         const grouped = {};
 
         months.forEach(month => {
+            const monthSessions = sessions.filter(session => session.monthId === month.id);
+            const longSessionsCount = countLongSessions(monthSessions);
+
             grouped[month.id] = {
                 month: month,
-                sessions: sessions.filter(session => session.monthId === month.id)
+                sessions: monthSessions,
+                longSessionsCount: longSessionsCount
             };
         });
 
@@ -359,6 +367,13 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                                     <div className="month-totals">
                                                         <span>Lektionen: {data.sessions.length}</span>
                                                         <span>Stunden: {totalHours}</span>
+                                                        {/* Add this new indicator */}
+                                                        {data.longSessionsCount > 0 && (
+                                                            <span className="long-session-indicator">
+                                                                <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                                                <span className="long-session-count">{data.longSessionsCount} 2h-Lektionen</span>
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <span className={`expand-indicator ${expandedMonth === monthId ? 'expanded' : ''}`}>
                                                         {expandedMonth === monthId ? '▼' : '▶'}
@@ -391,16 +406,27 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {data.sessions.map(session => (
-                                                                <tr key={session.id}>
-                                                                    <td>{safelyRenderValue(session.date)}</td>
-                                                                    <td>{getCourseNameById(session.courseId)}</td>
-                                                                    <td>{safelyRenderValue(session.title)}</td>
-                                                                    <td>
-                                                                        {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
+                                                            {data.sessions.map(session => {
+                                                                const isLong = isLongSession(session.startTime, session.endTime);
+                                                                return (
+                                                                    <tr key={session.id}>
+                                                                        <td>{safelyRenderValue(session.date)}</td>
+                                                                        <td>{getCourseNameById(session.courseId)}</td>
+                                                                        <td>
+                                                                            {safelyRenderValue(session.title)}
+                                                                            {isLong && (
+                                                                                <span className="long-session-indicator">
+                                                                                    <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                                                                    <span>2h</span>
+                                                                                </span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td>
+                                                                            {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
                                                         </tbody>
                                                     </table>
                                                 </div>

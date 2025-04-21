@@ -323,4 +323,49 @@
 .expand-indicator.expanded {
   transform: rotate(0deg);
 }
+
+/* Long session indicators */
+.long-session-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.long-session-icon {
+  color: #1565c0;
+  font-size: 14px;
+}
+
+.long-session-count {
+  font-weight: 600;
+}
+
+/* For detailed session view */
+.session-duration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.session-duration-badge.long {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+}
+
+.session-duration-badge.normal {
+  background-color: #f5f5f5;
+  color: #555;
+}
 /*END Month cards styling */
