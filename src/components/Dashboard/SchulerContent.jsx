@@ -26,15 +26,15 @@ const SchulerContent = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch students, courses, and teachers data
         const studentsData = await getAllRecords('students');
         const coursesData = await getAllRecords('courses');
         const teachersData = await getAllRecords('teachers');
-        
+
         // Fetch all sessions for attendance calculations
         const sessionsData = await getAllRecords('sessions');
-        
+
         // Enrich student data with additional information
         const enrichedStudents = await Promise.all(
           studentsData.map(async (student) => {
@@ -43,30 +43,30 @@ const SchulerContent = () => {
             const studentTeachers = new Set();
             let totalSessions = 0;
             let absentSessions = 0;
-            
+
             // Process each course the student is enrolled in
             for (const courseId of (student.courseIds || [])) {
               const course = coursesData.find(c => c.id === courseId);
               if (course) {
                 // Add course to student's courses
                 studentCourses.push(course);
-                
+
                 // Add teacher to student's teachers
                 if (course.teacherId) {
                   studentTeachers.add(course.teacherId);
                 }
-                
+
                 // Calculate attendance for this course
                 const courseSessions = sessionsData.filter(s => s.courseId === courseId);
                 courseSessions.forEach(session => {
                   if (session.attendance && session.attendance[student.id]) {
                     totalSessions++;
-                    
+
                     // Check if student was absent
-                    const status = typeof session.attendance[student.id] === 'object' 
-                      ? session.attendance[student.id].status 
+                    const status = typeof session.attendance[student.id] === 'object'
+                      ? session.attendance[student.id].status
                       : session.attendance[student.id];
-                    
+
                     if (status !== 'present') {
                       absentSessions++;
                     }
@@ -74,18 +74,18 @@ const SchulerContent = () => {
                 });
               }
             }
-            
+
             // Get teachers' names
             const teacherNames = Array.from(studentTeachers).map(teacherId => {
               const teacher = teachersData.find(t => t.id === teacherId);
               return teacher ? teacher.name : 'Unknown';
             });
-            
+
             // Calculate absence rate
-            const absenceRate = totalSessions > 0 
-              ? ((absentSessions / totalSessions) * 100).toFixed(1) 
+            const absenceRate = totalSessions > 0
+              ? ((absentSessions / totalSessions) * 100).toFixed(1)
               : 0;
-            
+
             // Return enriched student data
             return {
               ...student,
@@ -99,13 +99,13 @@ const SchulerContent = () => {
               absentSessions,
               absenceRate,
               absenceString: `${absentSessions}/${totalSessions}`,
-              joinDate: student.joinDates 
-                ? Object.values(student.joinDates).sort()[0] 
+              joinDate: student.joinDates
+                ? Object.values(student.joinDates).sort()[0]
                 : 'Unknown'
             };
           })
         );
-        
+
         setStudents(enrichedStudents);
         setCourses(coursesData);
         setTeachers(teachersData);
@@ -116,10 +116,10 @@ const SchulerContent = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
-  
+
   // Extract available levels from courses
   const availableLevels = useMemo(() => {
     const levels = new Set();
@@ -130,7 +130,7 @@ const SchulerContent = () => {
     });
     return Array.from(levels).sort();
   }, [courses]);
-  
+
   // Handle sorting
   const requestSort = (key) => {
     let direction = 'ascending';
@@ -139,45 +139,81 @@ const SchulerContent = () => {
     }
     setSortConfig({ key, direction });
   };
-  
+
+  // Add this normalize function at the top of your SchülerContent.jsx file
+  const normalizeString = (str) => {
+    if (!str) return '';
+
+    // Convert to lowercase
+    let normalized = str.toLowerCase();
+
+    // Replace Vietnamese characters with non-accented equivalents
+    const accentMap = {
+      'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+      'đ': 'd',
+      'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+      'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+      'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+      'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+      'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y'
+    };
+
+    for (const [accented, nonAccented] of Object.entries(accentMap)) {
+      normalized = normalized.replace(new RegExp(accented, 'g'), nonAccented);
+    }
+
+    return normalized;
+  };
+
   // Filter and sort students
   const filteredStudents = useMemo(() => {
     let result = [...students];
-    
+
     // Apply search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(student => 
-        student.name.toLowerCase().includes(query) ||
-        student.info?.toLowerCase().includes(query) ||
-        student.courseNames?.toLowerCase().includes(query) ||
-        student.levelNames?.toLowerCase().includes(query) ||
-        student.teacherNames?.toLowerCase().includes(query)
-      );
+      const query = normalizeString(searchQuery);
+      result = result.filter(student => {
+        // Normalize all searchable fields
+        const normalizedName = normalizeString(student.name);
+        const normalizedInfo = normalizeString(student.info);
+        const normalizedCourses = normalizeString(student.courseNames);
+        const normalizedLevels = normalizeString(student.levelNames);
+        const normalizedTeachers = normalizeString(student.teacherNames);
+
+        // Check if any field contains the query
+        return normalizedName.includes(query) ||
+          normalizedInfo.includes(query) ||
+          normalizedCourses.includes(query) ||
+          normalizedLevels.includes(query) ||
+          normalizedTeachers.includes(query);
+      });
     }
-    
-    // Apply course filter
+
+    // The rest of your filter logic remains the same
     if (selectedCourse) {
-      result = result.filter(student => 
+      result = result.filter(student =>
         student.courseIds?.includes(selectedCourse)
       );
     }
-    
-    // Apply level filter
+
     if (selectedLevel) {
-      result = result.filter(student => 
+      result = result.filter(student =>
         student.levels?.includes(selectedLevel)
       );
     }
-    
-    // Apply teacher filter
+
     if (selectedTeacher) {
-      result = result.filter(student => 
+      result = result.filter(student =>
         student.teacherIds?.includes(selectedTeacher)
       );
     }
-    
-    // Apply attendance filter
+
     if (attendanceFilter) {
       if (attendanceFilter === 'high') {
         result = result.filter(student => parseFloat(student.absenceRate) >= 20);
@@ -185,7 +221,7 @@ const SchulerContent = () => {
         result = result.filter(student => parseFloat(student.absenceRate) === 0 && student.totalSessions > 0);
       }
     }
-    
+
     // Apply sorting
     if (sortConfig.key) {
       result.sort((a, b) => {
@@ -198,10 +234,10 @@ const SchulerContent = () => {
         return 0;
       });
     }
-    
+
     return result;
   }, [students, searchQuery, selectedCourse, selectedLevel, selectedTeacher, attendanceFilter, sortConfig]);
-  
+
   // Reset all filters
   const resetFilters = () => {
     setSearchQuery('');
@@ -210,21 +246,21 @@ const SchulerContent = () => {
     setSelectedTeacher('');
     setAttendanceFilter('');
   };
-  
+
   // Open student detail modal
   const handleViewDetails = (student) => {
     setSelectedStudent(student);
   };
-  
+
   // Close student detail modal
   const handleCloseDetails = () => {
     setSelectedStudent(null);
   };
-  
+
   return (
     <div className="schuler-content">
       <h2>Schülerübersicht</h2>
-      
+
       {/* Search and Filter Bar */}
       <div className="search-filter-bar">
         <div className="search-container">
@@ -237,7 +273,7 @@ const SchulerContent = () => {
             className="search-input"
           />
         </div>
-        
+
         <div className="filters-container">
           <div className="filter-select">
             <label>
@@ -255,7 +291,7 @@ const SchulerContent = () => {
               </select>
             </label>
           </div>
-          
+
           <div className="filter-select">
             <label>
               <FontAwesomeIcon icon={faChalkboardTeacher} className="filter-icon" />
@@ -272,7 +308,7 @@ const SchulerContent = () => {
               </select>
             </label>
           </div>
-          
+
           <div className="filter-select">
             <label>
               <FontAwesomeIcon icon={faUserGraduate} className="filter-icon" />
@@ -289,7 +325,7 @@ const SchulerContent = () => {
               </select>
             </label>
           </div>
-          
+
           <div className="filter-select">
             <label>
               <FontAwesomeIcon icon={faCalendarAlt} className="filter-icon" />
@@ -303,24 +339,24 @@ const SchulerContent = () => {
               </select>
             </label>
           </div>
-          
+
           <button className="reset-filters-btn" onClick={resetFilters}>
             Filter zurücksetzen
           </button>
         </div>
       </div>
-      
+
       {/* Loading and Error States */}
       {loading && <div className="loading-indicator">Daten werden geladen...</div>}
       {error && <div className="error-message">{error}</div>}
-      
+
       {/* Students Table */}
       {!loading && !error && (
         <>
           <div className="results-info">
             {filteredStudents.length} {filteredStudents.length === 1 ? 'Schüler' : 'Schüler'} gefunden
           </div>
-          
+
           <div className="students-table-container">
             <table className="students-table">
               <thead>
@@ -374,7 +410,7 @@ const SchulerContent = () => {
               </tbody>
             </table>
           </div>
-          
+
           {filteredStudents.length === 0 && !loading && (
             <div className="empty-state">
               <h3>Keine Schüler gefunden</h3>
@@ -383,7 +419,7 @@ const SchulerContent = () => {
           )}
         </>
       )}
-      
+
       {/* Student Detail Modal */}
       {selectedStudent && (
         <StudentDetailModal
