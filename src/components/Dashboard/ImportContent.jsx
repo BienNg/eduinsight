@@ -79,9 +79,13 @@ const ImportContent = () => {
             return;
           }
 
-          // If validation passes, process the file with new structure
-          if (file.name.includes('B1.1_ONLINE_VN')) {
-            // Process the course file using our new function
+          // ADD THE DEBUG CODE RIGHT HERE, after validation passes
+          console.log("File passed validation:", file.name);
+          console.log("File name test:", /B\d+\.\d+/i.test(file.name));
+          console.log("ONLINE_VN test:", file.name.includes('ONLINE_VN'));
+
+          // REPLACE THE EXISTING IF STATEMENT WITH THIS TRY/CATCH BLOCK
+          try {
             const courseData = await processB1CourseFileWithColors(arrayBuffer, file.name);
 
             setResult({
@@ -89,10 +93,12 @@ const ImportContent = () => {
               message: `File "${file.name}" successfully imported into new database structure!`,
               details: `Created course ${courseData.name} with ${courseData.sessionIds.length} sessions`
             });
-          } else {
+          } catch (processingError) {
+            console.error("Processing error details:", processingError);
             setResult({
               success: false,
-              message: "Unsupported file format. Please use a compatible course template."
+              message: `Error processing file: ${processingError.message}`,
+              details: "Check console for more information."
             });
           }
         } catch (error) {
@@ -257,13 +263,24 @@ const ImportContent = () => {
         return errors;
       }
 
-      // 2. Validate required columns exist in header row
+      // 2. Modify validation of columns to be more flexible
       const headerRow = jsonData[headerRowIndex];
-      const requiredColumns = ["Folien", "Inhalt", "Notizen", "die Folien gecheckt", "gemacht", "Unterrichtstag", "von", "bis", "Lehrer"];
 
-      for (let i = 0; i < requiredColumns.length; i++) {
-        if (headerRow[i] !== requiredColumns[i]) {
-          errors.push(`Required column '${requiredColumns[i]}' not found at expected position ${i + 1}. Found '${headerRow[i] || "empty"}' instead.`);
+      // Define required columns and create functions to find them by partial match
+      const requiredColumns = ["Folien", "Unterrichtstag", "von", "bis", "Lehrer"];
+
+      // Function to find column index by partial match
+      const findColumnIndex = (headerRow, columnName) => {
+        return headerRow.findIndex(cell =>
+          cell && typeof cell === 'string' && cell.includes(columnName)
+        );
+      };
+
+      // Check only the crucial columns
+      for (const column of requiredColumns) {
+        const columnIndex = findColumnIndex(headerRow, column);
+        if (columnIndex === -1) {
+          errors.push(`Required column '${column}' not found in the header row.`);
         }
       }
 
@@ -272,7 +289,7 @@ const ImportContent = () => {
       for (let j = 10; j < headerRow.length; j++) {
         if (headerRow[j] &&
           headerRow[j] !== "Anwesenheitsliste" &&
-          headerRow[j] !== "Nachrichten von/ für NaNu NaNa") {
+          !headerRow[j].includes("Nachrichten von/ für")) {
           studentCount++;
         }
       }
@@ -281,7 +298,14 @@ const ImportContent = () => {
         errors.push("No student names found in the header row (columns K and beyond).");
       }
 
-      // 4. Validate session data - check for empty cells in Folien column where needed
+      // 4. Validate session data with a more flexible approach
+      // Get the indices of crucial columns
+      const folienIndex = findColumnIndex(headerRow, "Folien");
+      const dateIndex = findColumnIndex(headerRow, "Unterrichtstag");
+      const startTimeIndex = findColumnIndex(headerRow, "von");
+      const endTimeIndex = findColumnIndex(headerRow, "bis");
+      const teacherIndex = findColumnIndex(headerRow, "Lehrer");
+
       // Start from row after header
       const sessionsStartRow = headerRowIndex + 1;
       let currentSessionTitle = null;
@@ -295,43 +319,44 @@ const ImportContent = () => {
           continue;
         }
 
-        const folienValue = row[0]; // Column A - Folien
-        const contentValue = row[1]; // Column B - Inhalt
-
-        // Check if this is a content row that should be part of a session but has no parent session
-        if (!folienValue && contentValue && currentSessionTitle === null) {
-          errors.push(`Row ${i + 1}: Content "${contentValue}" has no associated session (missing value in Folien column).`);
-        }
+        const folienValue = folienIndex !== -1 ? row[folienIndex] : null;
 
         // If there's a value in Folien column, this should be a new session
         if (folienValue && folienValue.toString().trim() !== '') {
           currentSessionTitle = folienValue;
           sessionCount++;
 
-          // 5. Validate date format in column F (index 5)
-          const dateValue = row[5];
-          if (!dateValue) {
-            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a date in column F.`);
-          } else if (typeof dateValue === 'string' && !dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-            errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid date format "${dateValue}". Expected format: DD.MM.YYYY`);
+          // Validate date if column exists
+          if (dateIndex !== -1) {
+            const dateValue = row[dateIndex];
+            if (!dateValue) {
+              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a date.`);
+            } else if (typeof dateValue === 'string' && !dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+              errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid date format "${dateValue}". Expected format: DD.MM.YYYY`);
+            }
           }
 
-          // 6. Validate time format in columns G and H (indices 6 and 7)
-          const startTimeValue = row[6];
-          const endTimeValue = row[7];
-
-          if (!startTimeValue) {
-            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a start time in column G.`);
+          // Validate time values if columns exist
+          if (startTimeIndex !== -1) {
+            const startTimeValue = row[startTimeIndex];
+            if (!startTimeValue) {
+              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a start time.`);
+            }
           }
 
-          if (!endTimeValue) {
-            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing an end time in column H.`);
+          if (endTimeIndex !== -1) {
+            const endTimeValue = row[endTimeIndex];
+            if (!endTimeValue) {
+              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing an end time.`);
+            }
           }
 
-          // 7. Validate teacher information
-          const teacherValue = row[8];
-          if (!teacherValue) {
-            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information in column I.`);
+          // Validate teacher if column exists
+          if (teacherIndex !== -1) {
+            const teacherValue = row[teacherIndex];
+            if (!teacherValue) {
+              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information.`);
+            }
           }
         }
       }
@@ -429,7 +454,6 @@ const ImportContent = () => {
     return new Date(year, month - 1, day);
   };
 
-  // New function to process Excel file with the new database structure
   const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
     console.log('Starting Excel file processing with new database structure...');
 
@@ -466,9 +490,34 @@ const ImportContent = () => {
       headerRowIndex = 3; // Fallback
     }
 
+    // Get the header row
+    const headerRow = jsonData[headerRowIndex];
+
+    // Function to find column index by partial match
+    const findColumnIndex = (headerRow, columnName) => {
+      return headerRow.findIndex(cell =>
+        cell && typeof cell === 'string' && cell.includes(columnName)
+      );
+    };
+
+    // Map column indices for crucial data
+    const columnIndices = {
+      folien: findColumnIndex(headerRow, "Folien"),
+      inhalt: findColumnIndex(headerRow, "Inhalt"),
+      notizen: findColumnIndex(headerRow, "Notizen"),
+      checked: findColumnIndex(headerRow, "die Folien gecheckt"),
+      gemacht: findColumnIndex(headerRow, "gemacht"),
+      date: findColumnIndex(headerRow, "Unterrichtstag"),
+      startTime: findColumnIndex(headerRow, "von"),
+      endTime: findColumnIndex(headerRow, "bis"),
+      teacher: findColumnIndex(headerRow, "Lehrer"),
+      message: findColumnIndex(headerRow, "Nachrichten")
+    };
+
+    console.log("Column mapping:", columnIndices);
+
     // Extract student information
     const students = [];
-    const headerRow = jsonData[headerRowIndex];
 
     // Students typically start from column K (index 10)
     for (let j = 10; j < headerRow.length; j++) {
@@ -530,10 +579,22 @@ const ImportContent = () => {
         continue;
       }
 
-      const folienTitle = row[0]; // Column A - Folien
-      const contentValue = row[1]; // Column B - Inhalt
+      // Extract values using our column mapping
+      const getValue = (index) => index !== -1 && index < row.length ? row[index] : null;
+
+      const folienTitle = getValue(columnIndices.folien);
+      const contentValue = getValue(columnIndices.inhalt);
+      const notesValue = getValue(columnIndices.notizen);
+      const checkedValue = getValue(columnIndices.checked);
+      const completedValue = getValue(columnIndices.gemacht);
+      const dateValue = getValue(columnIndices.date);
+      const startTimeValue = getValue(columnIndices.startTime);
+      const endTimeValue = getValue(columnIndices.endTime);
+      const teacherValue = getValue(columnIndices.teacher);
+      const messageValue = getValue(columnIndices.message);
 
       // If we have a value in column A (Folien), this could be a new session
+      // If we have a value in folien column, this could be a new session
       if (folienTitle && folienTitle.toString().trim() !== '') {
         // If it's a new session title or different from current one, start a new session
         if (folienTitle !== currentSessionTitle) {
@@ -576,12 +637,6 @@ const ImportContent = () => {
 
             sessions.push(sessionRecord);
           }
-
-          // Extract date, time and teacher info
-          const dateValue = row[5]; // Column F - Date
-          const startTimeValue = row[6]; // Column G - Start time
-          const endTimeValue = row[7]; // Column H - End time
-          const teacherValue = row[8] || ''; // Column I - Teacher
 
           // Format date and times
           let formattedDate = '';
@@ -644,14 +699,14 @@ const ImportContent = () => {
             courseId: courseRecord.id,
             title: folienTitle,
             content: contentValue || '',
-            notes: row[2] || '', // Column C - Notizen
-            checked: row[3] === 'TRUE', // Column D - die Folien gecheckt
-            completed: row[4] === 'TRUE', // Column E - gemacht
+            notes: notesValue || '',
+            checked: checkedValue === 'TRUE',
+            completed: completedValue === 'TRUE',
             date: formattedDate,
             startTime: formattedStartTime,
             endTime: formattedEndTime,
             teacherId: teacherId,
-            message: row[9] || '', // Column J - Nachrichten
+            message: messageValue || '',
             contentItems: [],
             attendance: {},
             monthId: monthId
@@ -667,16 +722,16 @@ const ImportContent = () => {
           }
           currentSession.contentItems.push({
             content: contentValue,
-            notes: row[2] || '',
-            checked: row[3] === 'TRUE'
+            notes: notesValue || '',
+            checked: checkedValue === 'TRUE'
           });
         }
       } else if (currentSession && contentValue) {
         // This is additional content for the current session
         currentSession.contentItems.push({
           content: contentValue,
-          notes: row[2] || '',
-          checked: row[3] === 'TRUE'
+          notes: notesValue || '',
+          checked: checkedValue === 'TRUE'
         });
       }
 
