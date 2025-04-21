@@ -7,10 +7,10 @@ import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
 import ImportContent from './ImportContent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faChartLine, 
-  faCalendarAlt, 
-  faChalkboardTeacher, 
+import {
+  faChartLine,
+  faCalendarAlt,
+  faChalkboardTeacher,
   faUserGraduate,
   faChevronLeft,
   faChevronRight,
@@ -20,11 +20,11 @@ import {
 const Dashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  
+
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
-  
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -41,7 +41,7 @@ const Dashboard = () => {
         return <DashboardContent />;
     }
   };
-  
+
   return (
     <div className="dashboard-container">
       <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -51,13 +51,13 @@ const Dashboard = () => {
             <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} />
           </button>
         </div>
-        
+
         {/* Add Import Excel section above Lehrer */}
         <div className="nav-section">
           <div className="nav-title">{collapsed ? 'I' : 'Import'}</div>
           <ul className="nav-items">
-            <li 
-              className={activeTab === 'import' ? 'active' : ''} 
+            <li
+              className={activeTab === 'import' ? 'active' : ''}
               onClick={() => setActiveTab('import')}
             >
               <FontAwesomeIcon icon={faFileExcel} className="icon" />
@@ -65,33 +65,33 @@ const Dashboard = () => {
             </li>
           </ul>
         </div>
-        
+
         <div className="nav-section">
           <div className="nav-title">{collapsed ? 'L' : 'Lehrer'}</div>
           <ul className="nav-items">
-            <li 
-              className={activeTab === 'dashboard' ? 'active' : ''} 
+            <li
+              className={activeTab === 'dashboard' ? 'active' : ''}
               onClick={() => setActiveTab('dashboard')}
             >
               <FontAwesomeIcon icon={faChartLine} className="icon" />
               {!collapsed && <span>Dashboard</span>}
             </li>
-            <li 
-              className={activeTab === 'monat' ? 'active' : ''} 
+            <li
+              className={activeTab === 'monat' ? 'active' : ''}
               onClick={() => setActiveTab('monat')}
             >
               <FontAwesomeIcon icon={faCalendarAlt} className="icon" />
               {!collapsed && <span>Monat</span>}
             </li>
-            <li 
-              className={activeTab === 'klassen' ? 'active' : ''} 
+            <li
+              className={activeTab === 'klassen' ? 'active' : ''}
               onClick={() => setActiveTab('klassen')}
             >
               <FontAwesomeIcon icon={faChalkboardTeacher} className="icon" />
               {!collapsed && <span>Klassen</span>}
             </li>
-            <li 
-              className={activeTab === 'schuler' ? 'active' : ''} 
+            <li
+              className={activeTab === 'schuler' ? 'active' : ''}
               onClick={() => setActiveTab('schuler')}
             >
               <FontAwesomeIcon icon={faUserGraduate} className="icon" />
@@ -100,10 +100,16 @@ const Dashboard = () => {
           </ul>
         </div>
       </div>
-      
+
       <div className="content-area">
         <div className="content-header">
-          <h1>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+          <h1>
+            {activeTab === 'dashboard' && 'Dashboard'}
+            {activeTab === 'monat' && 'Monat'}
+            {activeTab === 'klassen' && 'Klassen'}
+            {activeTab === 'schuler' && 'Schüler'}
+            {activeTab === 'import' && 'Excel Import'}
+          </h1>
         </div>
         <div className="content-body">
           {renderContent()}

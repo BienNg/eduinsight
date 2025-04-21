@@ -159,3 +159,153 @@
       width: 95%;
     }
   }
+
+  /* Student Detail Modal specific styles */
+.student-detail-modal {
+  max-width: 1000px;
+}
+
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
+}
+
+.modal-tabs button {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  position: relative;
+}
+
+.modal-tabs button.active {
+  color: var(--primary-blue);
+}
+
+.modal-tabs button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary-blue);
+}
+
+.course-card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.course-header {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.course-header h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.level-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.course-stats {
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.course-stat {
+  display: flex;
+  justify-content: space-between;
+}
+
+.course-stat .label {
+  color: #666;
+  font-weight: 500;
+}
+
+.course-stat .value {
+  font-weight: 600;
+}
+
+.attendance-breakdown {
+  padding: 0 16px 16px;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: #eee;
+  border-radius: 4px;
+  display: flex;
+  overflow: hidden;
+}
+
+.progress-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-segment.present {
+  background-color: #4caf50;
+}
+
+.progress-segment.absent {
+  background-color: #f44336;
+}
+
+.progress-segment.sick {
+  background-color: #ff9800;
+}
+
+.progress-segment.technical {
+  background-color: #2196f3;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: #666;
+}
+
+.status-present {
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.status-absent {
+  color: #f44336;
+  font-weight: 500;
+}
+
+.status-sick {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.status-technical_issues {
+  color: #2196f3;
+  font-weight: 500;
+}
+
+.status-unknown {
+  color: #9e9e9e;
+  font-weight: 500;
+}
