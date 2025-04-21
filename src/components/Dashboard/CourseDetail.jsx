@@ -154,16 +154,33 @@ const calculateAttendance = (sessions, studentId) => {
 
     let presentCount = 0;
     let totalSessions = 0;
+    
+    console.log(`Calculating attendance for student ID: ${studentId}`);
+    console.log(`Total sessions: ${sessions.length}`);
 
-    sessions.forEach(session => {
-        if (session.attendance && session.attendance[studentId]) {
-            totalSessions++;
-            if (session.attendance[studentId] === 'present') {
-                presentCount++;
+    sessions.forEach((session, idx) => {
+        console.log(`Session ${idx}: ${session.title}, Attendance:`, session.attendance);
+        
+        // Check if attendance exists and has data for this student
+        if (session.attendance && Object.keys(session.attendance).length > 0) {
+            console.log(`Student attendance value: ${session.attendance[studentId]}`);
+            
+            // Only count sessions where attendance was tracked for this student
+            if (session.attendance[studentId]) {
+                totalSessions++;
+                
+                // Check for both 'present' and 'Present' to handle case sensitivity
+                if (session.attendance[studentId].toLowerCase() === 'present') {
+                    presentCount++;
+                }
             }
+        } else {
+            console.log(`No attendance data for this session`);
         }
     });
 
+    console.log(`Present count: ${presentCount}, Total sessions: ${totalSessions}`);
+    
     if (totalSessions === 0) return 0;
     return Math.round((presentCount / totalSessions) * 100);
 };

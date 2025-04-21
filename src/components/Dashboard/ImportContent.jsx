@@ -622,39 +622,40 @@ const ImportContent = () => {
       if (currentSession && students.length > 0) {
         // Get the Excel row for color information
         const excelRow = excelWorksheet.getRow(i + 1); // +1 because ExcelJS is 1-based
-
+        
+        // Add debugging
+        console.log(`Processing attendance for session: ${currentSession.title}, Row: ${i + 1}`);
+        
         for (const student of students) {
           const columnIndex = parseInt(student.id.split('_')[1]);
           const cellValue = row[columnIndex];
-
+          
           if (cellValue !== undefined && cellValue !== null) {
             let attendanceValue = 'unknown';
-
+            
             // Try to get color information from ExcelJS
             const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
-
-            if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
-              const color = excelCell.fill.fgColor.argb || '';
-
-              // Green colors (present)
-              if (color && (
-                color.includes('FF00FF00') || // Pure green
-                color.includes('FF92D050') || // Light green
-                color.includes('FF00B050') || // Medium green
-                color.includes('FF00B0') ||   // Another green variant
-                color.includes('FF00B640'))) { // Another green variant
-                attendanceValue = 'present';
-              }
-              // Red/Pink colors (absent)
-              else if (color && (
-                color.includes('FFFF0000') || // Pure red
-                color.includes('FFFF00FF') || // Pure magenta/pink
-                color.includes('FFFF66CC') || // Light pink
-                color.includes('FFFF99CC'))) { // Very light pink
-                attendanceValue = 'absent';
-              }
-            }
-
+            
+            // Debug cell info
+            console.log(`Student: ${student.name}, Cell Value: ${cellValue}`);
+            console.log(`Cell Fill:`, excelCell.fill);
+            
+            // Update the color detection logic in your processB1CourseFileWithColors function
+if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
+  const color = excelCell.fill.fgColor.argb || '';
+  console.log(`Cell Color: ${color}`);
+  
+  // Use the helper functions for detection
+  if (color && isGreenColor(color)) {
+    attendanceValue = 'present';
+    console.log(`Detected green color: ${color} -> present`);
+  }
+  else if (color && isRedColor(color)) {
+    attendanceValue = 'absent';
+    console.log(`Detected red color: ${color} -> absent`);
+  }
+}
+            
             // If we couldn't determine from color, try text values
             if (attendanceValue === 'unknown' && cellValue) {
               const cellText = cellValue.toString().toLowerCase();
@@ -668,10 +669,12 @@ const ImportContent = () => {
                 attendanceValue = 'technical_issues';
               }
             }
-
+            
             // Record attendance - use the first value we find for each student
-            if (attendanceValue !== 'unknown' && !currentSession.attendance[student.id]) {
+            if (attendanceValue !== 'unknown') {
+              // FIXED: Always set the attendance value, even if it's already set
               currentSession.attendance[student.id] = attendanceValue;
+              console.log(`Set attendance for ${student.name} to "${attendanceValue}"`);
             }
           }
         }
@@ -709,6 +712,38 @@ const ImportContent = () => {
     const groupMatch = filename.match(/G(\d+)/i);
     return groupMatch ? `G${groupMatch[1]}` : '';
   };
+  // Add this helper function to your ImportContent.jsx file
+const isGreenColor = (argb) => {
+  // Common green color codes in Excel
+  const greenCodes = [
+    'FF00FF00', // Pure green
+    'FF92D050', // Light green
+    'FF00B050', // Medium green
+    'FF00B640', // Another green variant
+    'FFD9EAD3', // Light green (from your spreadsheet)
+    'FF9BBB59', // Olive green
+    'FF00B800', // Bright green
+    'FF70AD47'  // Dark green
+  ];
+  
+  return greenCodes.some(code => argb.includes(code));
+};
+
+const isRedColor = (argb) => {
+  // Common red/pink color codes in Excel
+  const redCodes = [
+    'FFFF0000', // Pure red
+    'FFFF00FF', // Pure magenta/pink
+    'FFFF66CC', // Light pink
+    'FFFF99CC', // Very light pink
+    'FFF4B084', // Light red/orange
+    'FFFF9999', // Light red
+    'FFFF8080', // Light red
+    'FFFFCCCC'  // Very light red
+  ];
+  
+  return redCodes.some(code => argb.includes(code));
+};
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
