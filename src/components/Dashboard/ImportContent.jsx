@@ -136,15 +136,15 @@ const ImportContent = () => {
       // Check if teacher already exists
       const teachers = await getAllRecords('teachers');
       const existingTeacher = teachers.find(t => t.name === teacherName);
-
+  
       if (existingTeacher) {
         return existingTeacher;
       }
-
+  
       // Create new teacher
       return await createRecord('teachers', {
         name: teacherName,
-        email: '', // Default empty, can be updated later
+        country: 'Deutschland', // Default country
         courseIds: [] // Will be updated when courses are created
       });
     } catch (error) {

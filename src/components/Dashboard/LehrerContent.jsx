@@ -1,6 +1,6 @@
 // src/components/Dashboard/LehrerContent.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords } from '../../firebase/database';
+import { getAllRecords, updateRecord } from '../../firebase/database';
 import TeacherDetail from './TeacherDetail';
 import './Content.css';
 
@@ -9,6 +9,8 @@ const LehrerContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
+  const [countryFilter, setCountryFilter] = useState(''); // Add this state
+  const [editingTeacher, setEditingTeacher] = useState(null); // Add this state
 
   useEffect(() => {
     fetchTeachers();

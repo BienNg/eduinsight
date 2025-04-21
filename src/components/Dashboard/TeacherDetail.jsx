@@ -1,10 +1,10 @@
 // src/components/Dashboard/TeacherDetail.jsx
 import { useState, useEffect } from 'react';
-import { getRecordById, getAllRecords } from '../../firebase/database';
+import { getRecordById, getAllRecords, updateRecord } from '../../firebase/database'
 import './CourseDetail.css'; // Reuse existing styles
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt,faClock } from '@fortawesome/free-solid-svg-icons';
 import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
 
 const TeacherDetail = ({ teacherId, onClose }) => {
@@ -16,6 +16,16 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
     const [expandedMonth, setExpandedMonth] = useState(null);
+    // Add state and handlers for country selection
+    const [editingCountry, setEditingCountry] = useState(false);
+    const [selectedCountry, setSelectedCountry] = useState('');
+
+    // Add this useEffect to initialize the selectedCountry
+    useEffect(() => {
+        if (teacher) {
+            setSelectedCountry(teacher.country || 'Deutschland');
+        }
+    }, [teacher]);
 
     useEffect(() => {
         const fetchTeacherDetails = async () => {
@@ -142,6 +152,19 @@ const TeacherDetail = ({ teacherId, onClose }) => {
         return totalHours.toFixed(1);
     };
 
+    // Add a function to handle saving the country change
+    const handleSaveCountry = async () => {
+        try {
+            await updateRecord('teachers', teacherId, { country: selectedCountry });
+            // Update the local teacher state
+            setTeacher({ ...teacher, country: selectedCountry });
+            setEditingCountry(false);
+        } catch (error) {
+            console.error("Error updating teacher country:", error);
+            // Optionally add error handling UI here
+        }
+    };
+
     // Get course name by ID
     const getCourseNameById = (courseId) => {
         const course = courses.find(c => c.id === courseId);
@@ -184,7 +207,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
             <div className="course-detail-header">
                 <button className="back-button" onClick={onClose}>← Back</button>
                 <h2>{teacher.name}</h2>
-                <div className="course-level-badge">{teacher.email || 'No Email'}</div>
+                <div className="course-level-badge">{teacher.country || 'No Country'}</div>
             </div>
 
             <div className="course-detail-tabs">
@@ -239,8 +262,25 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                     <span className="value">{teacher.name}</span>
                                 </div>
                                 <div className="info-item">
-                                    <span className="label">Email:</span>
-                                    <span className="value">{teacher.email || '-'}</span>
+                                    <span className="label">Land:</span>
+                                    {editingCountry ? (
+                                        <div className="country-selector-inline">
+                                            <select
+                                                value={selectedCountry}
+                                                onChange={(e) => setSelectedCountry(e.target.value)}
+                                                className="country-select"
+                                            >
+                                                <option value="Deutschland">Deutschland</option>
+                                                <option value="Vietnam">Vietnam</option>
+                                            </select>
+                                            <button onClick={handleSaveCountry} className="save-btn">Speichern</button>
+                                            <button onClick={() => setEditingCountry(false)} className="cancel-btn">Abbrechen</button>
+                                        </div>
+                                    ) : (
+                                        <span className="value editable" onClick={() => setEditingCountry(true)}>
+                                            {teacher.country || 'No Country'} <FontAwesomeIcon icon={faPencilAlt} className="edit-icon" />
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="info-item">
                                     <span className="label">Anzahl Monate aktiv:</span>
