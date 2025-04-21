@@ -113,33 +113,35 @@ const CourseDetail = ({ courseId, onClose }) => {
         )}
 
         {activeTab === 'sessions' && (
-          <div className="sessions-tab">
+        <div className="sessions-tab">
             <table className="sessions-table">
-              <thead>
+            <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Title</th>
-                  <th>Teacher</th>
-                  <th>Time</th>
-                  <th>Attendance</th>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Teacher</th>
+                <th>Time</th>
+                <th>Attendance</th>
                 </tr>
-              </thead>
-              <tbody>
+            </thead>
+            <tbody>
                 {course.sessions && course.sessions.map((session, index) => (
-                  <tr key={index}>
-                    <td>{session.date || '-'}</td>
-                    <td>{session.title || '-'}</td>
-                    <td>{session.teacher || '-'}</td>
-                    <td>{session.startTime} - {session.endTime}</td>
+                <tr key={index}>
+                    <td>{safelyRenderValue(session.date)}</td>
+                    <td>{safelyRenderValue(session.title)}</td>
+                    <td>{safelyRenderValue(session.teacher)}</td>
                     <td>
-                      {course.students && 
+                    {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
+                    </td>
+                    <td>
+                    {course.students && 
                         `${calculateSessionAttendance(session, course.students)}%`}
                     </td>
-                  </tr>
+                </tr>
                 ))}
-              </tbody>
+            </tbody>
             </table>
-          </div>
+        </div>
         )}
       </div>
     </div>
@@ -185,5 +187,50 @@ const calculateSessionAttendance = (session, students) => {
   if (totalStudents === 0) return 0;
   return Math.round((presentCount / totalStudents) * 100);
 };
+
+// Helper function to safely render any type of value
+const safelyRenderValue = (value) => {
+    if (value === null || value === undefined) {
+      return '-';
+    }
+    
+    if (typeof value === 'string' || typeof value === 'number') {
+      return value;
+    }
+    
+    // Handle objects with hyperlink & text properties (ExcelJS rich text)
+    if (value && typeof value === 'object') {
+      if (value.hyperlink && value.text) {
+        return value.text;
+      }
+      if (value.richText) {
+        return value.richText.map(rt => rt.text).join('');
+      }
+      if (value.text) {
+        return value.text;
+      }
+      if (value.formula) {
+        return value.result || '';
+      }
+      // Handle date objects
+      if (value instanceof Date) {
+        return value.toLocaleDateString();
+      }
+      // Last resort - convert to string
+      try {
+        return JSON.stringify(value);
+      } catch (e) {
+        return 'Complex value';
+      }
+    }
+    
+    // Convert arrays to comma-separated strings
+    if (Array.isArray(value)) {
+      return value.map(item => safelyRenderValue(item)).join(', ');
+    }
+    
+    // Last resort for any other type
+    return String(value);
+  };
 
 export default CourseDetail;

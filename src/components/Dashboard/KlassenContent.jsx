@@ -1,6 +1,6 @@
 // Updated src/components/Dashboard/KlassenContent.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords } from '../../firebase/database';
+import { getAllRecords, deleteRecord } from '../../firebase/database';
 import CourseDetail from './CourseDetail';
 import './Content.css';
 
@@ -9,23 +9,24 @@ const KlassenContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const [deletingCourseId, setDeletingCourseId] = useState(null);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        setLoading(true);
-        const coursesData = await getAllRecords('courses');
-        setCourses(coursesData);
-      } catch (err) {
-        console.error("Error fetching courses:", err);
-        setError("Failed to load courses. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCourses();
   }, []);
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const coursesData = await getAllRecords('courses');
+      setCourses(coursesData);
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      setError("Failed to load courses. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleViewDetails = (courseId) => {
     setSelectedCourseId(courseId);
@@ -33,6 +34,32 @@ const KlassenContent = () => {
 
   const handleCloseDetails = () => {
     setSelectedCourseId(null);
+  };
+
+  const handleDeleteCourse = async (courseId, courseName, event) => {
+    // Prevent click from propagating to parent elements
+    event.stopPropagation();
+    
+    // Confirm deletion with the user
+    const confirmDelete = window.confirm(`Sind Sie sicher, dass Sie "${courseName}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`);
+    
+    if (confirmDelete) {
+      try {
+        setDeletingCourseId(courseId);
+        await deleteRecord('courses', courseId);
+        
+        // Update the courses list by removing the deleted course
+        setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
+        
+        // Show success notification (you could implement a toast notification system)
+        console.log(`Course "${courseName}" successfully deleted`);
+      } catch (err) {
+        console.error("Error deleting course:", err);
+        setError(`Failed to delete course: ${err.message}`);
+      } finally {
+        setDeletingCourseId(null);
+      }
+    }
   };
 
   if (selectedCourseId) {
@@ -80,6 +107,13 @@ const KlassenContent = () => {
                 </div>
               </div>
               <div className="course-actions">
+                <button 
+                  className="btn-delete"
+                  onClick={(e) => handleDeleteCourse(course.id, course.name, e)}
+                  disabled={deletingCourseId === course.id}
+                >
+                  {deletingCourseId === course.id ? 'Löschen...' : 'Löschen'}
+                </button>
                 <button 
                   className="btn-details"
                   onClick={() => handleViewDetails(course.id)}
