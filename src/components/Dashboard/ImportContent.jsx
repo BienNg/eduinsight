@@ -410,19 +410,16 @@ const ImportContent = () => {
   };
 
   const isRedColor = (argb) => {
-    // Common red/pink color codes in Excel
-    const redCodes = [
-      'FFFF0000', // Pure red
-      'FFFF00FF', // Pure magenta/pink
-      'FFFF66CC', // Light pink
-      'FFFF99CC', // Very light pink
-      'FFF4B084', // Light red/orange
-      'FFFF9999', // Light red
-      'FFFF8080', // Light red
-      'FFFFCCCC'  // Very light red
-    ];
+    if (!argb) return false;
 
-    return redCodes.some(code => argb.includes(code));
+    // Extract RGB components
+    const r = parseInt(argb.substr(2, 2), 16) || 0;
+    const g = parseInt(argb.substr(4, 2), 16) || 0;
+    const b = parseInt(argb.substr(6, 2), 16) || 0;
+
+    // Check if it's predominantly red or pink
+    return (r > (g + 20) && r > (b + 20)) ||
+      (r > (g - 20) && r > 200 && b > 200); // For pinks (high red and blue)
   };
 
   // Helper function to parse date strings in DD.MM.YYYY format
@@ -714,7 +711,8 @@ const ImportContent = () => {
               }
               else if (isRedColor(color)) {
                 attendanceValue = 'absent';
-              }
+              }// Add debugging if needed
+              console.log(`Cell color: ${color}, Attendance: ${attendanceValue}`);
             }
 
             // If we couldn't determine from color, try text values
