@@ -64,7 +64,21 @@ const ImportContent = () => {
         try {
           const arrayBuffer = e.target.result;
 
-          // Process the file if it's a B1.1 course file
+          // Validate the file before processing
+          const validationErrors = await validateExcelFile(arrayBuffer, file.name);
+
+          if (validationErrors.length > 0) {
+            // Show validation errors
+            setResult({
+              success: false,
+              message: "Excel file validation failed. Please fix the following issues:",
+              errors: validationErrors
+            });
+            setLoading(false);
+            return;
+          }
+
+          // If validation passes, process the file
           if (file.name.includes('B1.1_ONLINE_VN')) {
             // Process as a course file using ExcelJS for color detection
             const courseData = await processB1CourseFileWithColors(arrayBuffer, file.name);
@@ -73,7 +87,7 @@ const ImportContent = () => {
 
           setResult({
             success: true,
-            message: `File "${file.name}" successfully imported!`
+            message: `File "${file.name}" successfully validated and imported!`
           });
         } catch (error) {
           console.error("Error details:", error);
@@ -101,6 +115,132 @@ const ImportContent = () => {
         message: `Error importing file: ${error.message}`
       });
       setLoading(false);
+    }
+  };
+
+  // Add this validation function to your ImportContent.jsx file
+
+  const validateExcelFile = async (arrayBuffer, filename) => {
+    const errors = [];
+
+    try {
+      // Use both XLSX for structure and ExcelJS for colors/formatting
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      // Use ExcelJS for additional formatting info
+      const excelWorkbook = new ExcelJS.Workbook();
+      await excelWorkbook.xlsx.load(arrayBuffer);
+      const excelWorksheet = excelWorkbook.worksheets[0];
+
+      // 1. Validate file structure - find header row with "Folien"
+      let headerRowIndex = -1;
+      for (let i = 0; i < jsonData.length && i < 30; i++) {
+        if (jsonData[i][0] === "Folien") {
+          headerRowIndex = i;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) {
+        errors.push("Could not find header row with 'Folien' column. The Excel file structure appears to be invalid.");
+        // If we can't find the header row, many other validations will fail, so return early
+        return errors;
+      }
+
+      // 2. Validate required columns exist in header row
+      const headerRow = jsonData[headerRowIndex];
+      const requiredColumns = ["Folien", "Inhalt", "Notizen", "die Folien gecheckt", "gemacht", "Unterrichtstag", "von", "bis", "Lehrer"];
+
+      for (let i = 0; i < requiredColumns.length; i++) {
+        if (headerRow[i] !== requiredColumns[i]) {
+          errors.push(`Required column '${requiredColumns[i]}' not found at expected position ${i + 1}. Found '${headerRow[i] || "empty"}' instead.`);
+        }
+      }
+
+      // 3. Check for student names in header row (typically starting from column K/index 10)
+      let studentCount = 0;
+      for (let j = 10; j < headerRow.length; j++) {
+        if (headerRow[j] &&
+          headerRow[j] !== "Anwesenheitsliste" &&
+          headerRow[j] !== "Nachrichten von/ für NaNu NaNa") {
+          studentCount++;
+        }
+      }
+
+      if (studentCount === 0) {
+        errors.push("No student names found in the header row (columns K and beyond).");
+      }
+
+      // 4. Validate session data - check for empty cells in Folien column where needed
+      // Start from row after header
+      const sessionsStartRow = headerRowIndex + 1;
+      let currentSessionTitle = null;
+      let sessionCount = 0;
+
+      for (let i = sessionsStartRow; i < jsonData.length; i++) {
+        const row = jsonData[i];
+
+        // Skip completely empty rows
+        if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+          continue;
+        }
+
+        const folienValue = row[0]; // Column A - Folien
+        const contentValue = row[1]; // Column B - Inhalt
+
+        // Check if this is a content row that should be part of a session but has no parent session
+        if (!folienValue && contentValue && currentSessionTitle === null) {
+          errors.push(`Row ${i + 1}: Content "${contentValue}" has no associated session (missing value in Folien column).`);
+        }
+
+        // If there's a value in Folien column, this should be a new session
+        if (folienValue && folienValue.toString().trim() !== '') {
+          currentSessionTitle = folienValue;
+          sessionCount++;
+
+          // 5. Validate date format in column F (index 5)
+          const dateValue = row[5];
+          if (!dateValue) {
+            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a date in column F.`);
+          } else if (typeof dateValue === 'string' && !dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+            errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid date format "${dateValue}". Expected format: DD.MM.YYYY`);
+          }
+
+          // 6. Validate time format in columns G and H (indices 6 and 7)
+          const startTimeValue = row[6];
+          const endTimeValue = row[7];
+
+          if (!startTimeValue) {
+            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a start time in column G.`);
+          }
+
+          if (!endTimeValue) {
+            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing an end time in column H.`);
+          }
+
+          // 7. Validate teacher information
+          const teacherValue = row[8];
+          if (!teacherValue) {
+            errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information in column I.`);
+          }
+        }
+      }
+
+      if (sessionCount === 0) {
+        errors.push("No sessions found in the Excel file. The Folien column should contain session titles.");
+      }
+
+      // 8. Check for attendance data formatting
+      // This is more complex and might need special handling depending on your exact needs
+
+      return errors;
+
+    } catch (error) {
+      errors.push(`Error processing Excel file: ${error.message}`);
+      return errors;
     }
   };
 
@@ -667,7 +807,22 @@ const ImportContent = () => {
               borderRadius: '4px',
               color: result.success ? '#2e7d32' : '#c62828'
             }}>
-              {result.message}
+              <p><strong>{result.message}</strong></p>
+
+              {result.errors && result.errors.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <ul style={{
+                    listStyleType: 'disc',
+                    paddingLeft: '20px',
+                    marginTop: '5px',
+                    fontSize: '14px'
+                  }}>
+                    {result.errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>
