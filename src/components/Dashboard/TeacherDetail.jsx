@@ -154,7 +154,13 @@ const TeacherDetail = ({ teacherId, onClose }) => {
       };
     });
     
-    return grouped;
+    // Sort the month entries by id in descending order (newest first)
+    return Object.fromEntries(
+      Object.entries(grouped).sort((a, b) => {
+        // Month IDs are in format 'YYYY-MM'
+        return b[0].localeCompare(a[0]); // Reverse sort
+      })
+    );
   };
 
   if (loading) return <div className="loading">Loading teacher details...</div>;
