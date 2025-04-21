@@ -105,48 +105,52 @@ const CourseDetail = ({ courseId, onClose }) => {
         setSelectedStudent(null);
     };
 
-    // Calculate attendance for a student across all sessions
+    // Calculate attendance for a student across all sessions - now returns absences/total format
     const calculateStudentAttendance = (studentId) => {
-        if (!sessions || sessions.length === 0) return 0;
+        if (!sessions || sessions.length === 0) return "0/0";
 
-        let presentCount = 0;
+        let absentCount = 0;
         let totalSessions = 0;
 
         sessions.forEach(session => {
             if (session.attendance && session.attendance[studentId]) {
                 totalSessions++;
 
-                if (session.attendance[studentId] === 'present') {
-                    presentCount++;
+                // Handle both string and object formats for attendance
+                const attendanceData = session.attendance[studentId];
+                const status = typeof attendanceData === 'object' ? attendanceData.status : attendanceData;
+
+                // Count as absent if not present (includes absent, sick, technical_issues, unknown)
+                if (status !== 'present') {
+                    absentCount++;
                 }
             }
         });
 
-        if (totalSessions === 0) return 0;
-        return Math.round((presentCount / totalSessions) * 100);
+        return `${absentCount}/${totalSessions}`;
     };
 
     // Calculate attendance for a session across all students
     const calculateSessionAttendance = (session) => {
         if (!session.attendance || !students || students.length === 0) return "0/0";
-        
+
         let presentCount = 0;
         let totalStudents = 0;
-        
+
         students.forEach(student => {
             if (session.attendance[student.id]) {
                 totalStudents++;
-                
+
                 // Handle both string and object formats for attendance
                 const attendanceData = session.attendance[student.id];
                 const status = typeof attendanceData === 'object' ? attendanceData.status : attendanceData;
-                
+
                 if (status === 'present') {
                     presentCount++;
                 }
             }
         });
-        
+
         return `${presentCount}/${totalStudents}`;
     };
 
@@ -286,7 +290,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Attendance</th>
+                                    <th>Absence</th>
                                     <th>Info</th>
                                     <th>Notes</th>
                                     <th>Actions</th>
