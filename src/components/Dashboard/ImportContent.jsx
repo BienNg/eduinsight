@@ -286,20 +286,36 @@ const ImportContent = () => {
       const headerRow = jsonData[headerRowIndex];
 
       // Define required columns and create functions to find them by partial match
-      const requiredColumns = ["Folien", "Unterrichtstag", "von", "bis", "Lehrer"];
+      const requiredColumns = [
+        "Folien",
+        ["Unterrichtstag", "Datum"], // Allow either of these for the date column
+        "von",
+        "bis",
+        "Lehrer"
+      ];
 
       // Function to find column index by partial match
-      const findColumnIndex = (headerRow, columnName) => {
-        return headerRow.findIndex(cell =>
-          cell && typeof cell === 'string' && cell.includes(columnName)
-        );
+      const findColumnIndex = (headerRow, columnNames) => {
+        // Handle both string and array input
+        const namesToCheck = Array.isArray(columnNames) ? columnNames : [columnNames];
+
+        // Look for any of the possible column names
+        for (const name of namesToCheck) {
+          const index = headerRow.findIndex(cell =>
+            cell && typeof cell === 'string' && cell.includes(name)
+          );
+          if (index !== -1) return index;
+        }
+        return -1;
       };
 
       // Check only the crucial columns
       for (const column of requiredColumns) {
         const columnIndex = findColumnIndex(headerRow, column);
         if (columnIndex === -1) {
-          errors.push(`Required column '${column}' not found in the header row.`);
+          // Handle array of possible column names in the error message
+          const columnName = Array.isArray(column) ? column.join(" or ") : column;
+          errors.push(`Required column '${columnName}' not found in the header row.`);
         }
       }
 
@@ -320,7 +336,7 @@ const ImportContent = () => {
       // 4. Validate session data with a more flexible approach
       // Get the indices of crucial columns
       const folienIndex = findColumnIndex(headerRow, "Folien");
-      const dateIndex = findColumnIndex(headerRow, "Unterrichtstag");
+      const dateIndex = findColumnIndex(headerRow, ["Unterrichtstag", "Datum", "Tag", "Date", "Day"]);
       const startTimeIndex = findColumnIndex(headerRow, "von");
       const endTimeIndex = findColumnIndex(headerRow, "bis");
       const teacherIndex = findColumnIndex(headerRow, "Lehrer");
@@ -548,6 +564,8 @@ const ImportContent = () => {
 
   const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
     console.log('Starting Excel file processing with new database structure...');
+    console.log('Filename:', filename);
+
 
     // Use XLSX and ExcelJS to parse the file
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -589,9 +607,13 @@ const ImportContent = () => {
     };
 
     // Find the header row with "Folien"
+
+    console.log('*** SEARCHING FOR HEADER ROW ***');
     let headerRowIndex = -1;
     for (let i = 0; i < jsonData.length; i++) {
       if (jsonData[i][0] === "Folien") {
+
+        console.log(`Found header row at index ${i}`);
         headerRowIndex = i;
         break;
       }
@@ -603,13 +625,33 @@ const ImportContent = () => {
     }
 
     // Get the header row
+    console.log(`Using header row index: ${headerRowIndex}`);
     const headerRow = jsonData[headerRowIndex];
+    console.log("FULL HEADER ROW:", headerRow);
 
-    // Function to find column index by partial match
-    const findColumnIndex = (headerRow, columnName) => {
-      return headerRow.findIndex(cell =>
-        cell && typeof cell === 'string' && cell.includes(columnName)
-      );
+    console.log("Full header row:", headerRow);
+
+    // In the validateExcelFile function, update this section:
+    const findColumnIndex = (headerRow, columnNames) => {
+      // Handle both string and array input
+      const namesToCheck = Array.isArray(columnNames) ? columnNames : [columnNames];
+
+      // Search the entire header row for any of the possible column names
+      for (let i = 0; i < headerRow.length; i++) {
+        const cell = headerRow[i];
+        if (cell && typeof cell === 'string') {
+          // Check if the cell contains any of the specified column names
+          for (const name of namesToCheck) {
+            if (cell.toLowerCase().includes(name.toLowerCase())) {
+              console.log(`Found column "${name}" at position ${i}: "${cell}"`);
+              return i;
+            }
+          }
+        }
+      }
+
+      console.log(`Could not find any of these columns: ${namesToCheck.join(', ')}`);
+      return -1;
     };
 
     // Map column indices for crucial data
@@ -619,7 +661,7 @@ const ImportContent = () => {
       notizen: findColumnIndex(headerRow, "Notizen"),
       checked: findColumnIndex(headerRow, "die Folien gecheckt"),
       gemacht: findColumnIndex(headerRow, "gemacht"),
-      date: findColumnIndex(headerRow, "Unterrichtstag"),
+      date: findColumnIndex(headerRow, ["Unterrichtstag", "Datum"]), // Modified to accept either name
       startTime: findColumnIndex(headerRow, "von"),
       endTime: findColumnIndex(headerRow, "bis"),
       teacher: findColumnIndex(headerRow, "Lehrer"),
