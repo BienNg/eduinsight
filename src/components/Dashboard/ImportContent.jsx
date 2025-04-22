@@ -206,17 +206,29 @@ const ImportContent = () => {
   // Function to create a teacher record
   const createTeacherRecord = async (teacherName) => {
     try {
-      // Check if teacher already exists
+      // Normalize the teacher name: trim whitespace and convert to title case
+      const normalizedName = teacherName
+        .trim()
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      // Check if teacher already exists (case-insensitive search)
       const teachers = await getAllRecords('teachers');
-      const existingTeacher = teachers.find(t => t.name === teacherName);
+      const existingTeacher = teachers.find(t =>
+        t.name.toLowerCase() === normalizedName.toLowerCase()
+      );
 
       if (existingTeacher) {
+        console.log(`Found existing teacher: ${existingTeacher.name}`);
         return existingTeacher;
       }
 
-      // Create new teacher
+      // Create new teacher with normalized name
+      console.log(`Creating new teacher: ${normalizedName}`);
       return await createRecord('teachers', {
-        name: teacherName,
+        name: normalizedName,
         country: 'Deutschland', // Default country
         courseIds: [] // Will be updated when courses are created
       });
