@@ -238,15 +238,33 @@ const ImportContent = () => {
     }
   };
 
-  // Function to create or update a student record
+  // Function to create or update a student record with improved name matching
   const createOrUpdateStudentRecord = async (studentName, studentInfo = '', courseId) => {
     try {
-      // Check if student already exists
+      // Get all students
       const students = await getAllRecords('students');
-      const existingStudent = students.find(s => s.name === studentName);
+
+      // Normalize the incoming student name for comparison
+      const normalizedName = studentName.trim();
+      const nameParts = normalizedName.split(/[-|]/)[0].trim().toLowerCase();
+
+      // Find existing student with similar name
+      const existingStudent = students.find(s => {
+        // Check for exact match first
+        if (s.name === studentName) return true;
+
+        // Then check for pattern matches
+        const existingNameLower = s.name.toLowerCase();
+        const existingNameParts = existingNameLower.split(/[-|]/)[0].trim();
+
+        // Match case 1: Base name is the same (ignoring group suffix or additional info)
+        return nameParts === existingNameParts ||
+          existingNameLower.includes(nameParts) ||
+          nameParts.includes(existingNameParts);
+      });
 
       if (existingStudent) {
-        console.log(`Found existing student: ${studentName}`);
+        console.log(`Found existing student for "${studentName}": ${existingStudent.name}`);
 
         // Update the student's courseIds to include the new course if it doesn't already
         let courseIds = existingStudent.courseIds || [];
@@ -256,11 +274,11 @@ const ImportContent = () => {
           // Update the student record with the new course
           await updateRecord('students', existingStudent.id, {
             courseIds: courseIds,
-            // Merge additional info if it's provided and the existing record doesn't have it
+            // Preserve existing info or use new info if existing is empty
             info: existingStudent.info || studentInfo
           });
 
-          console.log(`Updated student ${studentName} with course ${courseId}`);
+          console.log(`Updated student ${existingStudent.name} with course ${courseId}`);
         }
 
         return existingStudent;
@@ -271,9 +289,9 @@ const ImportContent = () => {
       return await createRecord('students', {
         name: studentName,
         info: studentInfo,
-        courseIds: [courseId], // Initialize with the current courseId
+        courseIds: [courseId],
         notes: '',
-        joinDates: {} // Will store when they joined each course
+        joinDates: {}
       });
     } catch (error) {
       console.error("Error creating/updating student record:", error);
