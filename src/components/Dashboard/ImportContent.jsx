@@ -541,14 +541,14 @@ const ImportContent = () => {
 
   const excelDateToJSDate = (excelDate) => {
     if (!excelDate) return null;
-  
+
     // If it's already a string in DD.MM.YYYY format, parse it directly
     if (typeof excelDate === 'string' && excelDate.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
       const [day, month, year] = excelDate.split('.').map(Number);
       // Create date in UTC to avoid timezone offset issues
       return new Date(Date.UTC(year, month - 1, day));
     }
-  
+
     // Handle Excel serial date numbers
     if (typeof excelDate === 'number') {
       // Excel's date system has a leap year bug from 1900
@@ -556,35 +556,35 @@ const ImportContent = () => {
       const excelEpoch = new Date(Date.UTC(1899, 11, 30));
       const millisecondsPerDay = 24 * 60 * 60 * 1000;
       const timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
-      
+
       const date = new Date(excelEpoch.getTime() + (excelDate * millisecondsPerDay) + timezoneOffset);
-  
+
       // Validate the converted date
       if (date.getUTCFullYear() === 1900 && date.getUTCMonth() === 0 && date.getUTCDate() === 1) {
         console.warn('Invalid Excel date detected:', excelDate);
         return null;
       }
-  
+
       return date;
     }
-  
+
     return null;
   };
-  
+
   // Also update the formatDate function to use UTC
   const formatDate = (jsDate) => {
     if (!jsDate || !(jsDate instanceof Date) || isNaN(jsDate)) {
       console.warn('Invalid date object:', jsDate);
       return '';
     }
-  
+
     // Validate the year is reasonable (e.g., between 2020 and 2030)
     const year = jsDate.getUTCFullYear();
     if (year < 2020 || year > 2030) {
       console.warn('Suspicious year detected:', year);
       return '';
     }
-  
+
     const day = jsDate.getUTCDate().toString().padStart(2, '0');
     const month = (jsDate.getUTCMonth() + 1).toString().padStart(2, '0');
     return `${day}.${month}.${year}`;
@@ -747,7 +747,7 @@ const ImportContent = () => {
       teacher: findColumnIndex(headerRow, ["Lehrer"]),
       message: findColumnIndex(headerRow, ["Nachrichten"])
     };
-    
+
     // Add debug logging
     console.log("Found date column at index:", columnIndices.date);
 
@@ -992,16 +992,27 @@ const ImportContent = () => {
             notes: notesValue || '',
             checked: checkedValue === 'TRUE',
             completed: completedValue === 'TRUE',
-            date: formattedDate || lastKnownDate || '',  // Use formattedDate first, then fallback to lastKnownDate
+            date: formattedDate || '', // Remove lastKnownDate fallback
             startTime: formatTime(startTimeValue),
             endTime: formatTime(endTimeValue),
-            teacherId: teacherId || '',  // Use the teacherId we got from createTeacherRecord
+            teacherId: teacherId || '',
             message: messageValue || '',
             contentItems: [],
             attendance: {},
-            monthId: monthId,  // Set the monthId we just got
-            status: isOngoingSession ? 'ongoing' : 'completed'
+            monthId: monthId,
+            // Set status to 'ongoing' if date is empty or in current/future month
+            status: !formattedDate ? 'ongoing' : (() => {
+              if (formattedDate) {
+                const [day, month, year] = formattedDate.split('.').map(Number);
+                const sessionDate = new Date(year, month - 1, day);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return sessionDate >= today ? 'ongoing' : 'completed';
+              }
+              return 'ongoing';
+            })()
           };
+
           // Update lastKnownDate if we have a valid date
           if (formattedDate) {
             lastKnownDate = formattedDate;
