@@ -774,15 +774,21 @@ const ImportContent = () => {
             }
           } else if (lastKnownDate) {
             // Use the last known date if current date is empty
-            formattedDate = lastKnownDate;
+            formattedDate = '';
             isOngoingSession = true;
           }
 
+          // Only mark as ongoing if the date is in the current month or future
           if (formattedDate) {
             const [day, month, year] = formattedDate.split('.').map(Number);
-            if (month === currentMonth && year === currentYear) {
-              isOngoingSession = true;
-            }
+            const sessionDate = new Date(year, month - 1, day);
+            const today = new Date();
+            
+            // Set to beginning of the day for accurate comparison
+            today.setHours(0, 0, 0, 0);
+            
+            // Only ongoing if it's today or in the future
+            isOngoingSession = sessionDate >= today;
           }
 
           // Format times

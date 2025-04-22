@@ -331,6 +331,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                                     <th>Teacher</th>
                                     <th>Time</th>
                                     <th>Attendance</th>
+                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -349,6 +350,11 @@ const CourseDetail = ({ courseId, onClose }) => {
                                         </td>
                                         <td>
                                             {calculateSessionAttendance(session)}
+                                        </td>
+                                        <td>
+                                            {session.status === 'ongoing' && (
+                                                <span className="status-badge ongoing">Ongoing</span>
+                                            )}
                                         </td>
                                         <td>
                                             <button
