@@ -479,3 +479,42 @@
   color: #856404;
   border: 1px solid #FFEEBA;
 }
+
+/* Add to CourseDetail.css */
+.sessions-table th {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+
+.sessions-table th:hover {
+  background-color: #e9e9e9;
+}
+
+.sessions-table th.sorted-ascending,
+.sessions-table th.sorted-descending {
+  background-color: #e0e0e0;
+}
+
+/* Lehrer/Kurse Tab */
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clickable-row:hover {
+  background-color: #f0f7ff !important;
+}
+
+.clickable-row:active {
+  background-color: #e1effe !important;
+}
+
+/* Make sure the button doesn't interfere with row clicking */
+.clickable-row .btn-details {
+  position: relative;
+  z-index: 2;
+}
+
+
+/*END Lehrer/Kurse Tab */

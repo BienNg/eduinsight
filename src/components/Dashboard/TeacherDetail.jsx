@@ -1,10 +1,11 @@
 // src/components/Dashboard/TeacherDetail.jsx
 import { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords, updateRecord } from '../../firebase/database'
+import CourseDetail from './CourseDetail'; // Import CourseDetail component
 import './CourseDetail.css'; // Reuse existing styles
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt,faClock } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faClock } from '@fortawesome/free-solid-svg-icons';
 import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
 
 const TeacherDetail = ({ teacherId, onClose }) => {
@@ -16,9 +17,11 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
     const [expandedMonth, setExpandedMonth] = useState(null);
+    const [selectedCourseId, setSelectedCourseId] = useState(null);
     // Add state and handlers for country selection
     const [editingCountry, setEditingCountry] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState('');
+
 
     // Add this useEffect to initialize the selectedCountry
     useEffect(() => {
@@ -96,6 +99,16 @@ const TeacherDetail = ({ teacherId, onClose }) => {
             fetchTeacherDetails();
         }
     }, [teacherId]);
+
+    // Function to handle course selection
+    const handleCourseSelect = (courseId) => {
+        setSelectedCourseId(courseId);
+    };
+
+    // Function to go back from course detail to teacher detail
+    const handleBackToTeacher = () => {
+        setSelectedCourseId(null);
+    };
 
     // Function to safely render any type of value
     const safelyRenderValue = (value) => {
@@ -194,6 +207,11 @@ const TeacherDetail = ({ teacherId, onClose }) => {
             })
         );
     };
+
+    // If a course is selected, render the CourseDetail component
+    if (selectedCourseId) {
+        return <CourseDetail courseId={selectedCourseId} onClose={handleBackToTeacher} />;
+    }
 
     if (loading) return <div className="loading">Loading teacher details...</div>;
     if (error) return <div className="error">{error}</div>;
@@ -309,11 +327,16 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                         <th>Lektionen</th>
                                         <th>Zeitraum</th>
                                         <th>Anzahl Schüler</th>
+                                        <th>Aktionen</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {courses.map((course) => (
-                                        <tr key={course.id}>
+                                        <tr
+                                            key={course.id}
+                                            className="clickable-row"
+                                            onClick={() => handleCourseSelect(course.id)}
+                                        >
                                             <td>{course.name}</td>
                                             <td>{course.level}</td>
                                             <td>{course.sessionIds ? course.sessionIds.length : 0}</td>
@@ -321,6 +344,17 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                                 {course.startDate} - {course.endDate || 'heute'}
                                             </td>
                                             <td>{course.studentIds ? course.studentIds.length : 0}</td>
+                                            <td>
+                                                <button
+                                                    className="btn-details"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleCourseSelect(course.id);
+                                                    }}
+                                                >
+                                                    Details ansehen
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

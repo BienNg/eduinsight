@@ -15,6 +15,82 @@ const CourseDetail = ({ courseId, onClose }) => {
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedSession, setSelectedSession] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'ascending' });
+
+    // Add this function to handle column header clicks
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    // Add this function to get sorted sessions
+    const getSortedSessions = () => {
+        const sortableItems = [...sessions];
+        if (sortConfig.key) {
+            sortableItems.sort((a, b) => {
+                // Handle attendance separately
+                if (sortConfig.key === 'attendance') {
+                    const attendanceA = calculateSessionAttendance(a);
+                    const attendanceB = calculateSessionAttendance(b);
+                    const [presentA, totalA] = attendanceA.split('/').map(Number);
+                    const [presentB, totalB] = attendanceB.split('/').map(Number);
+
+                    // Calculate percentage
+                    const percentA = totalA === 0 ? 0 : (presentA / totalA) * 100;
+                    const percentB = totalB === 0 ? 0 : (presentB / totalB) * 100;
+
+                    return sortConfig.direction === 'ascending'
+                        ? percentA - percentB
+                        : percentB - percentA;
+                }
+
+                // Handle date separately
+                if (sortConfig.key === 'date') {
+                    const dateA = parseGermanDate(a.date) || new Date(0);
+                    const dateB = parseGermanDate(b.date) || new Date(0);
+                    return sortConfig.direction === 'ascending'
+                        ? dateA - dateB
+                        : dateB - dateA;
+                }
+
+                // Handle time separately
+                if (sortConfig.key === 'time') {
+                    const timeA = a.startTime || '';
+                    const timeB = b.startTime || '';
+                    return sortConfig.direction === 'ascending'
+                        ? timeA.localeCompare(timeB)
+                        : timeB.localeCompare(timeA);
+                }
+
+                // Handle teacher separately
+                if (sortConfig.key === 'teacher') {
+                    const teacherIdA = a.teacherId || '';
+                    const teacherIdB = b.teacherId || '';
+                    return sortConfig.direction === 'ascending'
+                        ? teacherIdA.localeCompare(teacherIdB)
+                        : teacherIdB.localeCompare(teacherIdA);
+                }
+
+                // Default case - compare by value
+                const valueA = a[sortConfig.key] || '';
+                const valueB = b[sortConfig.key] || '';
+
+                if (typeof valueA === 'string' && typeof valueB === 'string') {
+                    return sortConfig.direction === 'ascending'
+                        ? valueA.localeCompare(valueB)
+                        : valueB.localeCompare(valueA);
+                }
+
+                return sortConfig.direction === 'ascending'
+                    ? (valueA > valueB ? 1 : -1)
+                    : (valueB > valueA ? 1 : -1);
+            });
+        }
+        return sortableItems;
+    };
 
     useEffect(() => {
         const fetchCourseDetails = async () => {
@@ -326,17 +402,42 @@ const CourseDetail = ({ courseId, onClose }) => {
                         <table className="sessions-table">
                             <thead>
                                 <tr>
-                                    <th>Title</th>
-                                    <th>Date</th>
-                                    <th>Teacher</th>
-                                    <th>Time</th>
-                                    <th>Attendance</th>
+                                    <th
+                                        onClick={() => requestSort('title')}
+                                        className={sortConfig.key === 'title' ? `sorted-${sortConfig.direction}` : ''}
+                                    >
+                                        Title {sortConfig.key === 'title' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                    </th>
+                                    <th
+                                        onClick={() => requestSort('date')}
+                                        className={sortConfig.key === 'date' ? `sorted-${sortConfig.direction}` : ''}
+                                    >
+                                        Date {sortConfig.key === 'date' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                    </th>
+                                    <th
+                                        onClick={() => requestSort('teacher')}
+                                        className={sortConfig.key === 'teacher' ? `sorted-${sortConfig.direction}` : ''}
+                                    >
+                                        Teacher {sortConfig.key === 'teacher' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                    </th>
+                                    <th
+                                        onClick={() => requestSort('time')}
+                                        className={sortConfig.key === 'time' ? `sorted-${sortConfig.direction}` : ''}
+                                    >
+                                        Time {sortConfig.key === 'time' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                    </th>
+                                    <th
+                                        onClick={() => requestSort('attendance')}
+                                        className={sortConfig.key === 'attendance' ? `sorted-${sortConfig.direction}` : ''}
+                                    >
+                                        Attendance {sortConfig.key === 'attendance' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                    </th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {sessions.map((session) => (
+                                {getSortedSessions().map((session) => (
                                     <tr key={session.id}>
                                         <td>{safelyRenderValue(session.title)}</td>
                                         <td>{safelyRenderValue(session.date)}</td>
