@@ -352,3 +352,35 @@
 }
 
 /* END Group-based card view */
+
+/* Kursstufen Badge */
+.level-badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 0 5px;
+}
+
+.level-badge {
+  display: flex;
+  align-items: center;
+  background-color: #0066cc;
+  border-radius: 18px;
+  padding: 6px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: lightslategray;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.level-badge:hover {
+  background-color: #0055aa;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* END Kursstufen Badge */

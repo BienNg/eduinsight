@@ -251,9 +251,13 @@ const KlassenContent = () => {
               <div className="group-info">
                 <div className="info-item">
                   <span className="label">Kursstufen:</span>
-                  <span className="value">
-                    {sortLanguageLevels(Array.from(new Set(groupCourses.map(course => course.level)))).join(', ')}
-                  </span>
+                  <div className="level-badges-container">
+                    {sortLanguageLevels(Array.from(new Set(groupCourses.map(course => course.level)))).map(level => (
+                      <div className="level-badge" key={level}>
+                        {level}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="info-item">
                   <span className="label">Schüler insgesamt:</span>
@@ -268,13 +272,7 @@ const KlassenContent = () => {
                   </span>
                 </div>
               </div>
-              <div className="course-level-list">
-                {groupCourses.map(course => (
-                  <div className="level-badge" key={course.id}>
-                    {course.level}
-                  </div>
-                ))}
-              </div>
+
               <div className="group-actions">
                 <button
                   className="btn-details"
