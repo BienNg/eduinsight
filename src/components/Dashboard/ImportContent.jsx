@@ -539,51 +539,54 @@ const ImportContent = () => {
     }
   };
 
-  // Update the excelDateToJSDate function
   const excelDateToJSDate = (excelDate) => {
     if (!excelDate) return null;
-
-    // If it's already a string in DD.MM.YYYY format, return as is
+  
+    // If it's already a string in DD.MM.YYYY format, parse it directly
     if (typeof excelDate === 'string' && excelDate.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
       const [day, month, year] = excelDate.split('.').map(Number);
-      return new Date(year, month - 1, day);
+      // Create date in UTC to avoid timezone offset issues
+      return new Date(Date.UTC(year, month - 1, day));
     }
-
+  
     // Handle Excel serial date numbers
     if (typeof excelDate === 'number') {
       // Excel's date system has a leap year bug from 1900
-      const excelEpoch = new Date(1899, 11, 30);
+      // Adding the timezone offset and using UTC to prevent date shifting
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
       const millisecondsPerDay = 24 * 60 * 60 * 1000;
-      const date = new Date(excelEpoch.getTime() + (excelDate * millisecondsPerDay));
-
+      const timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
+      
+      const date = new Date(excelEpoch.getTime() + (excelDate * millisecondsPerDay) + timezoneOffset);
+  
       // Validate the converted date
-      if (date.getFullYear() === 1900 && date.getMonth() === 0 && date.getDate() === 1) {
+      if (date.getUTCFullYear() === 1900 && date.getUTCMonth() === 0 && date.getUTCDate() === 1) {
         console.warn('Invalid Excel date detected:', excelDate);
         return null;
       }
-
+  
       return date;
     }
-
+  
     return null;
   };
-
-  // Update the formatDate function to handle invalid dates
+  
+  // Also update the formatDate function to use UTC
   const formatDate = (jsDate) => {
     if (!jsDate || !(jsDate instanceof Date) || isNaN(jsDate)) {
       console.warn('Invalid date object:', jsDate);
       return '';
     }
-
+  
     // Validate the year is reasonable (e.g., between 2020 and 2030)
-    const year = jsDate.getFullYear();
+    const year = jsDate.getUTCFullYear();
     if (year < 2020 || year > 2030) {
       console.warn('Suspicious year detected:', year);
       return '';
     }
-
-    const day = jsDate.getDate().toString().padStart(2, '0');
-    const month = (jsDate.getMonth() + 1).toString().padStart(2, '0');
+  
+    const day = jsDate.getUTCDate().toString().padStart(2, '0');
+    const month = (jsDate.getUTCMonth() + 1).toString().padStart(2, '0');
     return `${day}.${month}.${year}`;
   };
 
