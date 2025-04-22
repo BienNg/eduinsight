@@ -298,11 +298,12 @@ const ImportContent = () => {
       const findColumnIndex = (headerRow, columnNames) => {
         // Handle both string and array input
         const namesToCheck = Array.isArray(columnNames) ? columnNames : [columnNames];
-
-        // Look for any of the possible column names
+      
+        // Look for any of the possible column names (case-insensitive)
         for (const name of namesToCheck) {
           const index = headerRow.findIndex(cell =>
-            cell && typeof cell === 'string' && cell.includes(name)
+            cell && typeof cell === 'string' && 
+            cell.toLowerCase().includes(name.toLowerCase())
           );
           if (index !== -1) return index;
         }
