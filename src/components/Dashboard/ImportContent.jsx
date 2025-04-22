@@ -554,19 +554,39 @@ const ImportContent = () => {
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
     const excelWorkbook = new ExcelJS.Workbook();
     await excelWorkbook.xlsx.load(arrayBuffer);
     const excelWorksheet = excelWorkbook.worksheets[0];
-
     // Extract course level and group from filename
     const levelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
     const level = levelMatch ? levelMatch[0] : 'unknown';
-
     const groupMatch = filename.match(/G(\d+)/i);
     const group = groupMatch ? `G${groupMatch[1]}` : '';
-
     const courseName = `${group} ${level}`;
+
+    const findExistingCourse = async (group, level) => {
+      try {
+        const coursesRef = ref(database, 'courses');
+        const coursesQuery = query(
+          coursesRef,
+          orderByChild('level'),
+          equalTo(level)
+        );
+
+        const snapshot = await get(coursesQuery);
+
+        if (snapshot.exists()) {
+          const courses = Object.values(snapshot.val());
+          // Find a course with matching group and level
+          return courses.find(course => course.group === group);
+        }
+
+        return null;
+      } catch (error) {
+        console.error("Error checking for existing course:", error);
+        throw error;
+      }
+    };
 
     // Find the header row with "Folien"
     let headerRowIndex = -1;
@@ -631,6 +651,20 @@ const ImportContent = () => {
     }
 
     console.log(`Found ${studentNames.length} students in Excel file`);
+
+    // Create the course record first
+    const existingCourse = await findExistingCourse(group, level);
+
+    if (existingCourse) {
+      throw new Error(
+        `Import Failed: Duplicate Course Detected\n\n` +
+        `A course with Group "${group}" and Level "${level}" already exists in the database.\n\n` +
+        `Course name: ${existingCourse.name}\n` +
+        `Created: ${existingCourse.startDate || 'Unknown date'}\n\n` +
+        `Please use a different file or delete the existing course before importing.`
+      );
+    }
+
 
     // Create the course record first
     const courseRecord = await createRecord('courses', {
@@ -783,10 +817,10 @@ const ImportContent = () => {
             const [day, month, year] = formattedDate.split('.').map(Number);
             const sessionDate = new Date(year, month - 1, day);
             const today = new Date();
-            
+
             // Set to beginning of the day for accurate comparison
             today.setHours(0, 0, 0, 0);
-            
+
             // Only ongoing if it's today or in the future
             isOngoingSession = sessionDate >= today;
           }
