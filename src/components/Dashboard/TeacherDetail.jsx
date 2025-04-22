@@ -220,6 +220,77 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const groupedSessions = groupSessionsByMonth();
     const totalHours = sessions.length * 1.5; // Simple calculation, can be improved
 
+
+    const formatCourseDates = (course) => {
+        // Default display
+        let startDateDisplay = course.startDate || '-';
+        let endDateDisplay = null;
+        let isOngoing = false;
+
+        // If we have sessions data available, calculate from actual sessions
+        if (sessions.length > 0) {
+            // Filter sessions for this specific course
+            const courseSessions = sessions.filter(session => session.courseId === course.id);
+
+            if (courseSessions.length > 0) {
+                // Sort sessions by date
+                const sortedSessions = [...courseSessions].sort((a, b) => {
+                    if (!a.date || !b.date) return 0;
+
+                    const partsA = a.date.split('.');
+                    const partsB = b.date.split('.');
+
+                    if (partsA.length === 3 && partsB.length === 3) {
+                        const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+                        const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+                        return dateA - dateB;
+                    }
+
+                    return 0;
+                });
+
+                // Get first and last session dates
+                const firstSession = sortedSessions[0];
+                const lastSession = sortedSessions[sortedSessions.length - 1];
+
+                // Update start date if available
+                if (firstSession && firstSession.date) {
+                    startDateDisplay = firstSession.date;
+                }
+
+                // Update end date if available
+                if (lastSession && lastSession.date) {
+                    // Check if the last session is in the future
+                    const parts = lastSession.date.split('.');
+                    if (parts.length === 3) {
+                        const sessionDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        if (sessionDate >= today) {
+                            isOngoing = true;
+                        } else {
+                            endDateDisplay = lastSession.date;
+                        }
+                    } else {
+                        endDateDisplay = lastSession.date;
+                    }
+                } else {
+                    isOngoing = true;
+                }
+            }
+        } else {
+            // Fallback to course.endDate
+            endDateDisplay = course.endDate;
+            // If no end date, mark as ongoing
+            if (!endDateDisplay) {
+                isOngoing = true;
+            }
+        }
+
+        return { startDateDisplay, endDateDisplay, isOngoing };
+    };
+
     return (
         <div className="course-detail-container">
             <div className="course-detail-header">
@@ -331,32 +402,39 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {courses.map((course) => (
-                                        <tr
-                                            key={course.id}
-                                            className="clickable-row"
-                                            onClick={() => handleCourseSelect(course.id)}
-                                        >
-                                            <td>{course.name}</td>
-                                            <td>{course.level}</td>
-                                            <td>{course.sessionIds ? course.sessionIds.length : 0}</td>
-                                            <td>
-                                                {course.startDate} - {course.endDate || 'heute'}
-                                            </td>
-                                            <td>{course.studentIds ? course.studentIds.length : 0}</td>
-                                            <td>
-                                                <button
-                                                    className="btn-details"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleCourseSelect(course.id);
-                                                    }}
-                                                >
-                                                    Details ansehen
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {courses.map((course) => {
+                                        const { startDateDisplay, endDateDisplay, isOngoing } = formatCourseDates(course);
+                                        return (
+                                            <tr
+                                                key={course.id}
+                                                className="clickable-row"
+                                                onClick={() => handleCourseSelect(course.id)}
+                                            >
+                                                <td>{course.name}</td>
+                                                <td>{course.level}</td>
+                                                <td>{course.sessionIds ? course.sessionIds.length : 0}</td>
+                                                <td>
+                                                    {startDateDisplay} - {isOngoing ? (
+                                                        <span className="status-badge ongoing">Ongoing</span>
+                                                    ) : (
+                                                        endDateDisplay || '-'
+                                                    )}
+                                                </td>
+                                                <td>{course.studentIds ? course.studentIds.length : 0}</td>
+                                                <td>
+                                                    <button
+                                                        className="btn-details"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleCourseSelect(course.id);
+                                                        }}
+                                                    >
+                                                        Details ansehen
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         ) : (
