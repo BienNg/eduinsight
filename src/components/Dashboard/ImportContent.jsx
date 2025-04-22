@@ -136,11 +136,11 @@ const ImportContent = () => {
       // Check if teacher already exists
       const teachers = await getAllRecords('teachers');
       const existingTeacher = teachers.find(t => t.name === teacherName);
-  
+
       if (existingTeacher) {
         return existingTeacher;
       }
-  
+
       // Create new teacher
       return await createRecord('teachers', {
         name: teacherName,
@@ -251,6 +251,7 @@ const ImportContent = () => {
     }
   };
 
+  // Modify the validateExcelFile function in ImportContent.jsx
   const validateExcelFile = async (arrayBuffer, filename) => {
     const errors = [];
 
@@ -328,6 +329,13 @@ const ImportContent = () => {
       const sessionsStartRow = headerRowIndex + 1;
       let currentSessionTitle = null;
       let sessionCount = 0;
+      let lastKnownDate = null;
+
+      // Get current date for comparison with session dates
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+      const currentYear = currentDate.getFullYear();
+
 
       for (let i = sessionsStartRow; i < jsonData.length; i++) {
         const row = jsonData[i];
@@ -347,33 +355,99 @@ const ImportContent = () => {
           // Validate date if column exists
           if (dateIndex !== -1) {
             const dateValue = row[dateIndex];
-            if (!dateValue) {
-              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a date.`);
-            } else if (typeof dateValue === 'string' && !dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-              errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid date format "${dateValue}". Expected format: DD.MM.YYYY`);
+
+            if (dateValue) {
+              // Store as last known date if valid
+              if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+                lastKnownDate = dateValue;
+
+                // Check if this session is in the current month
+                const [day, month, year] = dateValue.split('.').map(Number);
+                const isCurrentMonth = month === currentMonth && year === currentYear;
+
+                // Skip validation of incomplete data for current month sessions
+                if (isCurrentMonth) {
+                  continue;
+                }
+              }
+              // Handle Excel numeric dates
+              else if (typeof dateValue === 'number') {
+                // This is an Excel numeric date, it's valid but needs conversion
+                // We'll handle the conversion during processing, for validation we just accept it
+                try {
+                  const jsDate = excelDateToJSDate(dateValue);
+                  const formattedDate = formatDate(jsDate);
+                  lastKnownDate = formattedDate;
+
+                  if (jsDate) {
+                    const month = jsDate.getMonth() + 1;
+                    const year = jsDate.getFullYear();
+                    const isCurrentMonth = month === currentMonth && year === currentYear;
+
+                    if (isCurrentMonth) {
+                      continue;
+                    }
+                  }
+                } catch (e) {
+                  errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid numeric date value "${dateValue}".`);
+                }
+              }
+              else if (!(typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/))) {
+                errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid date format "${dateValue}". Expected format: DD.MM.YYYY`);
+              }
+            } else {
+              // If date is missing but we have a previous date, this is likely a continuation
+              // No error for this case, as we'll use the last known date during processing
+              if (!lastKnownDate) {
+                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a date and no previous date is available.`);
+              }
             }
           }
 
-          // Validate time values if columns exist
-          if (startTimeIndex !== -1) {
-            const startTimeValue = row[startTimeIndex];
-            if (!startTimeValue) {
-              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a start time.`);
-            }
-          }
+          // Validate time values for sessions not in current month
+          const dateValue = row[dateIndex];
+          if (dateValue) {
+            let isCurrentMonth = false;
 
-          if (endTimeIndex !== -1) {
-            const endTimeValue = row[endTimeIndex];
-            if (!endTimeValue) {
-              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing an end time.`);
+            if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+              const [day, month, year] = dateValue.split('.').map(Number);
+              isCurrentMonth = month === currentMonth && year === currentYear;
             }
-          }
+            else if (typeof dateValue === 'number') {
+              try {
+                const jsDate = excelDateToJSDate(dateValue);
+                if (jsDate) {
+                  const month = jsDate.getMonth() + 1;
+                  const year = jsDate.getFullYear();
+                  isCurrentMonth = month === currentMonth && year === currentYear;
+                }
+              } catch (e) {
+                // Error handling for invalid numeric date is already done above
+              }
+            }
 
-          // Validate teacher if column exists
-          if (teacherIndex !== -1) {
-            const teacherValue = row[teacherIndex];
-            if (!teacherValue) {
-              errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information.`);
+            if (!isCurrentMonth) {
+              // Leave the rest of your validation code for times and teacher unchanged
+              if (startTimeIndex !== -1) {
+                const startTimeValue = row[startTimeIndex];
+                if (!startTimeValue) {
+                  errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a start time.`);
+                }
+              }
+
+              if (endTimeIndex !== -1) {
+                const endTimeValue = row[endTimeIndex];
+                if (!endTimeValue) {
+                  errors.push(`Row ${i + 1}: Session "${folienValue}" is missing an end time.`);
+                }
+              }
+
+              if (teacherIndex !== -1) {
+                const teacherValue = row[teacherIndex];
+                if (!teacherValue) {
+                  errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information.`);
+                }
+              }
             }
           }
         }
@@ -598,6 +672,12 @@ const ImportContent = () => {
     let monthIds = new Set();
     let firstSessionDate = null;
     let lastSessionDate = null;
+    let lastKnownDate = null;
+
+    // Get current date for comparison with session dates
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+    const currentYear = currentDate.getFullYear();
 
     for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
       const row = jsonData[i];
@@ -668,15 +748,20 @@ const ImportContent = () => {
 
           // Format date and times
           let formattedDate = '';
+          let isOngoingSession = false;
+
           if (dateValue) {
             if (typeof dateValue === 'string' && dateValue.includes('.')) {
               formattedDate = dateValue;
+              lastKnownDate = formattedDate;
             } else {
               try {
                 const jsDate = excelDateToJSDate(dateValue);
                 formattedDate = formatDate(jsDate);
+                lastKnownDate = formattedDate;
               } catch (e) {
                 formattedDate = String(dateValue);
+                lastKnownDate = formattedDate;
               }
             }
 
@@ -686,6 +771,17 @@ const ImportContent = () => {
             }
             if (!lastSessionDate || formattedDate > lastSessionDate) {
               lastSessionDate = formattedDate;
+            }
+          } else if (lastKnownDate) {
+            // Use the last known date if current date is empty
+            formattedDate = lastKnownDate;
+            isOngoingSession = true;
+          }
+
+          if (formattedDate) {
+            const [day, month, year] = formattedDate.split('.').map(Number);
+            if (month === currentMonth && year === currentYear) {
+              isOngoingSession = true;
             }
           }
 
@@ -737,7 +833,8 @@ const ImportContent = () => {
             message: messageValue || '',
             contentItems: [],
             attendance: {},
-            monthId: monthId
+            monthId: monthId,
+            status: isOngoingSession ? 'ongoing' : 'completed' // Set status based on ongoing session
           };
 
           console.log(`Created new session: ${folienTitle} on ${formattedDate}`);
