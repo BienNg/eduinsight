@@ -1,6 +1,6 @@
 // src/components/Dashboard/SchulerContent.jsx
 import { useState, useEffect, useMemo } from 'react';
-import { getAllRecords, getRecordById, deleteRecord } from '../../firebase/database';
+import { getAllRecords, getRecordById } from '../../firebase/database';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faFilter, faUserGraduate, faChalkboardTeacher, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import StudentDetailModal from './StudentDetailModal';
@@ -20,21 +20,6 @@ const SchulerContent = () => {
   const [attendanceFilter, setAttendanceFilter] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
-
-  // Then add the handleDelete function inside your SchulerContent component
-  const handleDelete = async (studentId) => {
-    try {
-      // Delete the student record from Firebase
-      await deleteRecord('students', studentId);
-
-      // Update local state to remove the deleted student
-      setStudents(prevStudents => prevStudents.filter(student => student.id !== studentId));
-
-    } catch (error) {
-      console.error("Error deleting student:", error);
-      setError("Failed to delete student. Please try again.");
-    }
-  };
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -413,23 +398,12 @@ const SchulerContent = () => {
                     </td>
                     <td>{student.joinDate || '-'}</td>
                     <td>
-                      <div className="button-group" style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          className="btn-delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(student.id);
-                          }}
-                        >
-                          Löschen
-                        </button>
-                        <button
-                          className="btn-details"
-                          onClick={() => handleViewDetails(student)}
-                        >
-                          Details
-                        </button>
-                      </div>
+                      <button
+                        className="btn-details"
+                        onClick={() => handleViewDetails(student)}
+                      >
+                        Details
+                      </button>
                     </td>
                   </tr>
                 ))}

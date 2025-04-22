@@ -7,6 +7,79 @@ import { ref, push, set, get, update, remove, query, orderByChild, equalTo } fro
 import { database } from "../../firebase/config";
 import './Content.css';
 
+// Add at the top of the component, after imports
+const findColumnIndex = (headerRow, columnNames) => {
+  // Ensure columnNames is always an array
+  const searchNames = Array.isArray(columnNames) ? columnNames : [columnNames];
+
+  // Create strict mapping for date column
+  const dateColumnVariations = [
+    'Datum',
+    'Date',
+    'Unterrichtstag',
+    'Tag',
+    'Day'
+  ];
+
+  // Special handling for date column
+  if (searchNames.some(name => ['Datum', 'Date', 'Unterrichtstag'].includes(name))) {
+    for (let i = 0; i < headerRow.length; i++) {
+      const cell = headerRow[i];
+      if (cell && typeof cell === 'string') {
+        const cellText = cell.toString().trim();
+        // Use exact match for date column
+        if (dateColumnVariations.includes(cellText)) {
+          console.log(`Found date column "${cellText}" at index ${i}`);
+          return i;
+        }
+      }
+    }
+    return -1;
+  }
+
+  // For other columns, use existing logic with variations
+  const columnVariations = {
+    'von': ['von', 'from', 'start', 'Von'],
+    'bis': ['bis', 'to', 'end', 'Bis'],
+    'lehrer': ['lehrer', 'teacher', 'Lehrer'],
+    'folien': ['folien', 'slides', 'Folien'],
+    'inhalt': ['inhalt', 'content', 'Inhalt'],
+    'notizen': ['notizen', 'notes', 'Notizen']
+  };
+
+  // Search for exact matches first
+  for (let i = 0; i < headerRow.length; i++) {
+    const cell = headerRow[i];
+    if (!cell) continue;
+
+    const cellText = cell.toString().trim().toLowerCase();
+    for (const name of searchNames) {
+      if (cellText === name.toLowerCase()) {
+        console.log(`Found exact match for "${name}" at index ${i}`);
+        return i;
+      }
+    }
+  }
+
+  // Then try variations
+  for (let i = 0; i < headerRow.length; i++) {
+    const cell = headerRow[i];
+    if (!cell) continue;
+
+    const cellText = cell.toString().trim().toLowerCase();
+    for (const name of searchNames) {
+      const variations = columnVariations[name.toLowerCase()] || [];
+      if (variations.some(v => cellText.includes(v.toLowerCase()))) {
+        console.log(`Found variation match for "${name}" at index ${i}`);
+        return i;
+      }
+    }
+  }
+
+  console.log(`Could not find column for: ${searchNames.join(', ')}`);
+  return -1;
+};
+
 const ImportContent = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -294,22 +367,6 @@ const ImportContent = () => {
         ["Lehrer", "lehrer", "Teacher"]
       ];
 
-      // Function to find column index by partial match
-      const findColumnIndex = (headerRow, columnNames) => {
-        // Handle both string and array input
-        const namesToCheck = Array.isArray(columnNames) ? columnNames : [columnNames];
-      
-        // Look for any of the possible column names (case-insensitive)
-        for (const name of namesToCheck) {
-          const index = headerRow.findIndex(cell =>
-            cell && typeof cell === 'string' && 
-            cell.toLowerCase().includes(name.toLowerCase())
-          );
-          if (index !== -1) return index;
-        }
-        return -1;
-      };
-
       // Check only the crucial columns
       for (const column of requiredColumns) {
         const columnIndex = findColumnIndex(headerRow, column);
@@ -482,22 +539,67 @@ const ImportContent = () => {
     }
   };
 
-  // Helper functions
+  // Update the excelDateToJSDate function
   const excelDateToJSDate = (excelDate) => {
-    if (!excelDate) return '';
+    if (!excelDate) return null;
 
-    const date = new Date((excelDate - 1) * 24 * 60 * 60 * 1000 + new Date(1900, 0, 1).getTime());
-    return date;
+    // If it's already a string in DD.MM.YYYY format, return as is
+    if (typeof excelDate === 'string' && excelDate.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+      const [day, month, year] = excelDate.split('.').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    // Handle Excel serial date numbers
+    if (typeof excelDate === 'number') {
+      // Excel's date system has a leap year bug from 1900
+      const excelEpoch = new Date(1899, 11, 30);
+      const millisecondsPerDay = 24 * 60 * 60 * 1000;
+      const date = new Date(excelEpoch.getTime() + (excelDate * millisecondsPerDay));
+
+      // Validate the converted date
+      if (date.getFullYear() === 1900 && date.getMonth() === 0 && date.getDate() === 1) {
+        console.warn('Invalid Excel date detected:', excelDate);
+        return null;
+      }
+
+      return date;
+    }
+
+    return null;
   };
 
+  // Update the formatDate function to handle invalid dates
   const formatDate = (jsDate) => {
-    if (!jsDate || !(jsDate instanceof Date) || isNaN(jsDate)) return '';
+    if (!jsDate || !(jsDate instanceof Date) || isNaN(jsDate)) {
+      console.warn('Invalid date object:', jsDate);
+      return '';
+    }
+
+    // Validate the year is reasonable (e.g., between 2020 and 2030)
+    const year = jsDate.getFullYear();
+    if (year < 2020 || year > 2030) {
+      console.warn('Suspicious year detected:', year);
+      return '';
+    }
 
     const day = jsDate.getDate().toString().padStart(2, '0');
     const month = (jsDate.getMonth() + 1).toString().padStart(2, '0');
-    const year = jsDate.getFullYear();
-
     return `${day}.${month}.${year}`;
+  };
+
+  // First add the helper functions at the top level
+  const isValidDate = (dateString) => {
+    if (!dateString) return false;
+
+    // Handle string dates in DD.MM.YYYY format
+    if (typeof dateString === 'string') {
+      const [day, month, year] = dateString.split('.').map(Number);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(year, month - 1, day);
+        return date.getFullYear() >= 2020 && date.getFullYear() <= 2030;
+      }
+    }
+    return false;
   };
 
   const formatTime = (value) => {
@@ -564,9 +666,6 @@ const ImportContent = () => {
   };
 
   const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
-    console.log('Starting Excel file processing with new database structure...');
-    console.log('Filename:', filename);
-
 
     // Use XLSX and ExcelJS to parse the file
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -632,67 +731,22 @@ const ImportContent = () => {
 
     console.log("Full header row:", headerRow);
 
-    // Function to find column index by partial match with improved case-insensitivity
-    const findColumnIndex = (headerRow, columnNames) => {
-      // Handle both string and array input
-      const namesToCheck = Array.isArray(columnNames) ? columnNames : [columnNames];
-
-      // Create mapping for common column translations
-      const columnVariations = {
-        'von': ['von', 'from', 'start', 'beginn', 'Von'],
-        'bis': ['bis', 'to', 'end', 'ende', 'Bis'],
-        'lehrer': ['lehrer', 'teacher', 'Lehrer'],
-        'datum': ['datum', 'date', 'tag', 'unterrichtstag', 'Datum', 'Tag'],
-        'folien': ['folien', 'slides', 'Folien'],
-        'inhalt': ['inhalt', 'content', 'Inhalt'],
-        'notizen': ['notizen', 'notes', 'Notizen']
-      };
-
-      // Expand search terms with variations if available
-      const expandedTerms = namesToCheck.flatMap(name => {
-        // Find all variations for this column if they exist
-        for (const [key, variations] of Object.entries(columnVariations)) {
-          if (variations.includes(name.toLowerCase())) {
-            return variations;
-          }
-        }
-        return [name]; // Return original if no variations found
-      });
-
-      // Search the entire header row for any of the possible column names
-      for (let i = 0; i < headerRow.length; i++) {
-        const cell = headerRow[i];
-        if (cell && typeof cell === 'string') {
-          const cellText = cell.trim();
-          // Check if the cell matches any of the specified column names (case-insensitive)
-          for (const term of expandedTerms) {
-            if (cellText.toLowerCase().includes(term.toLowerCase())) {
-              console.log(`Found column "${term}" at position ${i}: "${cellText}"`);
-              return i;
-            }
-          }
-        }
-      }
-
-      console.log(`Could not find any of these columns: ${namesToCheck.join(', ')}`);
-      return -1;
-    };
-
     // Map column indices for crucial data
     const columnIndices = {
-      folien: findColumnIndex(headerRow, ["Folien", "folien"]),
-      inhalt: findColumnIndex(headerRow, ["Inhalt", "inhalt"]),
-      notizen: findColumnIndex(headerRow, ["Notizen", "notizen"]),
-      checked: findColumnIndex(headerRow, ["die Folien gecheckt", "gecheckt", "checked"]),
-      gemacht: findColumnIndex(headerRow, ["gemacht", "made", "done"]),
-      date: findColumnIndex(headerRow, ["Unterrichtstag", "Datum", "Tag", "Date", "Day"]),
-      startTime: findColumnIndex(headerRow, ["von", "Von", "from"]),
-      endTime: findColumnIndex(headerRow, ["bis", "Bis", "to"]),
-      teacher: findColumnIndex(headerRow, ["Lehrer", "lehrer", "Teacher"]),
-      message: findColumnIndex(headerRow, ["Nachrichten", "Messages"])
+      folien: findColumnIndex(headerRow, ["Folien"]),
+      inhalt: findColumnIndex(headerRow, ["Inhalt"]),
+      notizen: findColumnIndex(headerRow, ["Notizen"]),
+      checked: findColumnIndex(headerRow, ["die Folien gecheckt"]),
+      gemacht: findColumnIndex(headerRow, ["gemacht"]),
+      date: findColumnIndex(headerRow, ["Datum", "Date", "Unterrichtstag"]), // More specific date column detection
+      startTime: findColumnIndex(headerRow, ["von"]),
+      endTime: findColumnIndex(headerRow, ["bis"]),
+      teacher: findColumnIndex(headerRow, ["Lehrer"]),
+      message: findColumnIndex(headerRow, ["Nachrichten"])
     };
-
-    console.log("Column mapping:", columnIndices);
+    
+    // Add debug logging
+    console.log("Found date column at index:", columnIndices.date);
 
     // Extract student information
     const students = [];
@@ -849,33 +903,36 @@ const ImportContent = () => {
           // Format date and times
           let formattedDate = '';
           let isOngoingSession = false;
+          const dateValue = getValue(columnIndices.date);
 
           if (dateValue) {
             if (typeof dateValue === 'string' && dateValue.includes('.')) {
+              // Handle string dates in DD.MM.YYYY format
               formattedDate = dateValue;
-              lastKnownDate = formattedDate;
-            } else {
-              try {
-                const jsDate = excelDateToJSDate(dateValue);
-                formattedDate = formatDate(jsDate);
-                lastKnownDate = formattedDate;
-              } catch (e) {
-                formattedDate = String(dateValue);
-                lastKnownDate = formattedDate;
+            } else if (typeof dateValue === 'number') {
+              // Handle Excel serial date
+              const jsDate = excelDateToJSDate(dateValue);
+              if (jsDate) {
+                const day = jsDate.getDate().toString().padStart(2, '0');
+                const month = (jsDate.getMonth() + 1).toString().padStart(2, '0');
+                const year = jsDate.getFullYear();
+                formattedDate = `${day}.${month}.${year}`;
               }
             }
 
-            // Update first and last session dates
-            if (!firstSessionDate || formattedDate < firstSessionDate) {
-              firstSessionDate = formattedDate;
+            // Get or create month record first
+            let monthId = null;
+            if (formattedDate) {
+              try {
+                const monthRecord = await getOrCreateMonthRecord(formattedDate);
+                if (monthRecord) {
+                  monthId = monthRecord.id;
+                  monthIds.add(monthId);
+                }
+              } catch (error) {
+                console.error(`Error getting/creating month record for date ${formattedDate}:`, error);
+              }
             }
-            if (!lastSessionDate || formattedDate > lastSessionDate) {
-              lastSessionDate = formattedDate;
-            }
-          } else if (lastKnownDate) {
-            // Use the last known date if current date is empty
-            formattedDate = '';
-            isOngoingSession = true;
           }
 
           // Only mark as ongoing if the date is in the current month or future
@@ -932,17 +989,28 @@ const ImportContent = () => {
             notes: notesValue || '',
             checked: checkedValue === 'TRUE',
             completed: completedValue === 'TRUE',
-            date: formattedDate,
-            startTime: formattedStartTime,
-            endTime: formattedEndTime,
-            teacherId: teacherId,
+            date: formattedDate || lastKnownDate || '',  // Use formattedDate first, then fallback to lastKnownDate
+            startTime: formatTime(startTimeValue),
+            endTime: formatTime(endTimeValue),
+            teacherId: teacherId || '',  // Use the teacherId we got from createTeacherRecord
             message: messageValue || '',
             contentItems: [],
             attendance: {},
-            monthId: monthId,
-            status: isOngoingSession ? 'ongoing' : 'completed' // Set status based on ongoing session
+            monthId: monthId,  // Set the monthId we just got
+            status: isOngoingSession ? 'ongoing' : 'completed'
           };
+          // Update lastKnownDate if we have a valid date
+          if (formattedDate) {
+            lastKnownDate = formattedDate;
 
+            // Update first/last session dates for the course
+            if (!firstSessionDate || formattedDate < firstSessionDate) {
+              firstSessionDate = formattedDate;
+            }
+            if (!lastSessionDate || formattedDate > lastSessionDate) {
+              lastSessionDate = formattedDate;
+            }
+          }
           console.log(`Created new session: ${folienTitle} on ${formattedDate}`);
         }
         // If it's the same title but a new row with content, we might need to update the current session

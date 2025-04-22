@@ -186,38 +186,3 @@
       overflow-x: auto;
     }
   }
-
-  /* Add to your SchulerContent.css file */
-.button-group {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-delete, .btn-details {
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  font-size: 14px;
-  min-width: 80px;
-  text-align: center;
-}
-
-.btn-delete {
-  background-color: #e53935;
-  color: white;
-}
-
-.btn-details {
-  background-color: #1e88e5;
-  color: white;
-}
-
-.btn-delete:hover {
-  background-color: #c62828;
-}
-
-.btn-details:hover {
-  background-color: #1565c0;
-}
