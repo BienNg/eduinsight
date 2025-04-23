@@ -29,20 +29,20 @@ const TeacherDetail = ({ teacherId, onClose }) => {
         const fetchTeacherDetails = async () => {
             try {
                 setLoading(true);
-    
+
                 // Fetch teacher data
                 const teacherData = await getRecordById('teachers', teacherId);
                 if (!teacherData) {
                     throw new Error("Teacher not found");
                 }
                 setTeacher(teacherData);
-    
+
                 // Fetch course data
                 const coursesData = await Promise.all(
                     (teacherData.courseIds || []).map(courseId => getRecordById('courses', courseId))
                 );
                 setCourses(coursesData.filter(c => c !== null));
-    
+
                 // Collect all session IDs from all courses
                 const allSessionIds = [];
                 coursesData.forEach(course => {
@@ -50,42 +50,42 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                         allSessionIds.push(...course.sessionIds);
                     }
                 });
-    
+
                 // Fetch all sessions
                 const sessionsData = await Promise.all(
                     allSessionIds.map(sessionId => getRecordById('sessions', sessionId))
                 );
-                
+
                 // Filter sessions where this teacher is the assigned teacher
                 const validSessions = sessionsData
                     .filter(s => s !== null)
                     .filter(s => s.teacherId === teacherId); // This is the key change
-    
+
                 // Sort sessions by date
                 const sortedSessions = validSessions.sort((a, b) => {
                     if (!a.date || !b.date) return 0;
-    
+
                     const partsA = a.date.split('.');
                     const partsB = b.date.split('.');
-    
+
                     if (partsA.length === 3 && partsB.length === 3) {
                         const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
                         const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
                         return dateA - dateB;
                     }
-    
+
                     return 0;
                 });
-    
+
                 setSessions(sortedSessions);
-    
+
                 // Fetch month data and group sessions by month (using filtered sessions)
                 const monthIds = new Set(validSessions.map(session => session.monthId).filter(id => id));
                 const monthsData = await Promise.all(
                     Array.from(monthIds).map(monthId => getRecordById('months', monthId))
                 );
                 setMonths(monthsData.filter(m => m !== null));
-    
+
             } catch (err) {
                 console.error("Error fetching teacher details:", err);
                 setError("Failed to load teacher details.");
@@ -93,7 +93,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 setLoading(false);
             }
         };
-    
+
         if (teacherId) {
             fetchTeacherDetails();
         }
@@ -418,7 +418,14 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                             >
                                                 <td>{course.name}</td>
                                                 <td>{course.level}</td>
-                                                <td>{course.sessionIds ? course.sessionIds.length : 0}</td>
+                                                <td>
+                                                    {
+                                                        // Count only sessions in this course taught by the current teacher
+                                                        sessions.filter(
+                                                            (session) => session.courseId === course.id && session.teacherId === teacher.id
+                                                        ).length
+                                                    }
+                                                </td>
                                                 <td>
                                                     {startDateDisplay} - {isOngoing ? (
                                                         <span className="status-badge ongoing">Ongoing</span>
