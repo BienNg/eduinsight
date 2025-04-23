@@ -1,6 +1,7 @@
 // src/components/Dashboard/CourseDetail.jsx
 import { useState, useEffect } from 'react';
-import { getRecordById, deleteRecord } from '../../firebase/database';
+import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '../../firebase/database';
+import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
 import SessionDetailModal from './SessionDetailModal';
 import StudentDetailModal from './StudentDetailModal';
 import './CourseDetail.css';
@@ -21,18 +22,8 @@ const CourseDetail = ({ courseId, onClose }) => {
     const [showOptions, setShowOptions] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    const handleDeleteCourse = async () => {
-        if (!window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
-        setDeleting(true);
-        try {
-            await deleteRecord('courses', courseId);
-            onClose();
-        } catch (err) {
-            alert('Failed to delete course.');
-        } finally {
-            setDeleting(false);
-            setShowOptions(false);
-        }
+    const onDeleteCourse = (courseId, courseName, event) => {
+        handleDeleteCourse(courseId, courseName, null, null, setError, event);
     };
 
     // Add this function to handle column header clicks
@@ -336,7 +327,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                             <div className="more-options-menu">
                                 <button
                                     className="option-item"
-                                    onClick={handleDeleteCourse}
+                                    onClick={e => onDeleteCourse(course.id, course.name, e)}
                                     disabled={deleting}
                                 >
                                     {deleting ? 'Deleting...' : 'Delete Course'}
