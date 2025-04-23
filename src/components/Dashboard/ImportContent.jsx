@@ -8,6 +8,7 @@ import { ref, push, set, get, update, remove, query, orderByChild, equalTo } fro
 import { database } from "../../firebase/config";
 import './Content.css';
 import ErrorSummary from './ErrorSummary';
+import { FOCUS_IMPORT_TAB_EVENT } from './ImportContext';
 
 // Add at the top of the component, after imports
 const findColumnIndex = (headerRow, columnNames) => {
@@ -1159,8 +1160,33 @@ const ImportContent = () => {
     clearFailedFiles
   } = useImport();
 
+  const importTabRef = useRef(null);
+
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    // Function to handle focusing the import tab
+    const handleFocusImportTab = () => {
+      if (importTabRef.current) {
+        // Focus the tab element
+        importTabRef.current.scrollIntoView({ behavior: 'smooth' });
+        importTabRef.current.focus();
+
+        // You might also need to programmatically select the tab if using a tab component
+        // For example:
+        // setActiveTab('import');
+      }
+    };
+
+    // Listen for the custom event
+    window.addEventListener(FOCUS_IMPORT_TAB_EVENT, handleFocusImportTab);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener(FOCUS_IMPORT_TAB_EVENT, handleFocusImportTab);
+    };
+  }, []);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -1196,7 +1222,7 @@ const ImportContent = () => {
   };
 
   return (
-    <div className="import-content">
+    <div className="import-content" ref={importTabRef} tabIndex="-1">
       <h2>Excel Import</h2>
       <div className="import-container" style={{ marginTop: '24px' }}>
         <div className="import-card" style={{

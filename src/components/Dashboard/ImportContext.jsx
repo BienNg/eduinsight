@@ -1,8 +1,12 @@
-// src/components/Dashboard/ImportContext.jsx
+// In ImportContext.jsx - Updated toast implementation
 import { createContext, useContext, useState, useEffect } from 'react';
 import TimeColumnsModal from './TimeColumnsModal';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+
+// Create a custom event for focusing the import tab
+export const FOCUS_IMPORT_TAB_EVENT = 'focusImportTab';
 
 const ImportContext = createContext(null);
 
@@ -13,10 +17,29 @@ export const ImportProvider = ({ children }) => {
   const [failedFiles, setFailedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Add new state for modal
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
+
+
+
+  // Helper function for navigating to import tab
+  const navigateToImport = () => {
+    // If we're already on the import page, dispatch a custom event to focus the tab
+    if (location.pathname === '/import') {
+      window.dispatchEvent(new CustomEvent(FOCUS_IMPORT_TAB_EVENT));
+    } else {
+      // Otherwise navigate to the import page
+      navigate('/import');
+
+      // After navigation, dispatch the event after a small delay to ensure components are mounted
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent(FOCUS_IMPORT_TAB_EVENT));
+      }, 100);
+    }
+  };
 
   // Process files sequentially when the queue changes
   useEffect(() => {
@@ -28,14 +51,11 @@ export const ImportProvider = ({ children }) => {
         // Create a toast ID for this file
         const toastId = `import-${currentFile.id}`;
 
-        // Show processing toast
+        // Show processing toast - entire toast clickable
         toast.loading(`Processing ${currentFile.name}...`, {
           id: toastId,
           duration: Infinity, // stays until dismissed or updated
-          action: {
-            label: 'View Import',
-            onClick: () => navigate('/import')
-          }
+          onClick: navigateToImport
         });
 
         try {
@@ -54,14 +74,11 @@ export const ImportProvider = ({ children }) => {
             status: 'completed',
             progress: 100
           }]);
-          // Update toast to success
+          // Update toast to success - entire toast clickable
           toast.success(`Successfully imported ${currentFile.name}`, {
             id: toastId,
             duration: 5000,
-            action: {
-              label: 'View Import',
-              onClick: () => navigate('/import')
-            }
+            onClick: () => navigateToImport()
           });
         } catch (error) {
           // Add to failed files
@@ -71,15 +88,12 @@ export const ImportProvider = ({ children }) => {
             error: error.message
           }]);
 
-          // Update toast to error
+          // Update toast to error - entire toast clickable
           toast.error(`Failed to import ${currentFile.name}`, {
             id: toastId,
             duration: 5000,
             description: error.message.substring(0, 100) + (error.message.length > 100 ? '...' : ''),
-            action: {
-              label: 'View Error',
-              onClick: () => navigate('/import')
-            }
+            onClick: navigateToImport
           });
         } finally {
           // Remove from queue
@@ -101,7 +115,8 @@ export const ImportProvider = ({ children }) => {
       if (progress % 20 === 0) { // Update less frequently to avoid performance issues
         toast.loading(`Processing ${currentFile.name}... ${progress}%`, {
           id: toastId,
-          duration: Infinity
+          duration: Infinity,
+          onClick: navigateToImport
         });
       }
 
@@ -131,15 +146,12 @@ export const ImportProvider = ({ children }) => {
       error: null
     }));
 
-    // Show toast notification for queued files
+    // Show toast notification for queued files - entire toast clickable
     if (filteredFiles.length > 0) {
       toast.info(`${filteredFiles.length} file(s) added to queue`, {
         description: filteredFiles.map(f => f.name).join(', ').substring(0, 60) +
           (filteredFiles.map(f => f.name).join(', ').length > 60 ? '...' : ''),
-        action: {
-          label: 'View Queue',
-          onClick: () => navigate('/import')
-        }
+        onClick: navigateToImport
       });
     }
 
@@ -156,6 +168,7 @@ export const ImportProvider = ({ children }) => {
       toast.error(`${invalidFiles.length} unsupported file(s)`, {
         id: toastId,
         description: 'Only Excel files (.xlsx, .xls, .csv) are supported.',
+        onClick: navigateToImport
       });
 
       setFailedFiles(prev => [
@@ -170,7 +183,6 @@ export const ImportProvider = ({ children }) => {
       ]);
     }
   };
-
   const clearCompletedFiles = () => {
     setCompletedFiles([]);
   };
@@ -267,14 +279,11 @@ export const ImportProvider = ({ children }) => {
     setShowTimeModal(false);
     setPendingFile(null);
 
-    // Show toast for cancelled import
+    // Show toast for cancelled import - entire toast clickable
     toast.error(`Import cancelled for ${pendingFileName}`, {
       id: toastId,
       duration: 5000,
-      action: {
-        label: 'View Import',
-        onClick: () => navigate('/import')
-      }
+      onClick: navigateToImport
     });
 
     // Add to failed files

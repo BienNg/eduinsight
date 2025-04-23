@@ -8,6 +8,7 @@ const ToastProvider = () => {
       toastOptions={{
         style: {
           fontSize: '14px',
+          cursor: 'pointer',  // Make it clear it's clickable
         },
         className: 'custom-toast',
         success: {
