@@ -619,6 +619,12 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
   const group = groupMatch ? `G${groupMatch[1]}` : '';
   const courseName = `${group} ${level}`;
 
+  // Extract online/offline status
+  const onlineMatch = filename.match(/_online/i);
+  const offlineMatch = filename.match(/_offline/i);
+  const courseType = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
+
+
   const findExistingCourse = async (group, level) => {
     try {
       const coursesRef = ref(database, 'courses');
@@ -716,6 +722,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
     name: courseName,
     level: level,
     group: group,
+    courseType: courseType, // Add the new field
     startDate: '', // Will be updated with the first session date
     endDate: '', // Will be updated with the last session date
     sessionIds: [],
