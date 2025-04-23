@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import { getAllRecords } from '../../firebase/database';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChalkboardTeacher, faUserGraduate, faClock, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import './MonthDetail.css'; // We'll create this file next
+import './MonthDetail.css';
 import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
+import { calculateTotalHours } from '../../utils/timeUtils';
 
 const MonatContent = () => {
   const [months, setMonths] = useState([]);
@@ -43,15 +44,8 @@ const MonatContent = () => {
           // Get sessions for this month
           const monthSessions = sessionsData.filter(session => session.monthId === month.id);
 
-          // Calculate hours (assuming 1.5h per session unless it's a long session)
-          let totalHours = 0;
-          monthSessions.forEach(session => {
-            if (isLongSession(session.startTime, session.endTime)) {
-              totalHours += 2; // 2 hours for long sessions
-            } else {
-              totalHours += 1.5; // 1.5 hours for regular sessions
-            }
-          });
+          // Calculate hours using the timeUtils function (with flat rate)
+          const totalHours = calculateTotalHours(monthSessions);
 
           // Get unique course IDs
           const courseIds = [...new Set(monthSessions.map(session => session.courseId))];
@@ -62,7 +56,6 @@ const MonatContent = () => {
           );
 
           // Get unique teacher IDs
-          // Get unique teacher IDs (corrected for teacherIds array)
           const teacherIds = [...new Set(monthCourses.flatMap(course =>
             course.teacherIds ? course.teacherIds : []
           ))];
@@ -85,26 +78,17 @@ const MonatContent = () => {
             const teacher = teachersData.find(t => t.id === teacherId);
             if (!teacher) return null;
 
-            // Get courses taught by this teacher this month
-            const teacherCourses = monthCourses.filter(c => c.teacherId === teacherId);
+            // Get ALL sessions for this month where this teacher is listed as the teacher
+            const teacherSessions = monthSessions.filter(session => session.teacherId === teacherId);
 
-            // Get sessions taught by this teacher this month
-            const teacherSessions = monthSessions.filter(s =>
-              s.teacherId === teacherId ||
-              (coursesData.find(c => c.id === s.courseId)?.teacherIds || []).includes(teacherId)
-            );
+            // Calculate hours using the timeUtils function (with flat rate)
+            const teacherHours = calculateTotalHours(teacherSessions);
 
-            // Calculate teacher hours
-            let teacherHours = 0;
-            teacherSessions.forEach(session => {
-              if (isLongSession(session.startTime, session.endTime)) {
-                teacherHours += 2;
-              } else {
-                teacherHours += 1.5;
-              }
-            });
+            // Get unique course IDs from the teacher's sessions
+            const teacherCourseIds = [...new Set(teacherSessions.map(session => session.courseId))];
+            const teacherCourses = coursesData.filter(course => teacherCourseIds.includes(course.id));
 
-            // Get student count
+            // Get all students from these courses
             const teacherStudentIds = new Set();
             teacherCourses.forEach(course => {
               if (course.studentIds) {
@@ -181,6 +165,7 @@ const MonatContent = () => {
 
                   return (
                     <div key={month.id} className="month-card">
+
                       <div
                         className="month-card-header"
                         onClick={() => toggleMonthExpansion(month.id)}
