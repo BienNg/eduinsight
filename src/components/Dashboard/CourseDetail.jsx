@@ -330,7 +330,6 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
             <div className="course-detail-container">
 
                 <div className="course-detail-header">
-                    <button className="back-button" onClick={onClose}>← Back</button>
                     <h2>{course.name}</h2>
                     <div className="course-level-badge">{course.level}</div>
                     {/* More Options Button */}

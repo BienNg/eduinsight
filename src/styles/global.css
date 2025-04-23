@@ -1,0 +1,9 @@
+/* Add to your existing CSS file or create global.css */
+p, h1, h2, h3, h4, h5, h6, span, div:not(.clickable):not([role="button"]):not(.clickable-row):not(.btn-details):not(.btn-delete):not([onclick]) {
+    cursor: default !important;
+  }
+  
+  /* Allow clickable items to keep their pointer cursor */
+  a, button, .clickable, [role="button"], .clickable-row, .btn-details, .btn-delete, [onclick] {
+    cursor: pointer;
+  }

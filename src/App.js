@@ -1,5 +1,4 @@
-// src/App.js
-import Dashboard from './components/Dashboard/Dashboard';
+import './styles/global.css';import Dashboard from './components/Dashboard/Dashboard';
 import { ImportProvider } from './components/Dashboard/ImportContext';
 import './App.css';
 
