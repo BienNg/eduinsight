@@ -727,7 +727,8 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
     endDate: '', // Will be updated with the last session date
     sessionIds: [],
     studentIds: [], // We'll update this after creating/getting students
-    teacherIds: [] // <-- Use only teacherIds array
+    teacherIds: [], // <-- Use only teacherIds array
+    status: 'ongoing' // Default status is ongoing
   });
 
   console.log(`Created course record: ${courseRecord.id}`);
@@ -1090,13 +1091,27 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
 
     sessions.push(sessionRecord);
   }
+  // Determine course status based on last session date
+  let courseStatus = 'ongoing';
+  if (lastSessionDate) {
+    const [day, month, year] = lastSessionDate.split('.').map(Number);
+    const lastDate = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // If the last session date is in the past, mark course as completed
+    if (lastDate < today) {
+      courseStatus = 'completed';
+    }
+  }
 
   // Update course with session dates and teacher
   await updateRecord('courses', courseRecord.id, {
     startDate: firstSessionDate || '',
     endDate: lastSessionDate || '',
     sessionIds: courseRecord.sessionIds,
-    teacherIds: Array.from(teacherIds)
+    teacherIds: Array.from(teacherIds),
+    status: courseStatus
   });
 
   // Update teacher records with this course
