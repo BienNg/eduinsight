@@ -383,4 +383,18 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 
+/* In Content.css */
+.level-badge.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.level-badge.clickable:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.level-badge.clickable:active {
+  transform: scale(0.98);
+}
 /* END Kursstufen Badge */

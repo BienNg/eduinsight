@@ -18,6 +18,21 @@ const KlassenContent = () => {
     fetchCourses();
   }, []);
 
+  // Add a function to handle level badge clicks
+  const handleLevelBadgeClick = (groupName, level) => {
+    // Find the first course that matches both group and level
+    const matchingCourse = courses.find(
+      course => course.group === groupName && course.level === level
+    );
+
+    if (matchingCourse) {
+      setSelectedCourseId(matchingCourse.id);
+    } else {
+      // Handle case where no matching course is found
+      alert(`No course found for ${level} in group ${groupName}`);
+    }
+  };
+
   const fetchCourses = async () => {
     try {
       setLoading(true);
@@ -253,7 +268,11 @@ const KlassenContent = () => {
                   <span className="label">Kursstufen:</span>
                   <div className="level-badges-container">
                     {sortLanguageLevels(Array.from(new Set(groupCourses.map(course => course.level)))).map(level => (
-                      <div className="level-badge" key={level}>
+                      <div
+                        className="level-badge clickable"
+                        key={level}
+                        onClick={() => handleLevelBadgeClick(groupName, level)}
+                      >
                         {level}
                       </div>
                     ))}
