@@ -847,6 +847,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
         let teacherId = '';
         if (teacherValue) {
           const teacherRecord = await createTeacherRecord(teacherValue);
+          teacherId = teacherRecord.id;
           teacherIds.add(teacherRecord.id);
 
           // If this is the first teacher we've found, set it as the course's teacher
