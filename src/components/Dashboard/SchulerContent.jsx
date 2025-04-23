@@ -272,7 +272,7 @@ const SchulerContent = () => {
 
   // If a course is selected, show the CourseDetail component
   if (selectedCourseId) {
-    return <CourseDetail 
+    return <CourseDetail
       courseId={selectedCourseId}
       onClose={handleCloseCourseDetail}
     />;
@@ -402,12 +402,22 @@ const SchulerContent = () => {
               <tbody>
                 {filteredStudents.map((student) => (
                   <tr key={student.id}>
-                    <td>{student.name}</td>
+                    <td>
+                      <div className="name-cell">
+                        <span className="name-text">{student.name}</span>
+                        <button
+                          className="hover-open-btn"
+                          onClick={() => handleViewDetails(student)}
+                        >
+                          OPEN
+                        </button>
+                      </div>
+                    </td>
                     <td>
                       <div className="level-badges-container">
                         {student.courses.map((course) => (
-                          <div 
-                            key={course.id} 
+                          <div
+                            key={course.id}
                             className="level-badge clickable"
                             onClick={() => handleCourseClick(course.id)}
                           >
@@ -432,7 +442,6 @@ const SchulerContent = () => {
                   </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
 
