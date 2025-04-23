@@ -386,7 +386,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                                                 className="btn-details"
                                                 onClick={() => openStudentDetail(student)}
                                             >
-                                                View Details
+                                                Details
                                             </button>
                                         </td>
 
@@ -462,7 +462,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                                                 className="btn-details"
                                                 onClick={() => openSessionDetail(session)}
                                             >
-                                                View Details
+                                                Details
                                             </button>
                                         </td>
                                     </tr>
@@ -479,6 +479,7 @@ const CourseDetail = ({ courseId, onClose }) => {
                     students={students}
                     teacher={teacher}
                     onClose={closeSessionDetail}
+                    groupName={course ? course.group : null}
                 />
             )}
             {selectedStudent && (

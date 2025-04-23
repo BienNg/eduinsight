@@ -617,6 +617,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                     students={[]} // Pass relevant students if available
                     teacher={teacher}
                     onClose={closeSessionDetail}
+                    groupName={courses.find(c => c.id === selectedSession.courseId)?.group || null}
                 />
             )}
         </div>

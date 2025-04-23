@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock } from '@fortawesome/free-solid-svg-icons';
 import { isLongSession } from '../../utils/sessionUtils';
 
-const SessionDetailModal = ({ session, students, onClose }) => {
+const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) => {
     // Function to safely render any type of value (reusing from CourseDetail)
     const safelyRenderValue = (value) => {
         if (value === null || value === undefined) {
@@ -68,7 +68,7 @@ const SessionDetailModal = ({ session, students, onClose }) => {
             <div className="session-detail-modal">
                 <div className="modal-header">
                     <div>
-                        <h2>{safelyRenderValue(session.title)}</h2>
+                        <h2>{groupName && `${groupName} | `}{session.title || 'Session Details'}</h2>
                         {isLongSession(session.startTime, session.endTime) && (
                             <div className="session-duration-badge long">
                                 <FontAwesomeIcon icon={faClock} />
