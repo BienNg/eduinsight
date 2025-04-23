@@ -233,7 +233,15 @@ const KlassenContent = () => {
   };
 
   if (selectedCourseId) {
-    return <CourseDetail courseId={selectedCourseId} onClose={handleCloseCourseDetails} />;
+    // Find the course to get its group
+    const selectedCourse = courses.find(course => course.id === selectedCourseId);
+    const groupName = selectedCourse ? selectedCourse.group : null;
+
+    return <CourseDetail
+      courseId={selectedCourseId}
+      onClose={handleCloseCourseDetails}
+      groupName={groupName}
+    />;
   }
 
   // If a group is selected, show the GroupDetail component

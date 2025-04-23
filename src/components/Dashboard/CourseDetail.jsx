@@ -7,7 +7,7 @@ import StudentDetailModal from './StudentDetailModal';
 import './CourseDetail.css';
 import './Content.css'
 
-const CourseDetail = ({ courseId, onClose }) => {
+const CourseDetail = ({ courseId, onClose, groupName }) => {
     const [course, setCourse] = useState(null);
     const [teacher, setTeacher] = useState(null);
     const [teachers, setTeachers] = useState([]);
@@ -309,13 +309,24 @@ const CourseDetail = ({ courseId, onClose }) => {
             <nav className="breadcrumb">
                 <span className="breadcrumb-link" onClick={onClose}>Courses</span>
                 <span className="breadcrumb-separator">
-                    {/* SVG chevron right */}
                     <svg width="16" height="16" fill="none">
                         <path d="M6 4l4 4-4 4" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 </span>
+                {groupName && (
+                    <>
+                        <span className="breadcrumb-link" onClick={onClose}>{groupName}</span>
+                        <span className="breadcrumb-separator">
+                            <svg width="16" height="16" fill="none">
+                                <path d="M6 4l4 4-4 4" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </span>
+                    </>
+                )}
                 <span className="breadcrumb-current">{course.name}</span>
             </nav>
+
+
             <div className="course-detail-container">
 
                 <div className="course-detail-header">
