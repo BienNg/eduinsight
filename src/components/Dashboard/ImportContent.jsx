@@ -39,6 +39,7 @@ const findColumnIndex = (headerRow, columnNames) => {
 
   // For other columns, use existing logic with variations
   const columnVariations = {
+    'folien': ['folien', 'canva', 'Folien', 'Canva'],
     'von': ['von', 'from', 'start', 'Von'],
     'bis': ['bis', 'to', 'end', 'Bis'],
     'lehrer': ['lehrer', 'teacher', 'Lehrer'],
@@ -247,7 +248,7 @@ const validateExcelFile = async (arrayBuffer, filename) => {
     // 1. Validate file structure - find header row with "Folien"
     let headerRowIndex = -1;
     for (let i = 0; i < jsonData.length && i < 30; i++) {
-      if (jsonData[i][0] === "Folien") {
+      if (jsonData[i][0] === "Folien" || jsonData[i][0] === "Canva") {
         headerRowIndex = i;
         break;
       }
@@ -669,7 +670,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
 
   // Map column indices for crucial data
   const columnIndices = {
-    folien: findColumnIndex(headerRow, ["Folien"]),
+    folien: findColumnIndex(headerRow, ["Folien", "Canva"]),
     inhalt: findColumnIndex(headerRow, ["Inhalt"]),
     notizen: findColumnIndex(headerRow, ["Notizen"]),
     checked: findColumnIndex(headerRow, ["die Folien gecheckt"]),
