@@ -4,6 +4,7 @@ import { getRecordById } from '../../firebase/database';
 import SessionDetailModal from './SessionDetailModal';
 import StudentDetailModal from './StudentDetailModal';
 import './CourseDetail.css';
+import './Content.css'
 
 const CourseDetail = ({ courseId, onClose }) => {
     const [course, setCourse] = useState(null);
@@ -287,225 +288,238 @@ const CourseDetail = ({ courseId, onClose }) => {
     if (!course) return <div className="error">Course not found</div>;
 
     return (
-        <div className="course-detail-container">
-            <div className="course-detail-header">
-                <button className="back-button" onClick={onClose}>← Back</button>
-                <h2>{course.name}</h2>
-                <div className="course-level-badge">{course.level}</div>
-            </div>
+        <>{/* Minimalistic Modern Breadcrumb */}
+            <nav className="breadcrumb">
+                <span className="breadcrumb-link" onClick={onClose}>Courses</span>
+                <span className="breadcrumb-separator">
+                    {/* SVG chevron right */}
+                    <svg width="16" height="16" fill="none">
+                        <path d="M6 4l4 4-4 4" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </span>
+                <span className="breadcrumb-current">{course.name}</span>
+            </nav>
+            <div className="course-detail-container">
 
-            <div className="course-detail-tabs">
-                <button
-                    className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('overview')}
-                >
-                    Overview
-                </button>
-                <button
-                    className={`tab ${activeTab === 'students' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('students')}
-                >
-                    Students
-                </button>
-                <button
-                    className={`tab ${activeTab === 'sessions' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('sessions')}
-                >
-                    Sessions
-                </button>
-            </div>
+                <div className="course-detail-header">
+                    <button className="back-button" onClick={onClose}>← Back</button>
+                    <h2>{course.name}</h2>
+                    <div className="course-level-badge">{course.level}</div>
+                </div>
 
-            <div className="course-detail-content">
-                {activeTab === 'overview' && (
-                    <div className="overview-tab">
-                        <div className="stats-row">
-                            <div className="stat-box">
-                                <h3>Students</h3>
-                                <div className="stat-value">{students.length}</div>
-                            </div>
-                            <div className="stat-box">
-                                <h3>Sessions</h3>
-                                <div className="stat-value">{sessions.length}</div>
-                            </div>
-                            <div className="stat-box">
-                                <h3>Teacher{teachers.length !== 1 ? 's' : ''}</h3>
-                                <div className="stat-value">
-                                    {teachers.length > 0
-                                        ? teachers.map(t => t.name).join(', ')
-                                        : 'Not assigned'}
+                <div className="course-detail-tabs">
+                    <button
+                        className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('overview')}
+                    >
+                        Overview
+                    </button>
+                    <button
+                        className={`tab ${activeTab === 'students' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('students')}
+                    >
+                        Students
+                    </button>
+                    <button
+                        className={`tab ${activeTab === 'sessions' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('sessions')}
+                    >
+                        Sessions
+                    </button>
+                </div>
+
+                <div className="course-detail-content">
+                    {activeTab === 'overview' && (
+                        <div className="overview-tab">
+                            <div className="stats-row">
+                                <div className="stat-box">
+                                    <h3>Students</h3>
+                                    <div className="stat-value">{students.length}</div>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="course-info-card">
-                            <h3>Course Information</h3>
-                            <div className="info-grid">
-                                <div className="info-item">
-                                    <span className="label">Group:</span>
-                                    <span className="value">{course.group || '-'}</span>
+                                <div className="stat-box">
+                                    <h3>Sessions</h3>
+                                    <div className="stat-value">{sessions.length}</div>
                                 </div>
-                                <div className="info-item">
-                                    <span className="label">Level:</span>
-                                    <span className="value">{course.level}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Start Date:</span>
-                                    <span className="value">{course.startDate || '-'}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">End Date:</span>
-                                    <span className="value">{course.endDate || '-'}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Average Attendance:</span>
-                                    <span className="value">
-                                        {students.length > 0 ?
-                                            Math.round(students.reduce((sum, student) =>
-                                                sum + calculateStudentAttendance(student.id), 0) / students.length)
-                                            : '-'}
-                                    </span>
+                                <div className="stat-box">
+                                    <h3>Teacher{teachers.length !== 1 ? 's' : ''}</h3>
+                                    <div className="stat-value">
+                                        {teachers.length > 0
+                                            ? teachers.map(t => t.name).join(', ')
+                                            : 'Not assigned'}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'students' && (
-                    <div className="students-tab">
-                        <table className="students-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Absence</th>
-                                    <th>Info</th>
-                                    <th>Notes</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {students.map((student) => (
-                                    <tr key={student.id}>
-                                        <td>{student.name}</td>
-                                        <td>
-                                            {calculateStudentAttendance(student.id)}
-                                        </td>
-                                        <td>{student.info || '-'}</td>
-                                        <td>{student.notes || '-'}</td>
-                                        <td>
-                                            <button
-                                                className="btn-details"
-                                                onClick={() => openStudentDetail(student)}
-                                            >
-                                                Details
-                                            </button>
-                                        </td>
-
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {activeTab === 'sessions' && (
-                    <div className="sessions-tab">
-                        <table className="sessions-table">
-                            <thead>
-                                <tr>
-                                    <th
-                                        onClick={() => requestSort('title')}
-                                        className={sortConfig.key === 'title' ? `sorted-${sortConfig.direction}` : ''}
-                                    >
-                                        Title {sortConfig.key === 'title' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => requestSort('date')}
-                                        className={sortConfig.key === 'date' ? `sorted-${sortConfig.direction}` : ''}
-                                    >
-                                        Date {sortConfig.key === 'date' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => requestSort('teacher')}
-                                        className={sortConfig.key === 'teacher' ? `sorted-${sortConfig.direction}` : ''}
-                                    >
-                                        Teacher {sortConfig.key === 'teacher' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => requestSort('time')}
-                                        className={sortConfig.key === 'time' ? `sorted-${sortConfig.direction}` : ''}
-                                    >
-                                        Time {sortConfig.key === 'time' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                    </th>
-                                    <th
-                                        onClick={() => requestSort('attendance')}
-                                        className={sortConfig.key === 'attendance' ? `sorted-${sortConfig.direction}` : ''}
-                                    >
-                                        Attendance {sortConfig.key === 'attendance' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                    </th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {getSortedSessions().map((session) => (
-                                    <tr key={session.id}>
-                                        <td>{safelyRenderValue(session.title)}</td>
-                                        <td>{safelyRenderValue(session.date)}</td>
-                                        <td>
-                                            {session.teacherId
-                                                ? (
-                                                    teachers.length > 0
-                                                        ? (
-                                                            teachers.find(t => String(t.id) === String(session.teacherId))?.name
-                                                            || 'Different Teacher'
-                                                        )
-                                                        : 'Different Teacher'
-                                                )
+                            <div className="course-info-card">
+                                <h3>Course Information</h3>
+                                <div className="info-grid">
+                                    <div className="info-item">
+                                        <span className="label">Group:</span>
+                                        <span className="value">{course.group || '-'}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="label">Level:</span>
+                                        <span className="value">{course.level}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="label">Start Date:</span>
+                                        <span className="value">{course.startDate || '-'}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="label">End Date:</span>
+                                        <span className="value">{course.endDate || '-'}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="label">Average Attendance:</span>
+                                        <span className="value">
+                                            {students.length > 0 ?
+                                                Math.round(students.reduce((sum, student) =>
+                                                    sum + calculateStudentAttendance(student.id), 0) / students.length)
                                                 : '-'}
-                                        </td>
-                                        <td>
-                                            {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
-                                        </td>
-                                        <td>
-                                            {calculateSessionAttendance(session)}
-                                        </td>
-                                        <td>
-                                            {session.status === 'ongoing' && (
-                                                <span className="status-badge ongoing">Ongoing</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <button
-                                                className="btn-details"
-                                                onClick={() => openSessionDetail(session)}
-                                            >
-                                                Details
-                                            </button>
-                                        </td>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'students' && (
+                        <div className="students-tab">
+                            <table className="students-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Absence</th>
+                                        <th>Info</th>
+                                        <th>Notes</th>
+                                        <th>Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {students.map((student) => (
+                                        <tr key={student.id}>
+                                            <td>{student.name}</td>
+                                            <td>
+                                                {calculateStudentAttendance(student.id)}
+                                            </td>
+                                            <td>{student.info || '-'}</td>
+                                            <td>{student.notes || '-'}</td>
+                                            <td>
+                                                <button
+                                                    className="btn-details"
+                                                    onClick={() => openStudentDetail(student)}
+                                                >
+                                                    Details
+                                                </button>
+                                            </td>
+
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {activeTab === 'sessions' && (
+                        <div className="sessions-tab">
+                            <table className="sessions-table">
+                                <thead>
+                                    <tr>
+                                        <th
+                                            onClick={() => requestSort('title')}
+                                            className={sortConfig.key === 'title' ? `sorted-${sortConfig.direction}` : ''}
+                                        >
+                                            Title {sortConfig.key === 'title' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('date')}
+                                            className={sortConfig.key === 'date' ? `sorted-${sortConfig.direction}` : ''}
+                                        >
+                                            Date {sortConfig.key === 'date' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('teacher')}
+                                            className={sortConfig.key === 'teacher' ? `sorted-${sortConfig.direction}` : ''}
+                                        >
+                                            Teacher {sortConfig.key === 'teacher' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('time')}
+                                            className={sortConfig.key === 'time' ? `sorted-${sortConfig.direction}` : ''}
+                                        >
+                                            Time {sortConfig.key === 'time' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                        </th>
+                                        <th
+                                            onClick={() => requestSort('attendance')}
+                                            className={sortConfig.key === 'attendance' ? `sorted-${sortConfig.direction}` : ''}
+                                        >
+                                            Attendance {sortConfig.key === 'attendance' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                        </th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {getSortedSessions().map((session) => (
+                                        <tr key={session.id}>
+                                            <td>{safelyRenderValue(session.title)}</td>
+                                            <td>{safelyRenderValue(session.date)}</td>
+                                            <td>
+                                                {session.teacherId
+                                                    ? (
+                                                        teachers.length > 0
+                                                            ? (
+                                                                teachers.find(t => String(t.id) === String(session.teacherId))?.name
+                                                                || 'Different Teacher'
+                                                            )
+                                                            : 'Different Teacher'
+                                                    )
+                                                    : '-'}
+                                            </td>
+                                            <td>
+                                                {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
+                                            </td>
+                                            <td>
+                                                {calculateSessionAttendance(session)}
+                                            </td>
+                                            <td>
+                                                {session.status === 'ongoing' && (
+                                                    <span className="status-badge ongoing">Ongoing</span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="btn-details"
+                                                    onClick={() => openSessionDetail(session)}
+                                                >
+                                                    Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+                {selectedSession && (
+                    <SessionDetailModal
+                        session={selectedSession}
+                        students={students}
+                        teacher={teacher}
+                        onClose={closeSessionDetail}
+                        groupName={course ? course.group : null}
+                    />
+                )}
+                {selectedStudent && (
+                    <StudentDetailModal
+                        student={selectedStudent}
+                        sessions={sessions}
+                        onClose={closeStudentDetail}
+                    />
                 )}
             </div>
-
-            {selectedSession && (
-                <SessionDetailModal
-                    session={selectedSession}
-                    students={students}
-                    teacher={teacher}
-                    onClose={closeSessionDetail}
-                    groupName={course ? course.group : null}
-                />
-            )}
-            {selectedStudent && (
-                <StudentDetailModal
-                    student={selectedStudent}
-                    sessions={sessions}
-                    onClose={closeStudentDetail}
-                />
-            )}
-        </div>
+        </>
     );
 };
 
