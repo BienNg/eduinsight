@@ -328,14 +328,27 @@ const KlassenContent = () => {
                   <span className="label">Lehrkräfte</span>
                   <div className="teacher-badges-container">
                     {(() => {
+                      // Collect all teacher sessions from all courses in the group
                       const allTeacherSessions = groupCourses.flatMap(course => course.teacherSessions || []);
+
                       if (allTeacherSessions.length === 0) {
                         return <span className="no-teachers-hint">Keine Lehrkräfte gefunden</span>;
                       }
-                      return allTeacherSessions.map(ts => (
-                        <span key={ts.teacherId + ts.name + Math.random()} className="teacher-badge">
-                          {ts.name}
-                          <span className="session-count-badge">{ts.count}</span>
+
+                      // Aggregate session counts by teacher
+                      const teacherTotals = allTeacherSessions.reduce((totals, ts) => {
+                        if (!totals[ts.teacherId]) {
+                          totals[ts.teacherId] = { name: ts.name, count: 0 };
+                        }
+                        totals[ts.teacherId].count += ts.count;
+                        return totals;
+                      }, {});
+
+                      // Convert back to array for rendering
+                      return Object.values(teacherTotals).map(teacher => (
+                        <span key={teacher.name} className="teacher-badge">
+                          {teacher.name}
+                          <span className="session-count-badge">{teacher.count}</span>
                         </span>
                       ));
                     })()}
