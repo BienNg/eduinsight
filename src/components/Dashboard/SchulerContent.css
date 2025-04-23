@@ -92,7 +92,8 @@
   background-color: white;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Remove the box-shadow */
+  box-shadow: none;
 }
 
 .students-table {
@@ -100,6 +101,8 @@
   table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.9rem;
+  /* Add borderless style */
+  border: none;
 }
 
 /* Name */
@@ -134,12 +137,15 @@
 
 
 .students-table th {
-  background-color: #f5f5f5;
+  /* Change background to white */
+  background-color: white;
   padding: 12px 16px;
   text-align: left;
   font-weight: 500;
   position: relative;
   cursor: pointer;
+  /* Add subtle bottom border for header separation */
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .students-table th:hover {
