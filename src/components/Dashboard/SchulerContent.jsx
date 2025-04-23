@@ -4,6 +4,7 @@ import { getAllRecords, getRecordById } from '../../firebase/database';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faFilter, faUserGraduate, faChalkboardTeacher, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import StudentDetailModal from './StudentDetailModal';
+import CourseDetail from './CourseDetail';
 import './Content.css';
 import './SchulerContent.css'; // We'll create this file
 
@@ -20,6 +21,18 @@ const SchulerContent = () => {
   const [attendanceFilter, setAttendanceFilter] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
+  const [selectedCourseId, setSelectedCourseId] = useState(null);
+
+
+  // Handle course badge click
+  const handleCourseClick = (courseId) => {
+    setSelectedCourseId(courseId);
+  };
+
+  // Handle closing course detail
+  const handleCloseCourseDetail = () => {
+    setSelectedCourseId(null);
+  };
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -257,6 +270,14 @@ const SchulerContent = () => {
     setSelectedStudent(null);
   };
 
+  // If a course is selected, show the CourseDetail component
+  if (selectedCourseId) {
+    return <CourseDetail 
+      courseId={selectedCourseId}
+      onClose={handleCloseCourseDetail}
+    />;
+  }
+
   return (
     <div className="schuler-content">
       <h2>Schülerübersicht</h2>
@@ -367,10 +388,6 @@ const SchulerContent = () => {
                   <th onClick={() => requestSort('courseNames')} className={sortConfig.key === 'courseNames' ? `sorted-${sortConfig.direction}` : ''}>
                     Kurse
                   </th>
-                  {/* Remove this column:
-    <th onClick={() => requestSort('levelNames')} className={sortConfig.key === 'levelNames' ? `sorted-${sortConfig.direction}` : ''}>
-      Stufen
-    </th> */}
                   <th onClick={() => requestSort('teacherNames')} className={sortConfig.key === 'teacherNames' ? `sorted-${sortConfig.direction}` : ''}>
                     Lehrer
                   </th>
@@ -388,9 +405,19 @@ const SchulerContent = () => {
                 {filteredStudents.map((student) => (
                   <tr key={student.id}>
                     <td>{student.name}</td>
-                    <td>{student.courseNames || '-'}</td>
-                    {/* Remove this cell:
-      <td>{student.levelNames || '-'}</td> */}
+                    <td>
+                      <div className="level-badges-container">
+                        {student.courses.map((course) => (
+                          <div 
+                            key={course.id} 
+                            className="level-badge clickable"
+                            onClick={() => handleCourseClick(course.id)}
+                          >
+                            {course.name}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
                     <td>{student.teacherNames || '-'}</td>
                     <td className={parseFloat(student.absenceRate) > 20 ? 'absence-high' : parseFloat(student.absenceRate) === 0 ? 'absence-perfect' : ''}>
                       {student.absenceString} ({student.absenceRate}%)
