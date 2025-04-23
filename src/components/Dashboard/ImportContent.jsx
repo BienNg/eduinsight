@@ -1223,7 +1223,6 @@ const ImportContent = () => {
 
   return (
     <div className="import-content" ref={importTabRef} tabIndex="-1">
-      <h2>Excel Import</h2>
       <div className="import-container" style={{ marginTop: '24px' }}>
         <div className="import-card" style={{
           backgroundColor: 'white',

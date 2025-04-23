@@ -35,7 +35,7 @@ const Dashboard = () => {
         return <MonatContent />;
       case 'klassen':
         return <KlassenContent />;
-      case 'lehrer': // Add this case
+      case 'lehrer':
         return <LehrerContent />;
       case 'schuler':
         return <SchulerContent />;
@@ -56,7 +56,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Add Import Excel section above Lehrer */}
         <div className="nav-section">
           <div className="nav-title">{collapsed ? 'I' : 'Import'}</div>
           <ul className="nav-items">
@@ -71,7 +70,7 @@ const Dashboard = () => {
         </div>
 
         <div className="nav-section">
-          <div className="nav-title">{collapsed ? 'L' : 'Lehrer'}</div>
+          <div className="nav-title">{collapsed ? 'L' : 'Tabs'}</div>
           <ul className="nav-items">
             <li
               className={activeTab === 'dashboard' ? 'active' : ''}
