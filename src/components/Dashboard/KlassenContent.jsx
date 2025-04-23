@@ -286,7 +286,20 @@ const KlassenContent = () => {
             <div className="group-card" key={groupName}>
               <div className="group-header">
                 <h3>{groupName}</h3>
-                <span className="group-count">{groupCourses.length} Kurse</span>
+                <div className="type-badges-container">
+                  {(() => {
+                    // Get unique course types in this group
+                    const courseTypes = Array.from(new Set(groupCourses.map(course => course.courseType)));
+                    return courseTypes.map(type => (
+                      <span
+                        key={type}
+                        className={`type-badge ${type.toLowerCase()}`}
+                      >
+                        {type || 'Unknown'}
+                      </span>
+                    ));
+                  })()}
+                </div>
               </div>
               <div className="group-info">
                 <div className="info-item">
