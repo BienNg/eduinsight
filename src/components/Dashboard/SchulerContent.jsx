@@ -364,9 +364,6 @@ const SchulerContent = () => {
                   <th onClick={() => requestSort('name')} className={sortConfig.key === 'name' ? `sorted-${sortConfig.direction}` : ''}>
                     Name
                   </th>
-                  <th onClick={() => requestSort('info')} className={sortConfig.key === 'info' ? `sorted-${sortConfig.direction}` : ''}>
-                    Info
-                  </th>
                   <th onClick={() => requestSort('courseNames')} className={sortConfig.key === 'courseNames' ? `sorted-${sortConfig.direction}` : ''}>
                     Kurse
                   </th>
@@ -391,7 +388,6 @@ const SchulerContent = () => {
                 {filteredStudents.map((student) => (
                   <tr key={student.id}>
                     <td>{student.name}</td>
-                    <td>{student.info || '-'}</td>
                     <td>{student.courseNames || '-'}</td>
                     {/* Remove this cell:
       <td>{student.levelNames || '-'}</td> */}
