@@ -1,6 +1,7 @@
 // src/components/Dashboard/LehrerContent.jsx
 import { useState, useEffect } from 'react';
 import { getAllRecords, updateRecord } from '../../firebase/database';
+import { calculateTotalHours } from '../../utils/timeUtils';
 import TeacherDetail from './TeacherDetail';
 import './Content.css';
 
@@ -29,42 +30,22 @@ const LehrerContent = () => {
           course.teacherIds && course.teacherIds.includes(teacher.id)
         );
   
-        // Gather all session objects for this teacher's courses
-        let totalSessions = 0;
-        let totalHours = 0;
+        // Find sessions for this teacher
+        const teacherSessions = allSessions.filter(session => 
+          session.teacherId === teacher.id
+        );
+        
+        // Use our utility function with the original calculation
+        const totalHours = calculateTotalHours(teacherSessions);
+        
+        // Group sessions by month
         const sessionsByMonth = {};
-  
-        teacherCourses.forEach(course => {
-          if (course.sessionIds && course.sessionIds.length > 0) {
-            // Find session objects for this course
-            const courseSessions = allSessions.filter(session => 
-              course.sessionIds.includes(session.id) && 
-              session.teacherId === teacher.id
-            );
-            
-            totalSessions += courseSessions.length;
-  
-            courseSessions.forEach(session => {
-              if (session.startTime && session.endTime) {
-                // Calculate hours based on start and end time
-                const [startHours, startMinutes] = session.startTime.split(':').map(Number);
-                const [endHours, endMinutes] = session.endTime.split(':').map(Number);
-                
-                let durationMinutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
-                // Handle sessions that cross midnight
-                if (durationMinutes < 0) durationMinutes += 24 * 60;
-                
-                totalHours += durationMinutes / 60;
-              }
-              
-              // Group by month
-              if (session.monthId) {
-                if (!sessionsByMonth[session.monthId]) {
-                  sessionsByMonth[session.monthId] = 0;
-                }
-                sessionsByMonth[session.monthId]++;
-              }
-            });
+        teacherSessions.forEach(session => {
+          if (session.monthId) {
+            if (!sessionsByMonth[session.monthId]) {
+              sessionsByMonth[session.monthId] = 0;
+            }
+            sessionsByMonth[session.monthId]++;
           }
         });
   
@@ -72,7 +53,7 @@ const LehrerContent = () => {
           ...teacher,
           courseCount: teacherCourses.length,
           courses: teacherCourses,
-          sessionCount: totalSessions,
+          sessionCount: teacherSessions.length,
           totalHours: totalHours,
           sessionsByMonth: sessionsByMonth
         };
