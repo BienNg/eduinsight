@@ -1,0 +1,82 @@
+/* src/components/Dashboard/Modal.css */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .modal-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 0;
+    width: 500px;
+    max-width: 90%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #666;
+  }
+  
+  .modal-body {
+    padding: 20px;
+  }
+  
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 15px 20px;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .cancel-button {
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin-right: 10px;
+    cursor: pointer;
+    color: #333;
+  }
+  
+  .confirm-button {
+    background-color: #1e88e5;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .cancel-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .confirm-button:hover {
+    background-color: #1565c0;
+  }

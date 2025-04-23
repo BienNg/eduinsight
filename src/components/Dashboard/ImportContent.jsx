@@ -230,6 +230,7 @@ const getOrCreateMonthRecord = async (date) => {
 // Modify the validateExcelFile function in ImportContent.jsx
 const validateExcelFile = async (arrayBuffer, filename) => {
   const errors = [];
+  let missingTimeColumns = false;
 
   try {
     // Use both XLSX for structure and ExcelJS for colors/formatting
@@ -265,10 +266,32 @@ const validateExcelFile = async (arrayBuffer, filename) => {
     const requiredColumns = [
       ["Folien", "folien"],
       ["Unterrichtstag", "Datum", "Tag", "Date", "Day"], // Allow either of these for the date column
-      ["von", "Von", "from"],
-      ["bis", "Bis", "to"],
       ["Lehrer", "lehrer", "Teacher"]
     ];
+
+    const startTimeIndex = findColumnIndex(headerRow, ["von", "Von", "from"]);
+    const endTimeIndex = findColumnIndex(headerRow, ["bis", "Bis", "to"]);
+
+    // Set the missingTimeColumns flag if either column is missing
+    if (startTimeIndex === -1 || endTimeIndex === -1) {
+      missingTimeColumns = true;
+
+      // Add a specific error message for missing time columns
+      if (startTimeIndex === -1) {
+        errors.push("Missing time column: von/from not found in the header row.");
+      }
+
+      if (endTimeIndex === -1) {
+        errors.push("Missing time column: bis/to not found in the header row.");
+      }
+    }
+    // Only add as regular error if just one is missing
+    else if (startTimeIndex === -1) {
+      errors.push("Required column 'von/from' not found in the header row.");
+    }
+    else if (endTimeIndex === -1) {
+      errors.push("Required column 'bis/to' not found in the header row.");
+    }
 
     // Check only the crucial columns
     for (const column of requiredColumns) {
@@ -298,8 +321,6 @@ const validateExcelFile = async (arrayBuffer, filename) => {
     // Get the indices of crucial columns
     const folienIndex = findColumnIndex(headerRow, "Folien");
     const dateIndex = findColumnIndex(headerRow, ["Unterrichtstag", "Datum", "Tag", "Date", "Day"]);
-    const startTimeIndex = findColumnIndex(headerRow, "von");
-    const endTimeIndex = findColumnIndex(headerRow, "bis");
     const teacherIndex = findColumnIndex(headerRow, "Lehrer");
 
     // Start from row after header
@@ -434,11 +455,19 @@ const validateExcelFile = async (arrayBuffer, filename) => {
       errors.push("No sessions found in the Excel file. The Folien column should contain session titles.");
     }
 
-    return errors;
+    return {
+      errors,
+      missingTimeColumns,
+      hasOnlyTimeErrors: missingTimeColumns && errors.every(error =>
+        error.includes('Missing time column:') ||
+        error.includes('missing a start time') ||
+        error.includes('missing an end time')
+      )
+    };
 
   } catch (error) {
     errors.push(`Error processing Excel file: ${error.message}`);
-    return errors;
+    return { errors, missingTimeColumns, hasOnlyTimeErrors: false };
   }
 };
 
@@ -571,7 +600,9 @@ const parseDate = (dateString) => {
   return new Date(year, month - 1, day);
 };
 
-const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
+const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => {
+
+  const { ignoreMissingTimeColumns } = options;
 
   // Use XLSX and ExcelJS to parse the file
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -881,8 +912,9 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
           checked: checkedValue === 'TRUE',
           completed: completedValue === 'TRUE',
           date: formattedDate || '', // Remove lastKnownDate fallback
-          startTime: formatTime(startTimeValue),
-          endTime: formatTime(endTimeValue),
+          // Allow empty time values if columns are missing
+          startTime: columnIndices.startTime !== -1 ? formatTime(startTimeValue) : '',
+          endTime: columnIndices.endTime !== -1 ? formatTime(endTimeValue) : '',
           teacherId: teacherId || '',
           message: messageValue || '',
           contentItems: [],

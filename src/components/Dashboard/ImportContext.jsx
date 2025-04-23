@@ -1,5 +1,6 @@
 // src/components/Dashboard/ImportContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
+import TimeColumnsModal from './TimeColumnsModal';
 
 const ImportContext = createContext(null);
 
@@ -9,6 +10,10 @@ export const ImportProvider = ({ children }) => {
   const [completedFiles, setCompletedFiles] = useState([]);
   const [failedFiles, setFailedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Add new state for modal
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
 
   // Process files sequentially when the queue changes
   useEffect(() => {
@@ -98,7 +103,7 @@ export const ImportProvider = ({ children }) => {
       ]);
     }
   };
-
+  //f
   const clearCompletedFiles = () => {
     setCompletedFiles([]);
   };
@@ -107,50 +112,75 @@ export const ImportProvider = ({ children }) => {
     setFailedFiles([]);
   };
 
-  // Move the processFile function here, importing any needed functions
+  // Process file with improved time column handling
   const processFile = async (file) => {
     return new Promise(async (resolve, reject) => {
       try {
         const reader = new FileReader();
-
+  
         reader.onload = async (e) => {
           try {
             const arrayBuffer = e.target.result;
-
+  
             // Simulating progress updates during validation
             updateProgress(10);
-
+  
             // Import these functions from your ImportContent file
             const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
-
+  
             // Validate the file
-            const validationErrors = await validateExcelFile(arrayBuffer, file.name);
-
+            const validationResult = await validateExcelFile(arrayBuffer, file.name);
+  
+            console.log('Validation result:', validationResult); // Debug log
             updateProgress(30);
-
-            if (validationErrors.length > 0) {
+  
+            // Simplified check for time-only errors using the new flag
+            if (validationResult.missingTimeColumns && validationResult.hasOnlyTimeErrors) {
+              console.log('Showing time columns modal for file:', file.name); // Debug log
+  
+              // Make sure we don't already have this file pending
+              if (!pendingFile || pendingFile.name !== file.name) {
+                // Set pending file and show modal
+                setPendingFile({
+                  file,
+                  arrayBuffer,
+                  name: file.name
+                });
+                setShowTimeModal(true);
+              }
+              
+              // Remove from processing queue as we'll handle it separately
+              setProcessingQueue(prev => prev.slice(1));
+              setLoading(false);
+              resolve();
+              return;
+            }
+  
+            // Handle other validation errors
+            if (validationResult.errors && validationResult.errors.length > 0) {
               throw new Error(
-                `Validation failed: ${validationErrors.join(', ')}`
+                `Validation failed: ${validationResult.errors.join(', ')}`
               );
             }
-
+  
             updateProgress(50);
-
+  
             // Process the file with the existing function
-            const courseData = await processB1CourseFileWithColors(arrayBuffer, file.name);
-
+            await processB1CourseFileWithColors(arrayBuffer, file.name, {});
+  
             updateProgress(90);
-
+  
             resolve();
           } catch (error) {
+            console.error('Error in file processing:', error); // Debug log
             reject(error);
           }
         };
-
+  
         reader.onerror = (error) => {
           reject(new Error(`Error reading file: ${error}`));
         };
-
+  
         reader.readAsArrayBuffer(file);
       } catch (error) {
         reject(error);
@@ -158,13 +188,91 @@ export const ImportProvider = ({ children }) => {
     });
   };
 
+  // Add handlers for modal actions
+  const handleCancelImport = () => {
+    if (!pendingFile) return;
+
+    // Store name before clearing state
+    const pendingFileName = pendingFile.name;
+
+    // Close modal and reset pending file
+    setShowTimeModal(false);
+    setPendingFile(null);
+
+    // Add to failed files
+    setFailedFiles(prev => [
+      ...prev,
+      {
+        id: Date.now() + Math.random().toString(36).substr(2, 9),
+        name: pendingFileName,
+        status: 'failed',
+        error: 'Import cancelled due to missing time columns.'
+      }
+    ]);
+
+    // Allow the next file to be processed
+    setLoading(false);
+  };
+
+  const handleConfirmImport = async () => {
+    if (!pendingFile) return;
+
+    // Store the pending file info locally to use after clearing state
+    const currentPendingFile = { ...pendingFile };
+
+    // Close modal and reset pending file immediately
+    setShowTimeModal(false);
+    setPendingFile(null);
+
+    try {
+      // Import necessary function
+      const { processB1CourseFileWithColors } = await import('./ImportContent');
+
+      // Process the file with missing time columns
+      await processB1CourseFileWithColors(
+        currentPendingFile.arrayBuffer,
+        currentPendingFile.name,
+        { ignoreMissingTimeColumns: true }
+      );
+
+      // Add to completed files
+      setCompletedFiles(prev => [
+        ...prev,
+        {
+          id: Date.now() + Math.random().toString(36).substr(2, 9),
+          name: currentPendingFile.name,
+          status: 'completed',
+          progress: 100
+        }
+      ]);
+
+      // Allow the next file to be processed by resetting loading
+      setLoading(false);
+
+    } catch (error) {
+      // Add to failed files
+      setFailedFiles(prev => [
+        ...prev,
+        {
+          id: Date.now() + Math.random().toString(36).substr(2, 9),
+          name: currentPendingFile.name,
+          status: 'failed',
+          error: `Error processing file: ${error.message}`
+        }
+      ]);
+
+      // Allow the next file to be processed
+      setLoading(false);
+    }
+  };
+
   return (
-    <ImportContext.Provider 
-      value={{ 
+    <ImportContext.Provider
+      value={{
         files,
-        processingQueue, 
-        completedFiles, 
-        failedFiles, 
+        processingQueue,
+        completedFiles,
+        failedFiles,
         loading,
         addFilesToQueue,
         clearCompletedFiles,
@@ -172,6 +280,12 @@ export const ImportProvider = ({ children }) => {
       }}
     >
       {children}
+      <TimeColumnsModal
+        isOpen={showTimeModal}
+        onClose={handleCancelImport}
+        onConfirm={handleConfirmImport}
+        filename={pendingFile?.name || ''}
+      />
     </ImportContext.Provider>
   );
 };
