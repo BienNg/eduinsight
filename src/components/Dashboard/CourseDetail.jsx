@@ -8,6 +8,7 @@ import './CourseDetail.css';
 const CourseDetail = ({ courseId, onClose }) => {
     const [course, setCourse] = useState(null);
     const [teacher, setTeacher] = useState(null);
+    const [teachers, setTeachers] = useState([]);
     const [students, setStudents] = useState([]);
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -105,9 +106,15 @@ const CourseDetail = ({ courseId, onClose }) => {
                 setCourse(courseData);
 
                 // Fetch teacher data if available
-                if (courseData.teacherId) {
+                if (courseData.teacherIds && Array.isArray(courseData.teacherIds)) {
+                    const teacherPromises = courseData.teacherIds.map(tid => getRecordById('teachers', tid));
+                    const teacherDataArr = await Promise.all(teacherPromises);
+                    setTeachers(teacherDataArr.filter(t => t));
+                } else if (courseData.teacherId) {
                     const teacherData = await getRecordById('teachers', courseData.teacherId);
-                    setTeacher(teacherData);
+                    setTeachers(teacherData ? [teacherData] : []);
+                } else {
+                    setTeachers([]);
                 }
 
                 // Fetch student data
@@ -321,9 +328,11 @@ const CourseDetail = ({ courseId, onClose }) => {
                                 <div className="stat-value">{sessions.length}</div>
                             </div>
                             <div className="stat-box">
-                                <h3>Teacher</h3>
+                                <h3>Teacher{teachers.length !== 1 ? 's' : ''}</h3>
                                 <div className="stat-value">
-                                    {teacher ? teacher.name : 'Not assigned'}
+                                    {teachers.length > 0
+                                        ? teachers.map(t => t.name).join(', ')
+                                        : 'Not assigned'}
                                 </div>
                             </div>
                         </div>
@@ -331,12 +340,12 @@ const CourseDetail = ({ courseId, onClose }) => {
                             <h3>Course Information</h3>
                             <div className="info-grid">
                                 <div className="info-item">
-                                    <span className="label">Level:</span>
-                                    <span className="value">{course.level}</span>
-                                </div>
-                                <div className="info-item">
                                     <span className="label">Group:</span>
                                     <span className="value">{course.group || '-'}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Level:</span>
+                                    <span className="value">{course.level}</span>
                                 </div>
                                 <div className="info-item">
                                     <span className="label">Start Date:</span>
@@ -442,9 +451,16 @@ const CourseDetail = ({ courseId, onClose }) => {
                                         <td>{safelyRenderValue(session.title)}</td>
                                         <td>{safelyRenderValue(session.date)}</td>
                                         <td>
-                                            {teacher && session.teacherId === teacher.id ?
-                                                teacher.name :
-                                                (session.teacherId ? 'Different Teacher' : '-')}
+                                            {session.teacherId
+                                                ? (
+                                                    teachers.length > 0
+                                                        ? (
+                                                            teachers.find(t => String(t.id) === String(session.teacherId))?.name
+                                                            || 'Different Teacher'
+                                                        )
+                                                        : 'Different Teacher'
+                                                )
+                                                : '-'}
                                         </td>
                                         <td>
                                             {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
