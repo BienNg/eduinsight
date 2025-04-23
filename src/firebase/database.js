@@ -73,6 +73,11 @@ export const deleteRecord = async (path, id) => {
       // After updating students, run the cleanup
       await cleanupOrphanedStudents();
     }
+
+    // If we deleted a course, cleanup orphan teachers
+    if (path === 'courses' && recordToDelete && recordToDelete.teacherIds) {
+      await cleanupOrphanTeachers(recordToDelete.teacherIds);
+    }
     
     // If we're deleting a session or course, check for empty months
     if (path === 'sessions' || path === 'courses') {
@@ -167,6 +172,21 @@ export const cleanupOrphanedStudents = async () => {
     console.error("Error cleaning up orphaned students:", error);
   }
 };
+
+// Call this after deleting all sessions of the course
+const cleanupOrphanTeachers = async (teacherIds) => {
+  const sessions = await getAllRecords('sessions');
+  for (const teacherId of teacherIds) {
+    // Check if any session still references this teacher
+    const hasSessions = sessions.some(session => session.teacherId === teacherId);
+    if (!hasSessions) {
+      // No sessions left, delete the teacher
+      await remove(ref(database, `teachers/${teacherId}`));
+      console.log(`Deleted teacher ${teacherId} as they have no sessions left.`);
+    }
+  }
+};
+
 // Remove a student from a course
 export const removeStudentFromCourse = async (studentId, courseId) => {
   try {
