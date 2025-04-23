@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords, updateRecord } from '../../firebase/database'
 import CourseDetail from './CourseDetail'; // Import CourseDetail component
+import SessionDetailModal from './SessionDetailModal';
 import './CourseDetail.css'; // Reuse existing styles
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -18,7 +19,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [activeTab, setActiveTab] = useState('overview');
     const [expandedMonth, setExpandedMonth] = useState(null);
     const [selectedCourseId, setSelectedCourseId] = useState(null);
-    // Add state and handlers for country selection
+    const [selectedSession, setSelectedSession] = useState(null);
     const [editingCountry, setEditingCountry] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState('');
 
@@ -99,7 +100,13 @@ const TeacherDetail = ({ teacherId, onClose }) => {
             fetchTeacherDetails();
         }
     }, [teacherId]);
+    const openSessionDetail = (session) => {
+        setSelectedSession(session);
+    };
 
+    const closeSessionDetail = () => {
+        setSelectedSession(null);
+    };
     // Function to handle course selection
     const handleCourseSelect = (courseId) => {
         setSelectedCourseId(courseId);
@@ -457,6 +464,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                         <th>Titel</th>
                                         <th>Zeit</th>
                                         <th>Monat</th>
+                                        <th>Aktionen</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -471,6 +479,14 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                                     {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
                                                 </td>
                                                 <td>{month ? month.name : '-'}</td>
+                                                <td>
+                                                    <button
+                                                        className="btn-details"
+                                                        onClick={() => openSessionDetail(session)}
+                                                    >
+                                                        Details
+                                                    </button>
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -595,6 +611,14 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                     </div>
                 )}
             </div>
+            {selectedSession && (
+                <SessionDetailModal
+                    session={selectedSession}
+                    students={[]} // Pass relevant students if available
+                    teacher={teacher}
+                    onClose={closeSessionDetail}
+                />
+            )}
         </div>
     );
 };
