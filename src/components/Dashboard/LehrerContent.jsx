@@ -20,48 +20,54 @@ const LehrerContent = () => {
     try {
       setLoading(true);
       const teachersData = await getAllRecords('teachers');
-
-      // Enrich teacher data with course and session info
-      const enrichedTeachers = await Promise.all(teachersData.map(async (teacher) => {
+      const allCourses = await getAllRecords('courses');
+      const allSessions = await getAllRecords('sessions');
+  
+      const enrichedTeachers = teachersData.map((teacher) => {
         // Get courses taught by this teacher
-        const allCourses = await getAllRecords('courses');
-        const teacherCourses = allCourses.filter(course => course.teacherId === teacher.id);
-        
-        // Get total sessions
+        const teacherCourses = allCourses.filter(course => 
+          course.teacherIds && course.teacherIds.includes(teacher.id)
+        );
+  
+        // Gather all session objects for this teacher's courses
         let totalSessions = 0;
         let totalHours = 0;
         const sessionsByMonth = {};
-        
-        for (const course of teacherCourses) {
+  
+        teacherCourses.forEach(course => {
           if (course.sessionIds && course.sessionIds.length > 0) {
-            totalSessions += course.sessionIds.length;
-            
-            // Get detailed session data for hours calculation
-            const sessions = await Promise.all(
-              course.sessionIds.map(id => getAllRecords(`sessions/${id}`))
+            // Find session objects for this course
+            const courseSessions = allSessions.filter(session => 
+              course.sessionIds.includes(session.id) && 
+              session.teacherId === teacher.id
             );
             
-            // Calculate hours and group by month
-            sessions.forEach(session => {
-              if (session) {
-                // Add to total hours if start and end time are available
-                if (session.startTime && session.endTime) {
-                  // Basic hours calculation (can be improved to actually calculate time difference)
-                  totalHours += 1.5; // Assuming average session length for now
-                }
+            totalSessions += courseSessions.length;
+  
+            courseSessions.forEach(session => {
+              if (session.startTime && session.endTime) {
+                // Calculate hours based on start and end time
+                const [startHours, startMinutes] = session.startTime.split(':').map(Number);
+                const [endHours, endMinutes] = session.endTime.split(':').map(Number);
                 
-                // Group by month
-                if (session.monthId) {
-                  if (!sessionsByMonth[session.monthId]) {
-                    sessionsByMonth[session.monthId] = 0;
-                  }
-                  sessionsByMonth[session.monthId]++;
+                let durationMinutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
+                // Handle sessions that cross midnight
+                if (durationMinutes < 0) durationMinutes += 24 * 60;
+                
+                totalHours += durationMinutes / 60;
+              }
+              
+              // Group by month
+              if (session.monthId) {
+                if (!sessionsByMonth[session.monthId]) {
+                  sessionsByMonth[session.monthId] = 0;
                 }
+                sessionsByMonth[session.monthId]++;
               }
             });
           }
-        }
-
+        });
+  
         return {
           ...teacher,
           courseCount: teacherCourses.length,
@@ -70,8 +76,8 @@ const LehrerContent = () => {
           totalHours: totalHours,
           sessionsByMonth: sessionsByMonth
         };
-      }));
-
+      });
+  
       setTeachers(enrichedTeachers);
     } catch (err) {
       console.error("Error fetching teachers:", err);
