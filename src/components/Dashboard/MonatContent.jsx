@@ -18,31 +18,31 @@ const MonatContent = () => {
   const [monthDetails, setMonthDetails] = useState({});
 
   useEffect(() => {
-    const fetchData = async() => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch all required data
         const monthsData = await getAllRecords('months');
         const teachersData = await getAllRecords('teachers');
         const coursesData = await getAllRecords('courses');
         const sessionsData = await getAllRecords('sessions');
         const studentsData = await getAllRecords('students');
-        
+
         // Set the basic data
         setMonths(monthsData);
         setTeachers(teachersData);
         setCourses(coursesData);
         setSessions(sessionsData);
         setStudents(studentsData);
-        
+
         // Process and calculate stats for each month
         const details = {};
-        
+
         monthsData.forEach(month => {
           // Get sessions for this month
           const monthSessions = sessionsData.filter(session => session.monthId === month.id);
-          
+
           // Calculate hours (assuming 1.5h per session unless it's a long session)
           let totalHours = 0;
           monthSessions.forEach(session => {
@@ -52,26 +52,26 @@ const MonatContent = () => {
               totalHours += 1.5; // 1.5 hours for regular sessions
             }
           });
-          
+
           // Get unique course IDs
           const courseIds = [...new Set(monthSessions.map(session => session.courseId))];
-          
+
           // Get courses for this month
-          const monthCourses = coursesData.filter(course => 
+          const monthCourses = coursesData.filter(course =>
             courseIds.includes(course.id)
           );
-          
+
           // Get unique teacher IDs
-          const teacherIds = [...new Set(monthCourses
-            .map(course => course.teacherId)
-            .filter(id => id))
-          ];
-          
+          // Get unique teacher IDs (corrected for teacherIds array)
+          const teacherIds = [...new Set(monthCourses.flatMap(course =>
+            course.teacherIds ? course.teacherIds : []
+          ))];
+
           // Get teachers for this month
-          const monthTeachers = teachersData.filter(teacher => 
+          const monthTeachers = teachersData.filter(teacher =>
             teacherIds.includes(teacher.id)
           );
-          
+
           // Get all students from these courses
           const studentIds = new Set();
           monthCourses.forEach(course => {
@@ -79,21 +79,21 @@ const MonatContent = () => {
               course.studentIds.forEach(id => studentIds.add(id));
             }
           });
-          
+
           // Process teacher details
           const teacherDetails = teacherIds.map(teacherId => {
             const teacher = teachersData.find(t => t.id === teacherId);
             if (!teacher) return null;
-            
+
             // Get courses taught by this teacher this month
             const teacherCourses = monthCourses.filter(c => c.teacherId === teacherId);
-            
+
             // Get sessions taught by this teacher this month
-            const teacherSessions = monthSessions.filter(s => {
-              const course = coursesData.find(c => c.id === s.courseId);
-              return course && course.teacherId === teacherId;
-            });
-            
+            const teacherSessions = monthSessions.filter(s =>
+              s.teacherId === teacherId ||
+              (coursesData.find(c => c.id === s.courseId)?.teacherIds || []).includes(teacherId)
+            );
+
             // Calculate teacher hours
             let teacherHours = 0;
             teacherSessions.forEach(session => {
@@ -103,7 +103,7 @@ const MonatContent = () => {
                 teacherHours += 1.5;
               }
             });
-            
+
             // Get student count
             const teacherStudentIds = new Set();
             teacherCourses.forEach(course => {
@@ -111,7 +111,7 @@ const MonatContent = () => {
                 course.studentIds.forEach(id => teacherStudentIds.add(id));
               }
             });
-            
+
             return {
               id: teacherId,
               name: teacher.name,
@@ -122,7 +122,7 @@ const MonatContent = () => {
               longSessions: countLongSessions(teacherSessions)
             };
           }).filter(t => t !== null);
-          
+
           details[month.id] = {
             teacherCount: teacherIds.length,
             studentCount: studentIds.size,
@@ -133,7 +133,7 @@ const MonatContent = () => {
             longSessions: countLongSessions(monthSessions)
           };
         });
-        
+
         setMonthDetails(details);
       } catch (err) {
         console.error("Error fetching month data:", err);
@@ -142,7 +142,7 @@ const MonatContent = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -153,11 +153,11 @@ const MonatContent = () => {
   return (
     <div className="monat-content">
       <h2>Monatsübersicht</h2>
-      
+
       {loading && <div className="loading-indicator">Daten werden geladen...</div>}
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       {!loading && !error && (
         <>
           {months.length === 0 ? (
@@ -178,7 +178,7 @@ const MonatContent = () => {
                     teachers: [],
                     longSessions: 0
                   };
-                  
+
                   return (
                     <div key={month.id} className="month-card">
                       <div
@@ -200,13 +200,13 @@ const MonatContent = () => {
                             <span>{details.hours.toFixed(1)} Stunden</span>
                           </div>
                           <div className="expand-toggle">
-                            <FontAwesomeIcon 
-                              icon={expandedMonth === month.id ? faChevronDown : faChevronRight} 
+                            <FontAwesomeIcon
+                              icon={expandedMonth === month.id ? faChevronDown : faChevronRight}
                             />
                           </div>
                         </div>
                       </div>
-                      
+
                       {expandedMonth === month.id && (
                         <div className="month-card-details">
                           <div className="month-summary">
@@ -231,7 +231,7 @@ const MonatContent = () => {
                               <div className="summary-label">2h-Lektionen</div>
                             </div>
                           </div>
-                          
+
                           <h4>Lehrer diesen Monat</h4>
                           <div className="teacher-cards-container">
                             {details.teachers.length === 0 ? (
