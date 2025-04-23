@@ -22,8 +22,18 @@ const CourseDetail = ({ courseId, onClose }) => {
     const [showOptions, setShowOptions] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    const onDeleteCourse = (courseId, courseName, event) => {
-        handleDeleteCourse(courseId, courseName, null, null, setError, event);
+    const onDeleteCourse = async (courseId, courseName, event) => {
+        setDeleting(true);
+        await handleDeleteCourse(
+            courseId,
+            courseName,
+            setDeleting, // Pass setDeleting to show loading state
+            null,        // setCourses not needed here
+            setError,
+            event
+        );
+        setDeleting(false);
+        onClose(); // Close the detail view after deletion
     };
 
     // Add this function to handle column header clicks
