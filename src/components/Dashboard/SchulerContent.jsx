@@ -370,9 +370,10 @@ const SchulerContent = () => {
                   <th onClick={() => requestSort('courseNames')} className={sortConfig.key === 'courseNames' ? `sorted-${sortConfig.direction}` : ''}>
                     Kurse
                   </th>
-                  <th onClick={() => requestSort('levelNames')} className={sortConfig.key === 'levelNames' ? `sorted-${sortConfig.direction}` : ''}>
-                    Stufen
-                  </th>
+                  {/* Remove this column:
+    <th onClick={() => requestSort('levelNames')} className={sortConfig.key === 'levelNames' ? `sorted-${sortConfig.direction}` : ''}>
+      Stufen
+    </th> */}
                   <th onClick={() => requestSort('teacherNames')} className={sortConfig.key === 'teacherNames' ? `sorted-${sortConfig.direction}` : ''}>
                     Lehrer
                   </th>
@@ -385,13 +386,15 @@ const SchulerContent = () => {
                   <th>Aktionen</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredStudents.map((student) => (
                   <tr key={student.id}>
                     <td>{student.name}</td>
                     <td>{student.info || '-'}</td>
                     <td>{student.courseNames || '-'}</td>
-                    <td>{student.levelNames || '-'}</td>
+                    {/* Remove this cell:
+      <td>{student.levelNames || '-'}</td> */}
                     <td>{student.teacherNames || '-'}</td>
                     <td className={parseFloat(student.absenceRate) > 20 ? 'absence-high' : parseFloat(student.absenceRate) === 0 ? 'absence-perfect' : ''}>
                       {student.absenceString} ({student.absenceRate}%)
@@ -408,6 +411,7 @@ const SchulerContent = () => {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
 
