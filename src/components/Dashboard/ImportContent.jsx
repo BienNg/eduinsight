@@ -81,21 +81,27 @@ const findColumnIndex = (headerRow, columnNames) => {
   return -1;
 };
 
+// Helper to normalize teacher names (remove accents, lowercase, trim)
+const normalizeTeacherName = (name) => {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize('NFD') // Decompose accented characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .replace(/\s+/g, ' '); // Collapse multiple spaces
+};
+
 // Function to create a teacher record
 const createTeacherRecord = async (teacherName) => {
   try {
     // Normalize the teacher name: trim whitespace and convert to title case
-    const normalizedName = teacherName
-      .trim()
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    const normalizedName = normalizeTeacherName(teacherName);
+
 
     // Check if teacher already exists (case-insensitive search)
     const teachers = await getAllRecords('teachers');
     const existingTeacher = teachers.find(t =>
-      t.name.toLowerCase() === normalizedName.toLowerCase()
+      normalizeTeacherName(t.name) === normalizedName
     );
 
     if (existingTeacher) {
@@ -106,7 +112,7 @@ const createTeacherRecord = async (teacherName) => {
     // Create new teacher with normalized name
     console.log(`Creating new teacher: ${normalizedName}`);
     return await createRecord('teachers', {
-      name: normalizedName,
+      name: teacherName.trim(),
       country: 'Deutschland', // Default country
       courseIds: [] // Will be updated when courses are created
     });
@@ -701,7 +707,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
     endDate: '', // Will be updated with the last session date
     sessionIds: [],
     studentIds: [], // We'll update this after creating/getting students
-    teacherId: '' // Will be updated when we process sessions
+    teacherIds: [] // <-- Use only teacherIds array
   });
 
   console.log(`Created course record: ${courseRecord.id}`);
@@ -860,8 +866,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
         let teacherId = '';
         if (teacherValue) {
           const teacherRecord = await createTeacherRecord(teacherValue);
-          teacherId = teacherRecord.id;
-          teacherIds.add(teacherId);
+          teacherIds.add(teacherRecord.id);
 
           // If this is the first teacher we've found, set it as the course's teacher
           if (!courseRecord.teacherId) {
@@ -1074,7 +1079,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
     startDate: firstSessionDate || '',
     endDate: lastSessionDate || '',
     sessionIds: courseRecord.sessionIds,
-    teacherId: courseRecord.teacherId
+    teacherIds: Array.from(teacherIds)
   });
 
   // Update teacher records with this course
