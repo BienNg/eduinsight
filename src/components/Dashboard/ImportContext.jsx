@@ -1,6 +1,7 @@
 // src/components/Dashboard/ImportContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import TimeColumnsModal from './TimeColumnsModal';
+import ErrorSummary from './ErrorSummary';
 
 const ImportContext = createContext(null);
 

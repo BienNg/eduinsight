@@ -7,6 +7,7 @@ import { createRecord, updateRecord, getAllRecords, getRecordById } from '../../
 import { ref, push, set, get, update, remove, query, orderByChild, equalTo } from "firebase/database";
 import { database } from "../../firebase/config";
 import './Content.css';
+import ErrorSummary from './ErrorSummary';
 
 // Add at the top of the component, after imports
 const findColumnIndex = (headerRow, columnNames) => {
@@ -392,7 +393,7 @@ const validateExcelFile = async (arrayBuffer, filename) => {
               }
             }
             else if (!(typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/))) {
-              errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid date format "${dateValue}". Expected format: DD.MM.YYYY`);
+              errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid date format "${dateValue}". Expected format: DD.MM.YYYY in the "Datum/Unterrichtstag" column`);
             }
           } else {
             // If date is missing but we have a previous date, this is likely a continuation
@@ -430,21 +431,21 @@ const validateExcelFile = async (arrayBuffer, filename) => {
             if (startTimeIndex !== -1) {
               const startTimeValue = row[startTimeIndex];
               if (!startTimeValue) {
-                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a start time.`);
+                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a start time in the "von" column.`);
               }
             }
 
             if (endTimeIndex !== -1) {
               const endTimeValue = row[endTimeIndex];
               if (!endTimeValue) {
-                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing an end time.`);
+                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing an end time in the "bis" column.`);
               }
             }
 
             if (teacherIndex !== -1) {
               const teacherValue = row[teacherIndex];
               if (!teacherValue) {
-                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information.`);
+                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information in the "Lehrer" column.`);
               }
             }
           }
@@ -1332,7 +1333,7 @@ const ImportContent = () => {
           {failedFiles.length > 0 && (
             <div style={{ marginTop: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4>Failed ({failedFiles.length})</h4>
+                <h4>Fix These Files ({failedFiles.length})</h4>
                 <button
                   onClick={clearFailedFiles}
                   style={{
@@ -1358,9 +1359,13 @@ const ImportContent = () => {
                     <span><strong>{item.name}</strong></span>
                     <span style={{ color: '#c62828' }}>✗ Failed</span>
                   </div>
-                  <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#c62828' }}>
-                    {item.error}
-                  </p>
+                  {item.error && item.error.includes('Validation failed:') ? (
+                    <ErrorSummary errors={item.error} filename={item.name} />
+                  ) : (
+                    <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#c62828' }}>
+                      {item.error}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
