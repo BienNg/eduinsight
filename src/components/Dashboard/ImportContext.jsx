@@ -1,7 +1,8 @@
 // src/components/Dashboard/ImportContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import TimeColumnsModal from './TimeColumnsModal';
-import ErrorSummary from './ErrorSummary';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const ImportContext = createContext(null);
 
@@ -11,6 +12,7 @@ export const ImportProvider = ({ children }) => {
   const [completedFiles, setCompletedFiles] = useState([]);
   const [failedFiles, setFailedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Add new state for modal
   const [showTimeModal, setShowTimeModal] = useState(false);
@@ -22,6 +24,19 @@ export const ImportProvider = ({ children }) => {
       if (processingQueue.length > 0 && !loading) {
         setLoading(true);
         const currentFile = processingQueue[0];
+
+        // Create a toast ID for this file
+        const toastId = `import-${currentFile.id}`;
+
+        // Show processing toast
+        toast.loading(`Processing ${currentFile.name}...`, {
+          id: toastId,
+          duration: Infinity, // stays until dismissed or updated
+          action: {
+            label: 'View Import',
+            onClick: () => navigate('/import')
+          }
+        });
 
         try {
           // Update the current file's status to "processing"
@@ -39,6 +54,15 @@ export const ImportProvider = ({ children }) => {
             status: 'completed',
             progress: 100
           }]);
+          // Update toast to success
+          toast.success(`Successfully imported ${currentFile.name}`, {
+            id: toastId,
+            duration: 5000,
+            action: {
+              label: 'View Import',
+              onClick: () => navigate('/import')
+            }
+          });
         } catch (error) {
           // Add to failed files
           setFailedFiles(prev => [...prev, {
@@ -46,6 +70,17 @@ export const ImportProvider = ({ children }) => {
             status: 'failed',
             error: error.message
           }]);
+
+          // Update toast to error
+          toast.error(`Failed to import ${currentFile.name}`, {
+            id: toastId,
+            duration: 5000,
+            description: error.message.substring(0, 100) + (error.message.length > 100 ? '...' : ''),
+            action: {
+              label: 'View Error',
+              onClick: () => navigate('/import')
+            }
+          });
         } finally {
           // Remove from queue
           setProcessingQueue(prev => prev.slice(1));
@@ -55,13 +90,26 @@ export const ImportProvider = ({ children }) => {
     };
 
     processNextFile();
-  }, [processingQueue, loading]);
+  }, [processingQueue, loading, navigate]);
 
   const updateProgress = (progress) => {
-    setProcessingQueue(prev => [
-      { ...prev[0], progress },
-      ...prev.slice(1)
-    ]);
+    if (processingQueue.length > 0) {
+      const currentFile = processingQueue[0];
+      const toastId = `import-${currentFile.id}`;
+
+      // Update toast description with progress if needed
+      if (progress % 20 === 0) { // Update less frequently to avoid performance issues
+        toast.loading(`Processing ${currentFile.name}... ${progress}%`, {
+          id: toastId,
+          duration: Infinity
+        });
+      }
+
+      setProcessingQueue(prev => [
+        { ...prev[0], progress },
+        ...prev.slice(1)
+      ]);
+    }
   };
 
   const addFilesToQueue = (newFiles) => {
@@ -83,6 +131,18 @@ export const ImportProvider = ({ children }) => {
       error: null
     }));
 
+    // Show toast notification for queued files
+    if (filteredFiles.length > 0) {
+      toast.info(`${filteredFiles.length} file(s) added to queue`, {
+        description: filteredFiles.map(f => f.name).join(', ').substring(0, 60) +
+          (filteredFiles.map(f => f.name).join(', ').length > 60 ? '...' : ''),
+        action: {
+          label: 'View Queue',
+          onClick: () => navigate('/import')
+        }
+      });
+    }
+
     setProcessingQueue(prev => [...prev, ...filesWithMeta]);
 
     // Show error for invalid files
@@ -92,6 +152,12 @@ export const ImportProvider = ({ children }) => {
     });
 
     if (invalidFiles.length > 0) {
+      const toastId = `invalid-files-${Date.now()}`;
+      toast.error(`${invalidFiles.length} unsupported file(s)`, {
+        id: toastId,
+        description: 'Only Excel files (.xlsx, .xls, .csv) are supported.',
+      });
+
       setFailedFiles(prev => [
         ...prev,
         ...invalidFiles.map(file => ({
@@ -104,7 +170,7 @@ export const ImportProvider = ({ children }) => {
       ]);
     }
   };
-  //f
+
   const clearCompletedFiles = () => {
     setCompletedFiles([]);
   };
@@ -118,27 +184,27 @@ export const ImportProvider = ({ children }) => {
     return new Promise(async (resolve, reject) => {
       try {
         const reader = new FileReader();
-  
+
         reader.onload = async (e) => {
           try {
             const arrayBuffer = e.target.result;
-  
+
             // Simulating progress updates during validation
             updateProgress(10);
-  
+
             // Import these functions from your ImportContent file
             const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
-  
+
             // Validate the file
             const validationResult = await validateExcelFile(arrayBuffer, file.name);
-  
+
             console.log('Validation result:', validationResult); // Debug log
             updateProgress(30);
-  
+
             // Simplified check for time-only errors using the new flag
             if (validationResult.missingTimeColumns && validationResult.hasOnlyTimeErrors) {
               console.log('Showing time columns modal for file:', file.name); // Debug log
-  
+
               // Make sure we don't already have this file pending
               if (!pendingFile || pendingFile.name !== file.name) {
                 // Set pending file and show modal
@@ -149,39 +215,39 @@ export const ImportProvider = ({ children }) => {
                 });
                 setShowTimeModal(true);
               }
-              
+
               // Remove from processing queue as we'll handle it separately
               setProcessingQueue(prev => prev.slice(1));
               setLoading(false);
               resolve();
               return;
             }
-  
+
             // Handle other validation errors
             if (validationResult.errors && validationResult.errors.length > 0) {
               throw new Error(
                 `Validation failed: ${validationResult.errors.join(', ')}`
               );
             }
-  
+
             updateProgress(50);
-  
+
             // Process the file with the existing function
             await processB1CourseFileWithColors(arrayBuffer, file.name, {});
-  
+
             updateProgress(90);
-  
+
             resolve();
           } catch (error) {
             console.error('Error in file processing:', error); // Debug log
             reject(error);
           }
         };
-  
+
         reader.onerror = (error) => {
           reject(new Error(`Error reading file: ${error}`));
         };
-  
+
         reader.readAsArrayBuffer(file);
       } catch (error) {
         reject(error);
@@ -195,10 +261,21 @@ export const ImportProvider = ({ children }) => {
 
     // Store name before clearing state
     const pendingFileName = pendingFile.name;
+    const toastId = `import-pending-${Date.now()}`;
 
     // Close modal and reset pending file
     setShowTimeModal(false);
     setPendingFile(null);
+
+    // Show toast for cancelled import
+    toast.error(`Import cancelled for ${pendingFileName}`, {
+      id: toastId,
+      duration: 5000,
+      action: {
+        label: 'View Import',
+        onClick: () => navigate('/import')
+      }
+    });
 
     // Add to failed files
     setFailedFiles(prev => [
