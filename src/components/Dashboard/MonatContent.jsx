@@ -136,8 +136,6 @@ const MonatContent = () => {
 
   return (
     <div className="monat-content">
-      <h2>Monatsübersicht</h2>
-
       {loading && <div className="loading-indicator">Daten werden geladen...</div>}
 
       {error && <div className="error-message">{error}</div>}

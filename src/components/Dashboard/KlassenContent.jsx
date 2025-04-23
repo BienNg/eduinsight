@@ -276,8 +276,6 @@ const KlassenContent = () => {
   const courseGroups = groupCourses();
   return (
     <div className="klassen-content">
-      <h2>Klassenübersicht</h2>
-
       {loading && <div className="loading-indicator">Daten werden geladen...</div>}
 
       {error && <div className="error-message">{error}</div>}

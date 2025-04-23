@@ -84,7 +84,6 @@ const LehrerContent = () => {
 
   return (
     <div className="lehrer-content">
-      <h2>Lehrerübersicht</h2>
 
       {loading && <div className="loading-indicator">Daten werden geladen...</div>}
 

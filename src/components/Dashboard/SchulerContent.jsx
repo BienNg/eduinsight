@@ -280,8 +280,6 @@ const SchulerContent = () => {
 
   return (
     <div className="schuler-content">
-      <h2>Schülerübersicht</h2>
-
       {/* Search and Filter Bar */}
       <div className="search-filter-bar">
         <div className="search-container">
