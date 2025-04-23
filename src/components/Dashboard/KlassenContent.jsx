@@ -37,26 +37,51 @@ const KlassenContent = () => {
     try {
       setLoading(true);
       const coursesData = await getAllRecords('courses');
+      const allSessions = await getAllRecords('sessions');
+      const allTeachers = await getAllRecords('teachers');
 
-      // Enrich course data with teacher and student info
+      // Helper: get teacher name by id
+      const teacherNameById = {};
+      allTeachers.forEach(t => { teacherNameById[t.id] = t.name; });
+
+      // Enrich course data
       const enrichedCourses = await Promise.all(coursesData.map(async (course) => {
         // Get teacher if available
         let teacher = null;
         if (course.teacherId) {
-          teacher = await getRecordById('teachers', course.teacherId);
+          teacher = allTeachers.find(t => t.id === course.teacherId);
         }
 
         // Get students count
         const studentCount = course.studentIds ? course.studentIds.length : 0;
 
+        // Get sessions for this course
+        const courseSessions = allSessions.filter(s => s.courseId === course.id);
+
+        // Count sessions per teacher
+        const teacherSessionMap = {};
+        courseSessions.forEach(session => {
+          if (session.teacherId) {
+            teacherSessionMap[session.teacherId] = (teacherSessionMap[session.teacherId] || 0) + 1;
+          }
+        });
+
+        // Build teacher session info array
+        const teacherSessions = Object.entries(teacherSessionMap).map(([teacherId, count]) => ({
+          teacherId,
+          name: teacherNameById[teacherId] || 'Unbekannt',
+          count,
+        }));
+
         // Get sessions count
-        const sessionCount = course.sessionIds ? course.sessionIds.length : 0;
+        const sessionCount = courseSessions.length;
 
         return {
           ...course,
           teacherName: teacher ? teacher.name : 'Not assigned',
-          studentCount: studentCount,
-          sessionCount: sessionCount
+          studentCount,
+          sessionCount,
+          teacherSessions, // <-- add this
         };
       }));
 
@@ -265,7 +290,7 @@ const KlassenContent = () => {
               </div>
               <div className="group-info">
                 <div className="info-item">
-                  <span className="label">Kursstufen:</span>
+                  <span className="label">Kursstufen</span>
                   <div className="level-badges-container">
                     {sortLanguageLevels(Array.from(new Set(groupCourses.map(course => course.level)))).map(level => (
                       <div
@@ -279,13 +304,30 @@ const KlassenContent = () => {
                   </div>
                 </div>
                 <div className="info-item">
-                  <span className="label">Schüler insgesamt:</span>
+                  <span className="label">Lehrkräfte</span>
+                  <div className="teacher-badges-container">
+                    {(() => {
+                      const allTeacherSessions = groupCourses.flatMap(course => course.teacherSessions || []);
+                      if (allTeacherSessions.length === 0) {
+                        return <span className="no-teachers-hint">Keine Lehrkräfte gefunden</span>;
+                      }
+                      return allTeacherSessions.map(ts => (
+                        <span key={ts.teacherId + ts.name + Math.random()} className="teacher-badge">
+                          {ts.name}
+                          <span className="session-count-badge">{ts.count}</span>
+                        </span>
+                      ));
+                    })()}
+                  </div>
+                </div>
+                <div className="info-item">
+                  <span className="label">Schüler insgesamt</span>
                   <span className="value">
                     {groupCourses.reduce((total, course) => total + course.studentCount, 0)}
                   </span>
                 </div>
                 <div className="info-item">
-                  <span className="label">Lektionen insgesamt:</span>
+                  <span className="label">Lektionen insgesamt</span>
                   <span className="value">
                     {groupCourses.reduce((total, course) => total + course.sessionCount, 0)}
                   </span>
