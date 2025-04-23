@@ -93,7 +93,9 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                             </div>
                             <div className="info-item">
                                 <span className="label">Teacher:</span>
-                                <span className="value">{safelyRenderValue(session.teacher)}</span>
+                                <span className="value">
+                                    {teacher ? teacher.name : (session.teacherId ? 'Unknown Teacher' : '-')}
+                                </span>
                             </div>
                             <div className="info-item">
                                 <span className="label">Notes:</span>
