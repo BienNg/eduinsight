@@ -89,7 +89,6 @@ export const deleteRecord = async (path, id) => {
 // Check and delete months with no sessions
 export const cleanupEmptyMonths = async () => {
   try {
-    console.log("Checking for empty months to clean up...");
     const months = await getAllRecords('months');
 
     for (const month of months) {

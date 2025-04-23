@@ -30,7 +30,6 @@ const findColumnIndex = (headerRow, columnNames) => {
         const cellText = cell.toString().trim();
         // Use exact match for date column
         if (dateColumnVariations.includes(cellText)) {
-          console.log(`Found date column "${cellText}" at index ${i}`);
           return i;
         }
       }
@@ -56,7 +55,6 @@ const findColumnIndex = (headerRow, columnNames) => {
     const cellText = cell.toString().trim().toLowerCase();
     for (const name of searchNames) {
       if (cellText === name.toLowerCase()) {
-        console.log(`Found exact match for "${name}" at index ${i}`);
         return i;
       }
     }
@@ -71,7 +69,6 @@ const findColumnIndex = (headerRow, columnNames) => {
     for (const name of searchNames) {
       const variations = columnVariations[name.toLowerCase()] || [];
       if (variations.some(v => cellText.includes(v.toLowerCase()))) {
-        console.log(`Found variation match for "${name}" at index ${i}`);
         return i;
       }
     }
@@ -105,12 +102,10 @@ const createTeacherRecord = async (teacherName) => {
     );
 
     if (existingTeacher) {
-      console.log(`Found existing teacher: ${existingTeacher.name}`);
       return existingTeacher;
     }
 
     // Create new teacher with normalized name
-    console.log(`Creating new teacher: ${normalizedName}`);
     return await createRecord('teachers', {
       name: teacherName.trim(),
       country: 'Deutschland', // Default country
@@ -148,7 +143,6 @@ const createOrUpdateStudentRecord = async (studentName, studentInfo = '', course
     });
 
     if (existingStudent) {
-      console.log(`Found existing student for "${studentName}": ${existingStudent.name}`);
 
       // Update the student's courseIds to include the new course if it doesn't already
       let courseIds = existingStudent.courseIds || [];
@@ -161,15 +155,12 @@ const createOrUpdateStudentRecord = async (studentName, studentInfo = '', course
           // Preserve existing info or use new info if existing is empty
           info: existingStudent.info || studentInfo
         });
-
-        console.log(`Updated student ${existingStudent.name} with course ${courseId}`);
       }
 
       return existingStudent;
     }
 
     // Create new student if not found
-    console.log(`Creating new student: ${studentName}`);
     return await createRecord('students', {
       name: studentName,
       info: studentInfo,
@@ -201,7 +192,6 @@ const getOrCreateMonthRecord = async (date) => {
     const monthRecord = await getRecordById('months', monthId);
 
     if (monthRecord) {
-      console.log(`Found existing month record: ${monthId}`);
       return monthRecord;
     }
 
@@ -213,7 +203,6 @@ const getOrCreateMonthRecord = async (date) => {
 
     const monthName = `${monthNames[parseInt(month) - 1]} ${year}`;
 
-    console.log(`Creating new month record: ${monthId} (${monthName})`);
 
     const newMonth = {
       id: monthId,
@@ -625,12 +614,9 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
 
   // Find the header row with "Folien"
 
-  console.log('*** SEARCHING FOR HEADER ROW ***');
   let headerRowIndex = -1;
   for (let i = 0; i < jsonData.length; i++) {
     if (jsonData[i][0] === "Folien") {
-
-      console.log(`Found header row at index ${i}`);
       headerRowIndex = i;
       break;
     }
@@ -642,11 +628,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
   }
 
   // Get the header row
-  console.log(`Using header row index: ${headerRowIndex}`);
   const headerRow = jsonData[headerRowIndex];
-  console.log("FULL HEADER ROW:", headerRow);
-
-  console.log("Full header row:", headerRow);
 
   // Map column indices for crucial data
   const columnIndices = {
@@ -772,7 +754,6 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
       if (folienTitle !== currentSessionTitle) {
         // Save previous session if we have one
         if (currentSession) {
-          console.log(`Creating session record: ${currentSession.title}`);
           const sessionRecord = await createRecord('sessions', currentSession);
 
           // Add to course's sessionIds
@@ -931,7 +912,6 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
             lastSessionDate = formattedDate;
           }
         }
-        console.log(`Created new session: ${folienTitle} on ${formattedDate}`);
       }
       // If it's the same title but a new row with content, we might need to update the current session
       else if (contentValue && contentValue.trim() !== '') {
@@ -985,8 +965,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
             }
             else if (isRedColor(color)) {
               attendanceValue = 'absent';
-            }// Add debugging if needed
-            console.log(`Cell color: ${color}, Attendance: ${attendanceValue}`);
+            }
           }
 
           // If we couldn't determine from color, try text values
@@ -1025,7 +1004,6 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
                     parseDate(currentSession.date) < parseDate(joinDates[courseRecord.id])) {
                     joinDates[courseRecord.id] = currentSession.date;
                     update(ref(database, `students/${student.id}`), { joinDates });
-                    console.log(`Updated join date for student ${student.id} in course ${courseRecord.id} to ${currentSession.date}`);
                   }
                 }
               });
@@ -1038,7 +1016,6 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename) => {
 
   // Add the last session if we have one
   if (currentSession) {
-    console.log(`Creating final session record: ${currentSession.title}`);
     const sessionRecord = await createRecord('sessions', currentSession);
     courseRecord.sessionIds.push(sessionRecord.id);
 
