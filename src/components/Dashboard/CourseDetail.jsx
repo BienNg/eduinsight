@@ -331,7 +331,9 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
 
                 <div className="course-detail-header">
                     <h2>{course.name}</h2>
-                    <div className="course-level-badge">{course.level}</div>
+                    <div className={`status-badge ${course.status || 'ongoing'}`}>
+                        {course.status ? course.status.charAt(0).toUpperCase() + course.status.slice(1) : 'Ongoing'}
+                    </div>
                     {/* More Options Button */}
                     <div className="more-options-wrapper">
                         <button

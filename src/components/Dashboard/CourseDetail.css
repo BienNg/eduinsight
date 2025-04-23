@@ -590,4 +590,12 @@
   border: 1px solid #FFEEBA;
 }
 
+.status-badge.completed {
+  background-color: rgb(196, 236, 210);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
 /*END Lehrer/Kurse Tab */
+
+
