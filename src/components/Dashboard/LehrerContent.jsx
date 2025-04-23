@@ -102,7 +102,7 @@ const LehrerContent = () => {
             <div className="course-card" key={teacher.id} onClick={() => handleViewDetails(teacher.id)}>
               <div className="course-header">
                 <h3>{teacher.name}</h3>
-                <span className="course-level">{teacher.email ? 'Active' : 'No Email'}</span>
+                <span className="course-level">{teacher.country || 'No Country'}</span>
               </div>
               <div className="course-info">
                 <div className="info-item">

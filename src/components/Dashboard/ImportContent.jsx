@@ -108,7 +108,7 @@ const createTeacherRecord = async (teacherName) => {
     // Create new teacher with normalized name
     return await createRecord('teachers', {
       name: teacherName.trim(),
-      country: 'Deutschland', // Default country
+      country: '', // Default country
       courseIds: [] // Will be updated when courses are created
     });
   } catch (error) {
