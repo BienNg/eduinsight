@@ -443,3 +443,117 @@
 }
 
 /*END Modern minimalist breadcrumb */
+
+/* Modern minimalist Options button */
+.more-options-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+.more-options-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  outline: none;
+  height: 32px;
+  width: 32px;
+}
+
+
+.more-options-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  position: relative;
+}
+
+.more-options-icon::before,
+.more-options-icon::after,
+.more-options-icon span {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.more-options-icon::before {
+  top: 3px;
+}
+
+.more-options-icon span {
+  top: 8px;
+}
+
+.more-options-icon::after {
+  top: 13px;
+}
+
+/* Ensure the span for the middle dot exists */
+.more-options-icon span {
+  position: absolute;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  top: 8px;
+  content: '';
+  display: block;
+}
+
+.more-options-menu {
+  position: absolute;
+  right: 0;
+  top: 120%;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  z-index: 100;
+  min-width: 170px;
+  padding: 6px 0;
+  animation: fadeInMenu 0.15s;
+}
+
+@keyframes fadeInMenu {
+  from { opacity: 0; transform: translateY(-8px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+.more-options-menu .option-item {
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #dc2626;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 0;
+  transition: background 0.12s;
+  font-size: 15px;
+}
+
+.more-options-menu .option-item:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.more-options-menu .option-item:hover:not(:disabled) {
+  background: #fef2f2;
+}
+/*END Modern minimalist Options button */

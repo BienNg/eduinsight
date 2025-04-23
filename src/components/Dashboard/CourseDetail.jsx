@@ -1,6 +1,6 @@
 // src/components/Dashboard/CourseDetail.jsx
 import { useState, useEffect } from 'react';
-import { getRecordById } from '../../firebase/database';
+import { getRecordById, deleteRecord } from '../../firebase/database';
 import SessionDetailModal from './SessionDetailModal';
 import StudentDetailModal from './StudentDetailModal';
 import './CourseDetail.css';
@@ -18,6 +18,22 @@ const CourseDetail = ({ courseId, onClose }) => {
     const [selectedSession, setSelectedSession] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'ascending' });
+    const [showOptions, setShowOptions] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDeleteCourse = async () => {
+        if (!window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
+        setDeleting(true);
+        try {
+            await deleteRecord('courses', courseId);
+            onClose();
+        } catch (err) {
+            alert('Failed to delete course.');
+        } finally {
+            setDeleting(false);
+            setShowOptions(false);
+        }
+    };
 
     // Add this function to handle column header clicks
     const requestSort = (key) => {
@@ -305,6 +321,29 @@ const CourseDetail = ({ courseId, onClose }) => {
                     <button className="back-button" onClick={onClose}>← Back</button>
                     <h2>{course.name}</h2>
                     <div className="course-level-badge">{course.level}</div>
+                    {/* More Options Button */}
+                    <div className="more-options-wrapper">
+                        <button
+                            className="more-options-btn"
+                            aria-label="More options"
+                            onClick={() => setShowOptions(v => !v)}
+                        >
+                            <span className="more-options-icon">
+                                <span></span>
+                            </span>
+                        </button>
+                        {showOptions && (
+                            <div className="more-options-menu">
+                                <button
+                                    className="option-item"
+                                    onClick={handleDeleteCourse}
+                                    disabled={deleting}
+                                >
+                                    {deleting ? 'Deleting...' : 'Delete Course'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="course-detail-tabs">
