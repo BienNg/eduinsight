@@ -1,11 +1,87 @@
 // src/components/Dashboard/SessionDetailModal.jsx
 import React from 'react';
+import { useState, useEffect } from 'react';
+import { getRecordById, updateRecord } from '../../firebase/database';
+import TeacherSelect from '../common/TeacherSelect'; //
 import './SessionDetailModal.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock } from '@fortawesome/free-solid-svg-icons';
 import { isLongSession } from '../../utils/sessionUtils';
 
 const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) => {
+
+    const [sessionData, setSessionData] = useState(session);
+    const [savingTeacher, setSavingTeacher] = useState(false);
+    const [editedFields, setEditedFields] = useState({});
+    const [editMode, setEditMode] = useState(false);
+    const [savingChanges, setSavingChanges] = useState(false);
+
+    const handleTeacherChange = async (teacherId) => {
+        try {
+            if (teacherId === sessionData.teacherId) return;
+
+            setSavingTeacher(true);
+
+            // Update local state
+            setSessionData(prev => ({
+                ...prev,
+                teacherId
+            }));
+
+            // Update in database
+            await updateRecord('sessions', session.id, { teacherId });
+
+            // Get course data
+            const courseData = await getRecordById('courses', session.courseId);
+
+            // Check if this is the only session with the new teacher
+            const shouldUpdateCourseTeacher = courseData &&
+                (!courseData.teacherId || courseData.teacherId === session.teacherId);
+
+            if (shouldUpdateCourseTeacher) {
+                await updateRecord('courses', session.courseId, {
+                    teacherId: teacherId
+                });
+            }
+
+            // Update teacher records
+            if (session.teacherId) {
+                const oldTeacher = await getRecordById('teachers', session.teacherId);
+                if (oldTeacher && oldTeacher.courseIds) {
+                    // For simplicity, we're not implementing full cleanup here
+                    // In a real app, you might want to check if the teacher is still used in other sessions
+                }
+            }
+
+            if (teacherId) {
+                const newTeacher = await getRecordById('teachers', teacherId);
+                if (newTeacher) {
+                    const courseIds = newTeacher.courseIds || [];
+                    if (!courseIds.includes(session.courseId)) {
+                        courseIds.push(session.courseId);
+                        await updateRecord('teachers', teacherId, { courseIds });
+                    }
+                }
+            }
+
+            // Mark as edited
+            setEditedFields({
+                ...editedFields,
+                teacherId: true
+            });
+
+        } catch (err) {
+            console.error("Error updating teacher:", err);
+            // Revert to original state on error
+            setSessionData(prev => ({
+                ...prev,
+                teacherId: session.teacherId
+            }));
+        } finally {
+            setSavingTeacher(false);
+        }
+    };
+
     // Function to safely render any type of value (reusing from CourseDetail)
     const safelyRenderValue = (value) => {
         if (value === null || value === undefined) {
@@ -64,8 +140,8 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
     };
 
     return (
-        <div className="modal-backdrop">
-            <div className="session-detail-modal">
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="session-detail-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <div>
                         <h2>{groupName && `${groupName} | `}{session.title || 'Session Details'}</h2>
@@ -93,9 +169,16 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                             </div>
                             <div className="info-item">
                                 <span className="label">Teacher:</span>
-                                <span className="value">
-                                    {teacher ? teacher.name : (session.teacherId ? 'Unknown Teacher' : '-')}
-                                </span>
+                                <div className={`teacher-select-wrapper ${savingTeacher ? 'saving' : ''} ${editedFields.teacherId ? 'edited' : ''}`}>
+                                    <TeacherSelect
+                                        currentTeacherId={sessionData.teacherId}
+                                        onTeacherChange={handleTeacherChange}
+                                        courseName={groupName}
+                                    />
+                                    {savingTeacher && <span className="saving-indicator">Saving...</span>}
+                                    {editedFields.teacherId && !savingTeacher &&
+                                        <span className="edited-indicator">✓ Saved</span>}
+                                </div>
                             </div>
                             <div className="info-item">
                                 <span className="label">Notes:</span>

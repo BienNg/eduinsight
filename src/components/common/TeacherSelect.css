@@ -1,0 +1,82 @@
+/* src/components/common/TeacherSelect.css */
+.teacher-select-container {
+    width: 100%;
+  }
+  
+  .teacher-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .teacher-select:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
+  }
+  
+  .teacher-create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .teacher-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .teacher-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
+  }
+  
+  .teacher-create-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .btn-create {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .btn-create:hover {
+    background-color: var(--dark-blue);
+  }
+  
+  .btn-create:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  .btn-cancel {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .teacher-error {
+    color: #f44336;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  
+  .teacher-select-loading {
+    padding: 8px 0;
+    color: #666;
+    font-style: italic;
+  }
