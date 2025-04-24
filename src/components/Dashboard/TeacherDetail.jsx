@@ -27,6 +27,52 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [editingCountry, setEditingCountry] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState('');
 
+    const getCurrentMonthSessionsData = () => {
+        // Get current month and year
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1; // JavaScript months are 0-indexed
+        const currentYear = now.getFullYear();
+
+        // Filter sessions for current month
+        const currentMonthSessions = sessions.filter(session => {
+            if (!session.date) return false;
+
+            const dateParts = session.date.split('.');
+            if (dateParts.length !== 3) return false;
+
+            const sessionMonth = parseInt(dateParts[1]);
+            const sessionYear = parseInt(dateParts[2]);
+
+            return sessionMonth === currentMonth && sessionYear === currentYear;
+        });
+
+        // Group sessions by course
+        const courseSessionMap = {};
+
+        currentMonthSessions.forEach(session => {
+            if (!courseSessionMap[session.courseId]) {
+                const course = courses.find(c => c.id === session.courseId);
+                courseSessionMap[session.courseId] = {
+                    course: course,
+                    sessions: [],
+                    totalHours: 0,
+                    longSessionsCount: 0
+                };
+            }
+
+            courseSessionMap[session.courseId].sessions.push(session);
+
+            // Determine if it's a long session and calculate hours
+            const isLong = isLongSession(session.startTime, session.endTime);
+            courseSessionMap[session.courseId].totalHours += isLong ? 2 : 1.5;
+            if (isLong) {
+                courseSessionMap[session.courseId].longSessionsCount++;
+            }
+        });
+
+        return Object.values(courseSessionMap);
+    };
+
     // Define the prepareChartData function BEFORE using it in useMemo
     const prepareChartData = (sessions) => {
         // Create a map to store hours by month
@@ -470,6 +516,57 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
+                        </div>
+                        <div className="course-info-card" style={{ backgroundColor: 'white', marginTop: '24px' }}>
+                            <h3>Kurse im aktuellen Monat ({new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' })})</h3>
+
+                            {getCurrentMonthSessionsData().length > 0 ? (
+                                <table className="sessions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Kurs</th>
+                                            <th>Level</th>
+                                            <th>Lektionen</th>
+                                            <th>Unterrichtsstunden</th>
+                                            <th>2h-Lektionen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {getCurrentMonthSessionsData().map(data => (
+                                            <tr
+                                                key={data.course.id}
+                                                className="clickable-row"
+                                                onClick={() => handleCourseSelect(data.course.id)}
+                                            >
+                                                <td>{data.course.name}</td>
+                                                <td>{data.course.level}</td>
+                                                <td>{data.sessions.length}</td>
+                                                <td>{data.totalHours.toFixed(1)}</td>
+                                                <td>
+                                                    {data.longSessionsCount > 0 && (
+                                                        <span className="long-session-count">
+                                                            <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                                            {data.longSessionsCount}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colSpan="2"><strong>Gesamt</strong></td>
+                                            <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.sessions.length, 0)}</strong></td>
+                                            <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.totalHours, 0).toFixed(1)}</strong></td>
+                                            <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.longSessionsCount, 0)}</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            ) : (
+                                <div className="empty-state">
+                                    <p>Keine Kurse im aktuellen Monat.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
