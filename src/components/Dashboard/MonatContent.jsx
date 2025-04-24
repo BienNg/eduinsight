@@ -1,12 +1,10 @@
 // src/components/Dashboard/MonatContent.jsx
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
-import 'react-tabs/style/react-tabs.css';
 import { getAllRecords } from '../../firebase/database';
 import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
 import { calculateTotalHours } from '../../utils/timeUtils';
 import './MonthDetail.css';
-import './MonthTabs.css'; // We'll create this CSS file
+import './MonthTabs.css';
 import '../../styles/common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 
@@ -22,7 +20,7 @@ const MonatContent = () => {
   const [monthDetails, setMonthDetails] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [currentMonthId, setCurrentMonthId] = useState(null);
-  const [activeTab, setActiveTab] = useState('current')
+  const [activeTab, setActiveTab] = useState('current');
   const tabsContainerRef = useRef(null);
   const tabs = [
     { id: 'current', label: 'Aktueller Monat' },
@@ -30,7 +28,6 @@ const MonatContent = () => {
   ];
 
   // Add this useEffect to handle the underline animation
-  // Update the useEffect to work with your custom tab buttons
   useLayoutEffect(() => {
     const updateTabIndicator = () => {
       if (tabsContainerRef.current) {
@@ -67,30 +64,6 @@ const MonatContent = () => {
     };
   }, [activeTab]); // Depends on activeTab
 
-  useEffect(() => {
-    // Small delay to ensure the DOM is fully rendered
-    const timer = setTimeout(() => {
-      if (tabsContainerRef.current) {
-        const tabContainer = tabsContainerRef.current;
-        const activeTabElement = tabContainer.querySelector('.app-tab.active');
-
-        if (activeTabElement) {
-          // Get dimensions
-          const tabRect = activeTabElement.getBoundingClientRect();
-          const containerRect = tabContainer.getBoundingClientRect();
-
-          // Calculate positions
-          const left = tabRect.left - containerRect.left;
-
-          // Set custom properties for the sliding indicator
-          tabContainer.style.setProperty('--slider-width', `${tabRect.width}px`);
-          tabContainer.style.setProperty('--slider-left', `${left}px`);
-        }
-      }
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -391,6 +364,61 @@ const MonatContent = () => {
     );
   };
 
+  // Function to render all months view with search
+  const renderAllMonthsDetails = () => {
+    const filteredMonths = filterMonths(months).sort((a, b) => b.id.localeCompare(a.id));
+    
+    return (
+      <>
+        <div className="all-months-header">
+          <div className="search-container">
+            <input
+              type="text"
+              placeholder="Suchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="month-search-input"
+            />
+          </div>
+        </div>
+
+        <div className="notion-blocks">
+          {filteredMonths.map((month) => {
+            const details = monthDetails[month.id] || {
+              teacherCount: 0,
+              studentCount: 0,
+              courseCount: 0,
+              sessionCount: 0,
+              hours: 0,
+              teachers: [],
+              longSessions: 0
+            };
+
+            return (
+              <div className="notion-block-group" key={month.id}>
+                {renderMonthHeader(month, details)}
+
+                {expandedMonth === month.id && (
+                  <div className="notion-block-children">
+                    {renderMonthSummary(details)}
+
+                    <div className="notion-h2">Lehrer diesen Monat</div>
+
+                    {details.teachers.length === 0 ? (
+                      <div className="notion-empty-message">Keine Lehrer in diesem Monat.</div>
+                    ) : (
+                      renderTeacherCards(details.teachers)
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  };
+
   // Filter function for search
   const filterMonths = (months) => {
     if (!searchQuery) return months;
@@ -442,77 +470,17 @@ const MonatContent = () => {
     );
   }
 
-  const filteredMonths = filterMonths(months).sort((a, b) => b.id.localeCompare(a.id));
-
   return (
     <div className="notion-page monat-content">
-      <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
+      <TabComponent 
+        tabs={tabs} 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        ref={tabsContainerRef}
+      >
         {activeTab === 'current' && renderCurrentMonthDetails()}
-        {activeTab === 'all' && (
-          <>
-            <div className="all-months-header">
-              {/* Search container and other elements */}
-            </div>
-            <div className="notion-blocks">
-              {/* Month blocks */}
-            </div>
-          </>
-        )}
+        {activeTab === 'all' && renderAllMonthsDetails()}
       </TabComponent>
-
-      <div className="app-tab-panel">
-        {activeTab === 'current' && renderCurrentMonthDetails()}
-
-        {activeTab === 'all' && (
-          <>
-            <div className="all-months-header">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Suchen..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="month-search-input"
-                />
-              </div>
-            </div>
-
-            <div className="notion-blocks">
-              {filteredMonths.map((month) => {
-                const details = monthDetails[month.id] || {
-                  teacherCount: 0,
-                  studentCount: 0,
-                  courseCount: 0,
-                  sessionCount: 0,
-                  hours: 0,
-                  teachers: [],
-                  longSessions: 0
-                };
-
-                return (
-                  <div className="notion-block-group" key={month.id}>
-                    {renderMonthHeader(month, details)}
-
-                    {expandedMonth === month.id && (
-                      <div className="notion-block-children">
-                        {renderMonthSummary(details)}
-
-                        <div className="notion-h2">Lehrer diesen Monat</div>
-
-                        {details.teachers.length === 0 ? (
-                          <div className="notion-empty-message">Keine Lehrer in diesem Monat.</div>
-                        ) : (
-                          renderTeacherCards(details.teachers)
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 };
