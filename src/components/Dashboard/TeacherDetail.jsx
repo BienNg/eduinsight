@@ -4,6 +4,8 @@ import { getRecordById, getAllRecords, updateRecord } from '../../firebase/datab
 import CourseDetail from './CourseDetail'; // Import CourseDetail component
 import SessionDetailModal from './SessionDetailModal';
 import './CourseDetail.css'; // Reuse existing styles
+import '../../styles/common/Tabs.css';
+
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faClock } from '@fortawesome/free-solid-svg-icons';
@@ -305,9 +307,9 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 <div className="course-level-badge">{teacher.country || 'No Country'}</div>
             </div>
 
-            <div className="course-detail-tabs">
+            <div className="course-detail-tabs app-tab-list">
                 <button
-                    className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
+                    className={`app-tab  ${activeTab === 'overview' ? 'active' : ''}`}
                     onClick={() => setActiveTab('overview')}
                 >
                     Übersicht

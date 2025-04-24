@@ -6,6 +6,8 @@ import SessionDetailModal from './SessionDetailModal';
 import StudentDetailModal from './StudentDetailModal';
 import './CourseDetail.css';
 import './Content.css'
+import '../../styles/common/Tabs.css';
+
 
 const CourseDetail = ({ courseId, onClose, groupName }) => {
     const [course, setCourse] = useState(null);
@@ -379,28 +381,28 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
                     </div>
                 </div>
 
-                <div className="course-detail-tabs">
+                <div className="course-detail-tabs app-tab-list">
                     <button
-                        className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
+                        className={`app-tab  ${activeTab === 'overview' ? 'active' : ''}`}
                         onClick={() => setActiveTab('overview')}
                     >
                         Overview
                     </button>
                     <button
-                        className={`tab ${activeTab === 'students' ? 'active' : ''}`}
+                        className={`app-tab ${activeTab === 'students' ? 'active' : ''}`}
                         onClick={() => setActiveTab('students')}
                     >
                         Students
                     </button>
                     <button
-                        className={`tab ${activeTab === 'sessions' ? 'active' : ''}`}
+                        className={`app-tab ${activeTab === 'sessions' ? 'active' : ''}`}
                         onClick={() => setActiveTab('sessions')}
                     >
                         Sessions
                     </button>
                 </div>
 
-                <div className="course-detail-content">
+                <div className="app-tab-panel">
                     {activeTab === 'overview' && (
                         <div className="overview-tab">
                             <div className="stats-row">
