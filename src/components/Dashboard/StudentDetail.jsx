@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords } from '../../firebase/database';
 import './StudentDetail.css';
 
+import '../../styles/common/Tabs.css'; // Import the tab styles
+import TabComponent from '../common/TabComponent'; // Import TabComponent
+
 
 import { mergeStudents } from '../../firebase/database';
 import ConfirmationModal from './ConfirmationModal';
@@ -18,7 +21,13 @@ const StudentDetail = ({ student, onClose }) => {
   const [showMergeConfirmation, setShowMergeConfirmation] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
   const [mergeError, setMergeError] = useState(null);
-
+ // Define tabs configuration
+ const tabs = [
+    { id: 'overview', label: 'Übersicht' },
+    { id: 'attendance', label: 'Anwesenheit' },
+    { id: 'courses', label: 'Kurse' },
+    { id: 'relations', label: 'Relations' }
+  ];
   // Add the merge functionality
   const handleMergeStudents = async () => {
     if (!selectedRelatedStudent) return;
@@ -262,32 +271,47 @@ const StudentDetail = ({ student, onClose }) => {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
-        <div className="detail-tabs">
-          <button
-            className={activeTab === 'overview' ? 'active' : ''}
-            onClick={() => setActiveTab('overview')}
-          >
-            Übersicht
-          </button>
-          <button
-            className={activeTab === 'attendance' ? 'active' : ''}
-            onClick={() => setActiveTab('attendance')}
-          >
-            Anwesenheit
-          </button>
-          <button
-            className={activeTab === 'courses' ? 'active' : ''}
-            onClick={() => setActiveTab('courses')}
-          >
-            Kurse
-          </button>
-          <button
-            className={activeTab === 'relations' ? 'active' : ''}
-            onClick={() => setActiveTab('relations')}
-          >
-            Relations
-          </button>
-        </div>
+        <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
+          <div className="detail-content">
+            {loading ? (
+              <div className="loading-indicator">Daten werden geladen...</div>
+            ) : (
+              <>
+                {activeTab === 'overview' && (
+                  <>
+                    {/* Overview tab content */}
+                    <div className="session-info-section">
+                      <h3>Schülerinformation</h3>
+                      {/* ... rest of your overview tab content */}
+                    </div>
+                    {/* ... */}
+                  </>
+                )}
+
+                {activeTab === 'attendance' && (
+                  /* Attendance tab content */
+                  <div className="attendance-section">
+                    {/* ... */}
+                  </div>
+                )}
+
+                {activeTab === 'courses' && (
+                  /* Courses tab content */
+                  <div className="courses-section">
+                    {/* ... */}
+                  </div>
+                )}
+                
+                {activeTab === 'relations' && (
+                  /* Relations tab content */
+                  <div className="relations-section">
+                    {/* ... */}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </TabComponent>
 
         <div className="detail-content">
           {loading ? (
