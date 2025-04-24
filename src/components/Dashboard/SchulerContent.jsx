@@ -3,7 +3,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { getAllRecords, getRecordById } from '../../firebase/database';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faFilter, faUserGraduate, faChalkboardTeacher, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
-import StudentDetailModal from './StudentDetailModal';
+
+import StudentDetail from './StudentDetail';
 import CourseDetail from './CourseDetail';
 import './Content.css';
 import './SchulerContent.css'; // We'll create this file
@@ -277,6 +278,13 @@ const SchulerContent = () => {
       onClose={handleCloseCourseDetail}
     />;
   }
+  if (selectedStudent) {
+    return <StudentDetail
+      student={selectedStudent}
+      onClose={handleCloseDetails}
+    />;
+  }
+  
 
   return (
     <div className="schuler-content">
@@ -456,11 +464,12 @@ const SchulerContent = () => {
 
       {/* Student Detail Modal */}
       {selectedStudent && (
-        <StudentDetailModal
-          student={selectedStudent}
-          sessions={[]} // We'll need to fetch the sessions for this student
-          onClose={handleCloseDetails}
-        />
+        <div className="student-detail-wrapper">
+          <StudentDetail
+            student={selectedStudent}
+            onClose={handleCloseDetails}
+          />
+        </div>
       )}
     </div>
   );

@@ -1,13 +1,13 @@
-// src/components/Dashboard/StudentDetailModal.jsx
+// src/components/Dashboard/StudentDetail.jsx (new file)
 import React, { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords } from '../../firebase/database';
-import './SessionDetailModal.css';
-import './StudentDetailModal.css';
+import './StudentDetail.css';
+
 
 import { mergeStudents } from '../../firebase/database';
 import ConfirmationModal from './ConfirmationModal';
 
-const StudentDetailModal = ({ student, onClose }) => {
+const StudentDetail = ({ student, onClose }) => {
   const [sessions, setSessions] = useState([]);
   const [courses, setCourses] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
@@ -45,6 +45,7 @@ const StudentDetailModal = ({ student, onClose }) => {
       setIsMerging(false);
     }
   };
+  
   const fetchStudentData = async () => {
     setLoading(true);
     try {
@@ -104,6 +105,7 @@ const StudentDetailModal = ({ student, onClose }) => {
       setIsMerging(false);
     }
   };
+  
   useEffect(() => {
     fetchStudentData();
   }, [student.id]);
@@ -253,14 +255,14 @@ const StudentDetailModal = ({ student, onClose }) => {
   );
 
   return (
-    <div className="modal-backdrop">
-      <div className="session-detail-modal student-detail-modal fixed-size-modal">
-        <div className="modal-header">
+    <div className="student-detail-container">
+      <div className="student-detail-view">
+        <div className="detail-header">
           <h2>{safelyRenderValue(student.name)}</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
-        <div className="modal-tabs">
+        <div className="detail-tabs">
           <button
             className={activeTab === 'overview' ? 'active' : ''}
             onClick={() => setActiveTab('overview')}
@@ -287,7 +289,7 @@ const StudentDetailModal = ({ student, onClose }) => {
           </button>
         </div>
 
-        <div className="modal-content">
+        <div className="detail-content">
           {loading ? (
             <div className="loading-indicator">Daten werden geladen...</div>
           ) : (
@@ -419,6 +421,7 @@ const StudentDetailModal = ({ student, onClose }) => {
                             <div key={course.id} className="course-card">
                               <div className="course-header">
                                 <h4>{course.name}</h4>
+                                <span className="level-badge">{course.level}</span>
                               </div>
 
                               <div className="course-stats">
@@ -479,6 +482,7 @@ const StudentDetailModal = ({ student, onClose }) => {
                   )}
                 </div>
               )}
+              
               {activeTab === 'relations' && (
                 <div className="relations-section">
                   <h3>Schülerbeziehungen</h3>
@@ -620,4 +624,4 @@ const StudentDetailModal = ({ student, onClose }) => {
   );
 };
 
-export default StudentDetailModal;
+export default StudentDetail;
