@@ -9,6 +9,7 @@ import TabComponent from '../common/TabComponent';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SlidingPane from 'react-sliding-pane';
 import "react-sliding-pane/dist/react-sliding-pane.css";
+import "../../styles/common/SlidingPane.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faClock, faEye } from '@fortawesome/free-solid-svg-icons';
 
@@ -233,6 +234,22 @@ const TeacherDetail = ({ teacherId, onClose }) => {
             fetchTeacherDetails();
         }
     }, [teacherId]);
+
+    useEffect(() => {
+        // Apply will-change property before animation starts
+        if (isPaneOpen) {
+          document.querySelector('.slide-pane_from_right')?.style.setProperty('will-change', 'transform');
+        }
+        
+        // Clean up will-change after animation completes
+        const cleanupTimer = setTimeout(() => {
+          if (isPaneOpen) {
+            document.querySelector('.slide-pane_from_right')?.style.removeProperty('will-change');
+          }
+        }, 300); // slightly longer than animation duration
+        
+        return () => clearTimeout(cleanupTimer);
+      }, [isPaneOpen]);
 
     const openSessionDetail = (session) => {
         setSelectedSession(session);
@@ -939,6 +956,8 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 width="66%"
                 onRequestClose={() => setIsPaneOpen(false)}
                 hideHeader={false}
+                closeIcon={<span className="sliding-pane-close-icon">×</span>}
+                className="custom-sliding-pane"
             >
                 <div className="side-peek-content">
                     <div className="side-peek-actions">

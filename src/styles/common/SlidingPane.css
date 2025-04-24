@@ -1,0 +1,21 @@
+.slide-pane {
+    transition: transform 0.25s ease-in-out !important;
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100%;
+    max-width: 66%; /* Match your width prop */
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .slide-pane_from_right {
+    transform: translateX(100%);
+  }
+  
+  .slide-pane_from_right.content-after-open {
+    transform: translateX(0);
+  }
+  
+  .slide-pane__overlay {
+    transition: opacity 0.25s ease-in-out !important;
+  }
