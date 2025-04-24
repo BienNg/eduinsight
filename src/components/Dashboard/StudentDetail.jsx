@@ -11,6 +11,8 @@ import TabComponent from '../common/TabComponent'; // Import TabComponent
 import { mergeStudents } from '../../firebase/database';
 import ConfirmationModal from './ConfirmationModal';
 import ReassignModal from './ReassignModal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExchangeAlt } from '@fortawesome/free-solid-svg-icons';
 
 const StudentDetail = ({ student, onClose }) => {
     const [sessions, setSessions] = useState([]);
@@ -531,24 +533,33 @@ const StudentDetail = ({ student, onClose }) => {
                                                     return (
                                                         <div key={course.id} className="course-card">
                                                             <div className="course-header">
+                                                                <h4>{course.name}</h4>
                                                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                                                     <button
-                                                                        className="btn-reassign"
+                                                                        className="btn-icon"
                                                                         onClick={() => handleOpenReassignModal(course)}
+                                                                        title="Reassign student to another course"
                                                                         style={{
-                                                                            backgroundColor: '#f0f0f0',
+                                                                            backgroundColor: 'transparent',
                                                                             border: 'none',
-                                                                            borderRadius: '4px',
-                                                                            padding: '4px 8px',
-                                                                            marginRight: '10px',
-                                                                            cursor: 'pointer',
+                                                                            borderRadius: '50%',
+                                                                            width: '32px',
+                                                                            height: '32px',
                                                                             display: 'flex',
-                                                                            alignItems: 'center'
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            marginLeft: '10px',
+                                                                            cursor: 'pointer',
                                                                         }}
                                                                     >
-                                                                        <span style={{ fontSize: '14px' }}>Reassign</span>
+                                                                        <FontAwesomeIcon
+                                                                            icon={faExchangeAlt}
+                                                                            style={{
+                                                                                color: 'white',
+                                                                                fontSize: '16px',
+                                                                            }}
+                                                                        />
                                                                     </button>
-                                                                    <h4>{course.name}</h4>
                                                                 </div>
                                                             </div>
 
