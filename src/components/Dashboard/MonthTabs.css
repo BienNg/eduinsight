@@ -1,0 +1,101 @@
+/* src/components/Dashboard/MonthTabs.css */
+.month-tabs {
+    width: 100%;
+  }
+  
+  .month-tab-list {
+    display: flex;
+    list-style-type: none;
+    margin: 0 0 24px;
+    padding: 0;
+    border-bottom: 2px solid #f1f1f1;
+  }
+  
+  .month-tab {
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    color: #666;
+    margin-right: 8px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+  }
+  
+  .month-tab:hover {
+    color: var(--primary-blue);
+  }
+  
+  .month-tab[aria-selected="true"] {
+    color: var(--primary-blue);
+    border-bottom: 2px solid var(--primary-blue);
+  }
+  
+  .month-tab-panel {
+    padding: 8px 0;
+  }
+  
+  /* Current Month Details Styling */
+  .current-month-details {
+    width: 100%;
+  }
+  
+  .current-month-summary {
+    margin-bottom: 32px;
+  }
+  
+  .current-month-section {
+    margin-bottom: 40px;
+  }
+  
+  /* Search Styling */
+  .all-months-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .search-container {
+    position: relative;
+  }
+  
+  .month-search-input {
+    padding: 10px 16px;
+    font-size: 0.95rem;
+    border: none;
+    border-bottom: 1px solid #eaeaea;
+    width: 240px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  .month-search-input:focus {
+    outline: none;
+    background-color: white;
+    border-bottom: 1px solid var(--primary-blue);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .month-search-input::placeholder {
+    color: #aaa;
+  }
+  
+  /* Add responsive design */
+  @media (max-width: 768px) {
+    .all-months-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    
+    .month-search-input {
+      width: 100%;
+    }
+    
+    .month-tab {
+      padding: 12px 16px;
+      font-size: 0.9rem;
+    }
+  }

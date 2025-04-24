@@ -1,11 +1,12 @@
 // src/components/Dashboard/MonatContent.jsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
 import { getAllRecords } from '../../firebase/database';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChalkboardTeacher, faUserGraduate, faClock, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import './MonthDetail.css';
 import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
 import { calculateTotalHours } from '../../utils/timeUtils';
+import './MonthDetail.css';
+import './MonthTabs.css'; // We'll create this CSS file
 
 const MonatContent = () => {
   const [months, setMonths] = useState([]);
@@ -17,6 +18,8 @@ const MonatContent = () => {
   const [error, setError] = useState(null);
   const [expandedMonth, setExpandedMonth] = useState(null);
   const [monthDetails, setMonthDetails] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentMonthId, setCurrentMonthId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,59 +43,59 @@ const MonatContent = () => {
         // Process and calculate stats for each month
         const details = {};
 
-        monthsData.forEach(month => {
+        monthsData.forEach((month) => {
           // Get sessions for this month
-          const monthSessions = sessionsData.filter(session => session.monthId === month.id);
+          const monthSessions = sessionsData.filter((session) => session.monthId === month.id);
 
           // Calculate hours using the timeUtils function (with flat rate)
           const totalHours = calculateTotalHours(monthSessions);
 
           // Get unique course IDs
-          const courseIds = [...new Set(monthSessions.map(session => session.courseId))];
+          const courseIds = [...new Set(monthSessions.map((session) => session.courseId))];
 
           // Get courses for this month
-          const monthCourses = coursesData.filter(course =>
+          const monthCourses = coursesData.filter((course) => 
             courseIds.includes(course.id)
           );
 
           // Get unique teacher IDs
-          const teacherIds = [...new Set(monthCourses.flatMap(course =>
+          const teacherIds = [...new Set(monthCourses.flatMap((course) =>
             course.teacherIds ? course.teacherIds : []
           ))];
 
           // Get teachers for this month
-          const monthTeachers = teachersData.filter(teacher =>
+          const monthTeachers = teachersData.filter((teacher) =>
             teacherIds.includes(teacher.id)
           );
 
           // Get all students from these courses
           const studentIds = new Set();
-          monthCourses.forEach(course => {
+          monthCourses.forEach((course) => {
             if (course.studentIds) {
-              course.studentIds.forEach(id => studentIds.add(id));
+              course.studentIds.forEach((id) => studentIds.add(id));
             }
           });
 
           // Process teacher details
-          const teacherDetails = teacherIds.map(teacherId => {
-            const teacher = teachersData.find(t => t.id === teacherId);
+          const teacherDetails = teacherIds.map((teacherId) => {
+            const teacher = teachersData.find((t) => t.id === teacherId);
             if (!teacher) return null;
 
             // Get ALL sessions for this month where this teacher is listed as the teacher
-            const teacherSessions = monthSessions.filter(session => session.teacherId === teacherId);
+            const teacherSessions = monthSessions.filter((session) => session.teacherId === teacherId);
 
             // Calculate hours using the timeUtils function (with flat rate)
             const teacherHours = calculateTotalHours(teacherSessions);
 
             // Get unique course IDs from the teacher's sessions
-            const teacherCourseIds = [...new Set(teacherSessions.map(session => session.courseId))];
-            const teacherCourses = coursesData.filter(course => teacherCourseIds.includes(course.id));
+            const teacherCourseIds = [...new Set(teacherSessions.map((session) => session.courseId))];
+            const teacherCourses = coursesData.filter((course) => teacherCourseIds.includes(course.id));
 
             // Get all students from these courses
             const teacherStudentIds = new Set();
-            teacherCourses.forEach(course => {
+            teacherCourses.forEach((course) => {
               if (course.studentIds) {
-                course.studentIds.forEach(id => teacherStudentIds.add(id));
+                course.studentIds.forEach((id) => teacherStudentIds.add(id));
               }
             });
 
@@ -105,7 +108,7 @@ const MonatContent = () => {
               hours: teacherHours,
               longSessions: countLongSessions(teacherSessions)
             };
-          }).filter(t => t !== null);
+          }).filter((t) => t !== null);
 
           details[month.id] = {
             teacherCount: teacherIds.length,
@@ -114,11 +117,29 @@ const MonatContent = () => {
             sessionCount: monthSessions.length,
             hours: totalHours,
             teachers: teacherDetails,
-            longSessions: countLongSessions(monthSessions)
+            longSessions: countLongSessions(monthSessions),
+            courses: monthCourses  // Adding courses to details for more detailed view
           };
         });
 
         setMonthDetails(details);
+        
+        // Find current month
+        const now = new Date();
+        const currentMonth = now.toISOString().substring(0, 7); // YYYY-MM format
+        const currentMonthObj = monthsData.find(month => month.id.startsWith(currentMonth));
+        
+        if (currentMonthObj) {
+          setCurrentMonthId(currentMonthObj.id);
+          setExpandedMonth(currentMonthObj.id); // Auto-expand current month
+        } else {
+          // If current month not found, use the latest month
+          const sortedMonths = [...monthsData].sort((a, b) => b.id.localeCompare(a.id));
+          if (sortedMonths.length > 0) {
+            setCurrentMonthId(sortedMonths[0].id);
+            setExpandedMonth(sortedMonths[0].id);
+          }
+        }
       } catch (err) {
         console.error("Error fetching month data:", err);
         setError("Failed to load month data. Please try again later.");
@@ -134,134 +155,286 @@ const MonatContent = () => {
     setExpandedMonth(expandedMonth === monthId ? null : monthId);
   };
 
-  return (
-    <div className="monat-content">
-      {loading && <div className="loading-indicator">Daten werden geladen...</div>}
+  const renderMonthHeader = (month, details) => (
+    <div className="notion-block month-header" onClick={() => toggleMonthExpansion(month.id)}>
+      <div className="notion-block-content">
+        <div className="notion-block-toggle">
+          <div className="notion-block-toggle-icon">
+            {expandedMonth === month.id ? "▾" : "▸"}
+          </div>
+          <div className="notion-block-text">{month.name}</div>
+        </div>
+      </div>
+      <div className="notion-metadata">
+        <div className="notion-metadata-item">{details.teacherCount} Lehrer</div>
+        <div className="notion-metadata-item">{details.studentCount} Schüler</div>
+        <div className="notion-metadata-item">{details.hours.toFixed(1)}h</div>
+        <div className="notion-metadata-item">{details.sessionCount} Lektionen</div>
+      </div>
+    </div>
+  );
 
-      {error && <div className="error-message">{error}</div>}
+  const renderMonthSummary = (details) => (
+    <div className="notion-callout">
+      <div className="notion-callout-content">
+        <div className="notion-stat-grid">
+          <div className="notion-stat">
+            <div className="notion-stat-value">{details.courseCount}</div>
+            <div className="notion-stat-label">Kurse</div>
+          </div>
+          <div className="notion-stat">
+            <div className="notion-stat-value">{details.sessionCount}</div>
+            <div className="notion-stat-label">Lektionen</div>
+          </div>
+          <div className="notion-stat">
+            <div className="notion-stat-value">{details.studentCount}</div>
+            <div className="notion-stat-label">Schüler</div>
+          </div>
+          <div className="notion-stat">
+            <div className="notion-stat-value">{details.hours.toFixed(1)}</div>
+            <div className="notion-stat-label">Stunden</div>
+          </div>
+          <div className="notion-stat">
+            <div className="notion-stat-value">{details.longSessions}</div>
+            <div className="notion-stat-label">2h-Lektionen</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
-      {!loading && !error && (
-        <>
-          {months.length === 0 ? (
-            <div className="empty-state">
-              <p>Keine Monatsdaten gefunden. Importieren Sie Kursdaten über den Excel Import.</p>
+  // New render function for teacher cards instead of the togglable list
+  const renderTeacherCards = (teachers) => (
+    <div className="teacher-cards-grid">
+      {teachers.map((teacher) => (
+        <div className="teacher-card" key={teacher.id}>
+          <div className="teacher-card-header">
+            <h3 className="teacher-name">{teacher.name}</h3>
+          </div>
+          <div className="teacher-card-body">
+            <div className="teacher-stats">
+              <div className="teacher-stat-row">
+                <div className="teacher-stat">
+                  <div className="stat-label">Stunden</div>
+                  <div className="stat-value">{teacher.hours.toFixed(1)}h</div>
+                </div>
+                <div className="teacher-stat">
+                  <div className="stat-label">Lektionen</div>
+                  <div className="stat-value">{teacher.sessionCount}</div>
+                </div>
+              </div>
+              <div className="teacher-stat-row">
+                <div className="teacher-stat">
+                  <div className="stat-label">Kurse</div>
+                  <div className="stat-value">{teacher.courseCount}</div>
+                </div>
+                <div className="teacher-stat">
+                  <div className="stat-label">Schüler</div>
+                  <div className="stat-value">{teacher.studentCount}</div>
+                </div>
+              </div>
+              {teacher.longSessions > 0 && (
+                <div className="teacher-stat-row long-sessions">
+                  <div className="teacher-stat">
+                    <div className="stat-label">2h-Lektionen</div>
+                    <div className="stat-value">{teacher.longSessions}</div>
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // New function to render course cards for the current month view
+  const renderCourseCards = (courses) => (
+    <div className="courses-grid">
+      {courses.map((course) => (
+        <div className="course-card" key={course.id}>
+          <div className="course-header">
+            <h3>{course.name || 'Unbenannter Kurs'}</h3>
+            <div className="course-level">{course.level || 'N/A'}</div>
+          </div>
+          <div className="course-info">
+            <div className="info-item">
+              <div className="label">Schüler</div>
+              <div className="value">{course.studentIds ? course.studentIds.length : 0}</div>
+            </div>
+            <div className="info-item">
+              <div className="label">Lektionen</div>
+              <div className="value">
+                {sessions.filter(session => session.courseId === course.id && session.monthId === currentMonthId).length}
+              </div>
+            </div>
+            <div className="info-item">
+              <div className="label">Stunden</div>
+              <div className="value">
+                {calculateTotalHours(sessions.filter(session => session.courseId === course.id && session.monthId === currentMonthId)).toFixed(1)}h
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // New component for the current month details
+  const renderCurrentMonthDetails = () => {
+    if (!currentMonthId || !monthDetails[currentMonthId]) {
+      return <div className="notion-empty">Keine Daten für den aktuellen Monat verfügbar.</div>;
+    }
+
+    const month = months.find(m => m.id === currentMonthId);
+    const details = monthDetails[currentMonthId];
+
+    return (
+      <div className="current-month-details">
+        <h1 className="notion-h1">{month ? month.name : 'Aktueller Monat'}</h1>
+        
+        {/* Summary Stats */}
+        <div className="current-month-summary">
+          {renderMonthSummary(details)}
+        </div>
+        
+        {/* Teachers Section */}
+        <div className="current-month-section">
+          <h2 className="notion-h2">Lehrer</h2>
+          {details.teachers.length === 0 ? (
+            <div className="notion-empty-message">Keine Lehrer in diesem Monat.</div>
           ) : (
-            <div className="month-cards-container">
-              {months
-                .sort((a, b) => b.id.localeCompare(a.id)) // Sort by ID (YYYY-MM) in descending order
-                .map(month => {
-                  const details = monthDetails[month.id] || {
-                    teacherCount: 0,
-                    studentCount: 0,
-                    courseCount: 0,
-                    sessionCount: 0,
-                    hours: 0,
-                    teachers: [],
-                    longSessions: 0
-                  };
+            renderTeacherCards(details.teachers)
+          )}
+        </div>
+        
+        {/* Courses Section */}
+        <div className="current-month-section">
+          <h2 className="notion-h2">Kurse</h2>
+          {details.courses.length === 0 ? (
+            <div className="notion-empty-message">Keine Kurse in diesem Monat.</div>
+          ) : (
+            renderCourseCards(details.courses)
+          )}
+        </div>
+      </div>
+    );
+  };
 
-                  return (
-                    <div key={month.id} className="month-card">
+  // Filter function for search
+  const filterMonths = (months) => {
+    if (!searchQuery) return months;
+    
+    return months.filter(month => {
+      // Search by month name
+      if (month.name && month.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return true;
+      }
+      
+      const details = monthDetails[month.id];
+      if (!details) return false;
+      
+      // Search by teacher name
+      const teacherMatch = details.teachers.some(teacher => 
+        teacher.name && teacher.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (teacherMatch) return true;
+      
+      // Search by course name
+      const courseMatch = details.courses && details.courses.some(course => 
+        course.name && course.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (courseMatch) return true;
+      
+      // Search by group name (assuming groups are in courses)
+      const groupMatch = details.courses && details.courses.some(course => 
+        course.group && course.group.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      
+      return groupMatch;
+    });
+  };
 
-                      <div
-                        className="month-card-header"
-                        onClick={() => toggleMonthExpansion(month.id)}
-                      >
-                        <h3>{month.name}</h3>
-                        <div className="month-card-stats">
-                          <div className="stat-item">
-                            <FontAwesomeIcon icon={faChalkboardTeacher} />
-                            <span>{details.teacherCount} Lehrer</span>
-                          </div>
-                          <div className="stat-item">
-                            <FontAwesomeIcon icon={faUserGraduate} />
-                            <span>{details.studentCount} Schüler</span>
-                          </div>
-                          <div className="stat-item">
-                            <FontAwesomeIcon icon={faClock} />
-                            <span>{details.hours.toFixed(1)} Stunden</span>
-                          </div>
-                          <div className="expand-toggle">
-                            <FontAwesomeIcon
-                              icon={expandedMonth === month.id ? faChevronDown : faChevronRight}
-                            />
-                          </div>
-                        </div>
-                      </div>
+  // Main render function
+  if (loading) {
+    return <div className="notion-page notion-loading">Daten werden geladen...</div>;
+  }
 
-                      {expandedMonth === month.id && (
-                        <div className="month-card-details">
-                          <div className="month-summary">
-                            <div className="summary-item">
-                              <div className="summary-value">{details.courseCount}</div>
-                              <div className="summary-label">Kurse</div>
-                            </div>
-                            <div className="summary-item">
-                              <div className="summary-value">{details.sessionCount}</div>
-                              <div className="summary-label">Lektionen</div>
-                            </div>
-                            <div className="summary-item">
-                              <div className="summary-value">{details.studentCount}</div>
-                              <div className="summary-label">Schüler</div>
-                            </div>
-                            <div className="summary-item">
-                              <div className="summary-value">{details.hours.toFixed(1)}</div>
-                              <div className="summary-label">Stunden</div>
-                            </div>
-                            <div className="summary-item">
-                              <div className="summary-value">{details.longSessions}</div>
-                              <div className="summary-label">2h-Lektionen</div>
-                            </div>
-                          </div>
+  if (error) {
+    return <div className="notion-page notion-error">{error}</div>;
+  }
 
-                          <h4>Lehrer diesen Monat</h4>
-                          <div className="teacher-cards-container">
-                            {details.teachers.length === 0 ? (
-                              <p className="no-data-message">Keine Lehrer in diesem Monat.</p>
-                            ) : (
-                              details.teachers.map(teacher => (
-                                <div key={teacher.id} className="teacher-card">
-                                  <div className="teacher-card-header">
-                                    <h5>{teacher.name}</h5>
-                                  </div>
-                                  <div className="teacher-card-body">
-                                    <div className="teacher-stat">
-                                      <span className="label">Kurse:</span>
-                                      <span className="value">{teacher.courseCount}</span>
-                                    </div>
-                                    <div className="teacher-stat">
-                                      <span className="label">Lektionen:</span>
-                                      <span className="value">{teacher.sessionCount}</span>
-                                    </div>
-                                    <div className="teacher-stat">
-                                      <span className="label">Schüler:</span>
-                                      <span className="value">{teacher.studentCount}</span>
-                                    </div>
-                                    <div className="teacher-stat">
-                                      <span className="label">Stunden:</span>
-                                      <span className="value">{teacher.hours.toFixed(1)}</span>
-                                    </div>
-                                    {teacher.longSessions > 0 && (
-                                      <div className="teacher-stat">
-                                        <span className="label">2h-Lektionen:</span>
-                                        <span className="value">{teacher.longSessions}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </div>
+  if (months.length === 0) {
+    return (
+      <div className="notion-page notion-empty">
+        <p>Keine Monatsdaten gefunden. Importieren Sie Kursdaten über den Excel Import.</p>
+      </div>
+    );
+  }
+
+  const filteredMonths = filterMonths(months).sort((a, b) => b.id.localeCompare(a.id));
+
+  return (
+    <div className="notion-page monat-content">
+      <Tabs className="month-tabs">
+        <TabList className="month-tab-list">
+          <Tab className="month-tab">Aktueller Monat</Tab>
+          <Tab className="month-tab">Alle Monate</Tab>
+        </TabList>
+
+        <TabPanel className="month-tab-panel">
+          {renderCurrentMonthDetails()}
+        </TabPanel>
+
+        <TabPanel className="month-tab-panel">
+          <div className="all-months-header">
+            <h1 className="notion-h1">Monatsübersicht</h1>
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Suchen..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="month-search-input"
+              />
+            </div>
+          </div>
+          
+          <div className="notion-blocks">
+            {filteredMonths.map((month) => {
+              const details = monthDetails[month.id] || {
+                teacherCount: 0,
+                studentCount: 0,
+                courseCount: 0,
+                sessionCount: 0,
+                hours: 0,
+                teachers: [],
+                longSessions: 0
+              };
+
+              return (
+                <div className="notion-block-group" key={month.id}>
+                  {renderMonthHeader(month, details)}
+                  
+                  {expandedMonth === month.id && (
+                    <div className="notion-block-children">
+                      {renderMonthSummary(details)}
+                      
+                      <div className="notion-h2">Lehrer diesen Monat</div>
+                      
+                      {details.teachers.length === 0 ? (
+                        <div className="notion-empty-message">Keine Lehrer in diesem Monat.</div>
+                      ) : (
+                        renderTeacherCards(details.teachers)
                       )}
                     </div>
-                  );
-                })}
-            </div>
-          )}
-        </>
-      )}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </TabPanel>
+      </Tabs>
     </div>
   );
 };
