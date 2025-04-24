@@ -50,8 +50,12 @@ const StudentDetailModal = ({ student, onClose }) => {
     try {
       // Fetch all sessions for this student
       const allSessions = await getAllRecords('sessions');
+      const studentCourseIds = student.courseIds || [];
+
       const studentSessions = allSessions.filter(session =>
-        session.attendance && session.attendance[student.id]
+        session.attendance &&
+        session.attendance[student.id] &&
+        studentCourseIds.includes(session.courseId)
       );
 
       // Fetch course details for each session
@@ -397,75 +401,77 @@ const StudentDetailModal = ({ student, onClose }) => {
                 <div className="courses-section">
                   <h3>Kursbeteiligung</h3>
 
-                  {courses.length > 0 ? (
+                  {courses.filter(course => student.courseIds && student.courseIds.includes(course.id)).length > 0 ? (
                     <>
-                      {courses.map(course => {
-                        // Get course-specific attendance statistics
-                        const courseStats = getCourseStats()[course.id] || {
-                          total: 0, present: 0, absent: 0, sick: 0, technical: 0
-                        };
+                      {courses
+                        .filter(course => student.courseIds && student.courseIds.includes(course.id))
+                        .map(course => {
+                          // Get course-specific attendance statistics
+                          const courseStats = getCourseStats()[course.id] || {
+                            total: 0, present: 0, absent: 0, sick: 0, technical: 0
+                          };
 
-                        const attendanceRate = courseStats.total > 0
-                          ? Math.round((courseStats.present / courseStats.total) * 100)
-                          : 0;
+                          const attendanceRate = courseStats.total > 0
+                            ? Math.round((courseStats.present / courseStats.total) * 100)
+                            : 0;
 
-                        return (
-                          <div key={course.id} className="course-card">
-                            <div className="course-header">
-                              <h4>{course.name}</h4>
-                              <span className="level-badge">{course.level}</span>
+                          return (
+                            <div key={course.id} className="course-card">
+                              <div className="course-header">
+                                <h4>{course.name}</h4>
+                                <span className="level-badge">{course.level}</span>
+                              </div>
+
+                              <div className="course-stats">
+                                <div className="course-stat">
+                                  <span className="label">Anwesenheitsquote:</span>
+                                  <span className="value">{attendanceRate}%</span>
+                                </div>
+                                <div className="course-stat">
+                                  <span className="label">Lektionen:</span>
+                                  <span className="value">{courseStats.total}</span>
+                                </div>
+                                <div className="course-stat">
+                                  <span className="label">Abwesend:</span>
+                                  <span className="value">
+                                    {courseStats.absent + courseStats.sick + courseStats.technical}
+                                  </span>
+                                </div>
+                                <div className="course-stat">
+                                  <span className="label">Zeitraum:</span>
+                                  <span className="value">
+                                    {course.startDate} - {course.endDate || 'heute'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="attendance-breakdown">
+                                <div className="progress-bar">
+                                  <div
+                                    className="progress-segment present"
+                                    style={{ width: `${(courseStats.present / courseStats.total) * 100}%` }}
+                                    title={`Anwesend: ${courseStats.present}`}
+                                  ></div>
+                                  <div
+                                    className="progress-segment absent"
+                                    style={{ width: `${(courseStats.absent / courseStats.total) * 100}%` }}
+                                    title={`Abwesend: ${courseStats.absent}`}
+                                  ></div>
+                                  <div
+                                    className="progress-segment sick"
+                                    style={{ width: `${(courseStats.sick / courseStats.total) * 100}%` }}
+                                    title={`Krank: ${courseStats.sick}`}
+                                  ></div>
+                                  <div
+                                    className="progress-segment technical"
+                                    style={{ width: `${(courseStats.technical / courseStats.total) * 100}%` }}
+                                    title={`Technische Probleme: ${courseStats.technical}`}
+                                  ></div>
+                                </div>
+                              </div>
                             </div>
-
-                            <div className="course-stats">
-                              <div className="course-stat">
-                                <span className="label">Anwesenheitsquote:</span>
-                                <span className="value">{attendanceRate}%</span>
-                              </div>
-                              <div className="course-stat">
-                                <span className="label">Lektionen:</span>
-                                <span className="value">{courseStats.total}</span>
-                              </div>
-                              <div className="course-stat">
-                                <span className="label">Abwesend:</span>
-                                <span className="value">
-                                  {courseStats.absent + courseStats.sick + courseStats.technical}
-                                </span>
-                              </div>
-                              <div className="course-stat">
-                                <span className="label">Zeitraum:</span>
-                                <span className="value">
-                                  {course.startDate} - {course.endDate || 'heute'}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="attendance-breakdown">
-                              <div className="progress-bar">
-                                <div
-                                  className="progress-segment present"
-                                  style={{ width: `${(courseStats.present / courseStats.total) * 100}%` }}
-                                  title={`Anwesend: ${courseStats.present}`}
-                                ></div>
-                                <div
-                                  className="progress-segment absent"
-                                  style={{ width: `${(courseStats.absent / courseStats.total) * 100}%` }}
-                                  title={`Abwesend: ${courseStats.absent}`}
-                                ></div>
-                                <div
-                                  className="progress-segment sick"
-                                  style={{ width: `${(courseStats.sick / courseStats.total) * 100}%` }}
-                                  title={`Krank: ${courseStats.sick}`}
-                                ></div>
-                                <div
-                                  className="progress-segment technical"
-                                  style={{ width: `${(courseStats.technical / courseStats.total) * 100}%` }}
-                                  title={`Technische Probleme: ${courseStats.technical}`}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </>
                   ) : (
                     <div className="empty-state">
