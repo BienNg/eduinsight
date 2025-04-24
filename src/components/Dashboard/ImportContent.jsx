@@ -606,7 +606,7 @@ const parseDate = (dateString) => {
 const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => {
 
   const { ignoreMissingTimeColumns } = options;
-
+  let sessionOrderCounter = 0;
   // Use XLSX and ExcelJS to parse the file
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const firstSheetName = workbook.SheetNames[0];
@@ -931,6 +931,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
           contentItems: [],
           attendance: {},
           monthId: monthId,
+          sessionOrder: sessionOrderCounter++, 
           // Set status to 'ongoing' if date is empty or in current/future month
           status: !formattedDate ? 'ongoing' : (() => {
             if (formattedDate) {
@@ -1094,18 +1095,30 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
 
     sessions.push(sessionRecord);
   }
-  // Determine course status based on last session date
+  // Determine course status based on ANY ongoing sessions
   let courseStatus = 'ongoing';
-  if (lastSessionDate) {
-    const [day, month, year] = lastSessionDate.split('.').map(Number);
-    const lastDate = new Date(year, month - 1, day);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
-    // If the last session date is in the past, mark course as completed
-    if (lastDate < today) {
+  // If there are ANY sessions with status 'ongoing', the course should be ongoing
+  const hasAnyOngoingSessions = sessions.some(session =>
+    session.status === 'ongoing'
+  );
+
+  if (hasAnyOngoingSessions) {
+    courseStatus = 'ongoing';
+  } else {
+    // Only if ALL sessions are completed, mark the course as completed
+    const allSessionsCompleted = sessions.every(session =>
+      session.status === 'completed'
+    );
+
+    if (allSessionsCompleted && sessions.length > 0) {
       courseStatus = 'completed';
     }
+  }
+
+  // Empty date fallback - if no sessions or no valid dates, course is ongoing
+  if (sessions.length === 0 || !lastSessionDate) {
+    courseStatus = 'ongoing';
   }
 
   // Update course with session dates and teacher
