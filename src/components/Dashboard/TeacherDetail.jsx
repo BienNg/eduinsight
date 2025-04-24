@@ -30,7 +30,8 @@ const TeacherDetail = ({ teacherId, onClose }) => {
         { id: 'overview', label: 'Übersicht' },
         { id: 'courses', label: 'Kurse' },
         { id: 'sessions', label: 'Lektionen' },
-        { id: 'monthly', label: 'Monatlich' }
+        { id: 'monthly', label: 'Monatlich' },
+        { id: 'info', label: 'Info' },
     ];
 
 
@@ -336,6 +337,11 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                         {/* Monthly tab content */}
                     </div>
                 )}
+                {activeTab === 'info' && (
+                    <div className="info-tab">
+                        {/* Monthly tab content */}
+                    </div>
+                )}
             </TabComponent>
 
             <div className="course-detail-content">
@@ -353,46 +359,6 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                             <div className="stat-box">
                                 <h3>Unterrichtsstunden</h3>
                                 <div className="stat-value">{totalHours.toFixed(1)}</div>
-                            </div>
-                        </div>
-                        <div className="course-info-card">
-                            <h3>Lehrer Information</h3>
-                            <div className="info-grid">
-                                <div className="info-item">
-                                    <span className="label">Name:</span>
-                                    <span className="value">{teacher.name}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Land:</span>
-                                    {editingCountry ? (
-                                        <div className="country-selector-inline">
-                                            <select
-                                                value={selectedCountry}
-                                                onChange={(e) => setSelectedCountry(e.target.value)}
-                                                className="country-select"
-                                            >
-                                                <option value="Deutschland">Deutschland</option>
-                                                <option value="Vietnam">Vietnam</option>
-                                            </select>
-                                            <button onClick={handleSaveCountry} className="save-btn">Speichern</button>
-                                            <button onClick={() => setEditingCountry(false)} className="cancel-btn">Abbrechen</button>
-                                        </div>
-                                    ) : (
-                                        <span className="value editable" onClick={() => setEditingCountry(true)}>
-                                            {teacher.country || 'No Country'} <FontAwesomeIcon icon={faPencilAlt} className="edit-icon" />
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Anzahl Monate aktiv:</span>
-                                    <span className="value">{months.length}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Durchschnittliche Stunden pro Monat:</span>
-                                    <span className="value">
-                                        {months.length > 0 ? (totalHours / months.length).toFixed(1) : '0'}
-                                    </span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -622,6 +588,50 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                 <p>Keine monatlichen Daten gefunden.</p>
                             </div>
                         )}
+                    </div>
+                )}
+                {activeTab === 'info' && (
+                    <div className="info-tab">
+                        <div className="course-info-card">
+                            <h3>Lehrer Information</h3>
+                            <div className="info-grid">
+                                <div className="info-item">
+                                    <span className="label">Name:</span>
+                                    <span className="value">{teacher.name}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Land:</span>
+                                    {editingCountry ? (
+                                        <div className="country-selector-inline">
+                                            <select
+                                                value={selectedCountry}
+                                                onChange={(e) => setSelectedCountry(e.target.value)}
+                                                className="country-select"
+                                            >
+                                                <option value="Deutschland">Deutschland</option>
+                                                <option value="Vietnam">Vietnam</option>
+                                            </select>
+                                            <button onClick={handleSaveCountry} className="save-btn">Speichern</button>
+                                            <button onClick={() => setEditingCountry(false)} className="cancel-btn">Abbrechen</button>
+                                        </div>
+                                    ) : (
+                                        <span className="value editable" onClick={() => setEditingCountry(true)}>
+                                            {teacher.country || 'No Country'} <FontAwesomeIcon icon={faPencilAlt} className="edit-icon" />
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Anzahl Monate aktiv:</span>
+                                    <span className="value">{months.length}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Durchschnittliche Stunden pro Monat:</span>
+                                    <span className="value">
+                                        {months.length > 0 ? (totalHours / months.length).toFixed(1) : '0'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
