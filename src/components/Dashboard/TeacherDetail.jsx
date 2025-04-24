@@ -85,15 +85,15 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const prepareChartData = (sessions) => {
         // Create a map to store hours by month
         const monthlyHours = {};
-
+    
         // Month names in German
         const monthNames = [
             'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
             'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'
         ];
-
+    
         sessions.forEach(session => {
-            if (session.date && session.startTime && session.endTime) {
+            if (session.date) {
                 // Extract month from date (format: DD.MM.YYYY)
                 const dateParts = session.date.split('.');
                 if (dateParts.length === 3) {
@@ -102,29 +102,10 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                     const shortYear = fullYear.slice(2);
                     const monthKey = `${dateParts[1]}.${fullYear}`; // MM.YYYY format for sorting
                     const displayMonth = `${monthNames[monthNum]} ${shortYear}`; // "Month Year" format
-
-                    // Calculate session duration
-                    let durationHours = 1.5; // Default duration
-
-                    // If we have actual times, calculate actual duration
-                    if (session.startTime && session.endTime) {
-                        const [startHours, startMinutes] = session.startTime.split(':').map(Number);
-                        const [endHours, endMinutes] = session.endTime.split(':').map(Number);
-
-                        // Calculate total minutes
-                        const startTotalMinutes = startHours * 60 + startMinutes;
-                        const endTotalMinutes = endHours * 60 + endMinutes;
-
-                        // Calculate duration in minutes, handling sessions that cross midnight
-                        let durationMinutes = endTotalMinutes - startTotalMinutes;
-                        if (durationMinutes < 0) {
-                            durationMinutes += 24 * 60;
-                        }
-
-                        // Convert to hours
-                        durationHours = durationMinutes / 60;
-                    }
-
+    
+                    // Calculate session duration using the same logic as in the courses table
+                    const sessionHours = isLongSession(session.startTime, session.endTime) ? 2 : 1.5;
+    
                     // Add to monthly total
                     if (!monthlyHours[monthKey]) {
                         monthlyHours[monthKey] = {
@@ -133,11 +114,11 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                             sortKey: monthKey
                         };
                     }
-                    monthlyHours[monthKey].hours += durationHours;
+                    monthlyHours[monthKey].hours += sessionHours;
                 }
             }
         });
-
+    
         // Convert to array format needed by Recharts
         return Object.values(monthlyHours)
             .sort((a, b) => {
