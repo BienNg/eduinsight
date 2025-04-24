@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords, updateRecord } from '../../firebase/database'
 import CourseDetail from './CourseDetail'; // Import CourseDetail component
 import SessionDetailModal from './SessionDetailModal';
-import './CourseDetail.css'; // Reuse existing styles
+import './CourseDetail.css';
 import '../../styles/common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 
@@ -366,7 +366,6 @@ const TeacherDetail = ({ teacherId, onClose }) => {
 
                 {activeTab === 'courses' && (
                     <div className="courses-tab">
-                        <h3>Unterrichtete Kurse</h3>
                         {courses.length > 0 ? (
                             <table className="sessions-table">
                                 <thead>
@@ -432,7 +431,6 @@ const TeacherDetail = ({ teacherId, onClose }) => {
 
                 {activeTab === 'sessions' && (
                     <div className="sessions-tab">
-                        <h3>Lektionen</h3>
                         {sessions.length > 0 ? (
                             <table className="sessions-table">
                                 <thead>
@@ -482,7 +480,6 @@ const TeacherDetail = ({ teacherId, onClose }) => {
 
                 {activeTab === 'monthly' && (
                     <div className="monthly-tab">
-                        <h3>Monatliche Übersicht</h3>
                         {months.length > 0 ? (
                             <div className="month-cards-container">
                                 {Object.entries(groupSessionsByMonth()).map(([monthId, data]) => {
