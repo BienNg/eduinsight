@@ -1,14 +1,16 @@
-// src/components/Dashboard/StudentDetail.jsx (new file)
 import React, { useState, useEffect } from 'react';
-import { getRecordById, getAllRecords } from '../../firebase/database';
+import {
+    getRecordById,
+    getAllRecords,
+    updateRecord,
+    createRecord
+} from '../../firebase/database';
 import './StudentDetail.css';
-
 import '../../styles/common/Tabs.css'; // Import the tab styles
 import TabComponent from '../common/TabComponent'; // Import TabComponent
-
-
 import { mergeStudents } from '../../firebase/database';
 import ConfirmationModal from './ConfirmationModal';
+import ReassignModal from './ReassignModal';
 
 const StudentDetail = ({ student, onClose }) => {
     const [sessions, setSessions] = useState([]);
@@ -21,6 +23,13 @@ const StudentDetail = ({ student, onClose }) => {
     const [showMergeConfirmation, setShowMergeConfirmation] = useState(false);
     const [isMerging, setIsMerging] = useState(false);
     const [mergeError, setMergeError] = useState(null);
+
+    // State for reassignment
+    const [showReassignModal, setShowReassignModal] = useState(false);
+    const [currentCourseForReassign, setCurrentCourseForReassign] = useState(null);
+    const [reassignSearchQuery, setReassignSearchQuery] = useState('');
+    const [filteredReassignStudents, setFilteredReassignStudents] = useState([]);
+
     // Define tabs configuration
     const tabs = [
         { id: 'overview', label: 'Übersicht' },
@@ -28,6 +37,122 @@ const StudentDetail = ({ student, onClose }) => {
         { id: 'courses', label: 'Kurse' },
         { id: 'relations', label: 'Relations' }
     ];
+
+    const handleOpenReassignModal = (course) => {
+        setCurrentCourseForReassign(course);
+        setReassignSearchQuery('');
+        // Filter out the current student from the list
+        const otherStudents = allStudents.filter(s => s.id !== student.id);
+        setFilteredReassignStudents(otherStudents);
+        setShowReassignModal(true);
+    };
+
+    const handleReassignSearch = (query) => {
+        setReassignSearchQuery(query);
+        const otherStudents = allStudents.filter(s => s.id !== student.id);
+
+        if (!query.trim()) {
+            setFilteredReassignStudents(otherStudents);
+        } else {
+            const filtered = otherStudents.filter(s =>
+                s.name && s.name.toLowerCase().includes(query.toLowerCase())
+            );
+            setFilteredReassignStudents(filtered);
+        }
+    };
+
+    const handleReassignStudent = async (targetStudentId) => {
+        if (!currentCourseForReassign || !targetStudentId) return;
+
+        try {
+            // Get current course ID
+            const courseId = currentCourseForReassign.id;
+
+            // Get the target student
+            const targetStudent = await getRecordById('students', targetStudentId);
+            if (!targetStudent) {
+                throw new Error(`Target student with ID ${targetStudentId} not found`);
+            }
+
+            // Update target student's courseIds
+            const targetCourseIds = targetStudent.courseIds || [];
+            if (!targetCourseIds.includes(courseId)) {
+                const updatedTargetCourseIds = [...targetCourseIds, courseId];
+                await updateRecord('students', targetStudentId, { courseIds: updatedTargetCourseIds });
+            }
+
+            // Update current student's courseIds
+            const currentCourseIds = student.courseIds || [];
+            const updatedCurrentCourseIds = currentCourseIds.filter(id => id !== courseId);
+            await updateRecord('students', student.id, { courseIds: updatedCurrentCourseIds });
+
+            // Update the course's studentIds
+            const course = await getRecordById('courses', courseId);
+            if (course) {
+                const courseStudentIds = course.studentIds || [];
+                // Remove current student and add target student
+                const updatedStudentIds = courseStudentIds
+                    .filter(id => id !== student.id)
+                    .concat(targetStudentId);
+
+                // Make sure we don't have duplicates
+                const uniqueStudentIds = [...new Set(updatedStudentIds)];
+                await updateRecord('courses', courseId, { studentIds: uniqueStudentIds });
+            }
+
+            // Close the modal
+            setShowReassignModal(false);
+
+            // Refresh data
+            fetchStudentData();
+
+        } catch (error) {
+            console.error("Error reassigning course:", error);
+            alert(`Error reassigning course: ${error.message}`);
+        }
+    };
+
+    const handleCreateNewStudent = async (name) => {
+        if (!name.trim() || !currentCourseForReassign) return;
+
+        try {
+            // Create new student
+            const newStudent = await createRecord('students', {
+                name: name.trim(),
+                courseIds: [currentCourseForReassign.id],
+                createdAt: new Date().toISOString()
+            });
+
+            // Update current student's courseIds
+            const currentCourseIds = student.courseIds || [];
+            const updatedCurrentCourseIds = currentCourseIds.filter(id => id !== currentCourseForReassign.id);
+            await updateRecord('students', student.id, { courseIds: updatedCurrentCourseIds });
+
+            // Update the course's studentIds
+            const courseId = currentCourseForReassign.id;
+            const course = await getRecordById('courses', courseId);
+            if (course) {
+                const courseStudentIds = course.studentIds || [];
+                // Remove current student and add new student
+                const updatedStudentIds = courseStudentIds
+                    .filter(id => id !== student.id)
+                    .concat(newStudent.id);
+
+                await updateRecord('courses', courseId, { studentIds: updatedStudentIds });
+            }
+
+            // Close the modal
+            setShowReassignModal(false);
+
+            // Refresh data
+            fetchStudentData();
+
+        } catch (error) {
+            console.error("Error creating new student:", error);
+            alert(`Error creating new student: ${error.message}`);
+        }
+    };
+
     // Add the merge functionality
     const handleMergeStudents = async () => {
         if (!selectedRelatedStudent) return;
@@ -272,7 +397,7 @@ const StudentDetail = ({ student, onClose }) => {
                 </div>
 
                 <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
-                    
+
                 </TabComponent>
 
                 <div className="detail-content">
@@ -406,8 +531,25 @@ const StudentDetail = ({ student, onClose }) => {
                                                     return (
                                                         <div key={course.id} className="course-card">
                                                             <div className="course-header">
-                                                                <h4>{course.name}</h4>
-                                                                <span className="level-badge">{course.level}</span>
+                                                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                                    <button
+                                                                        className="btn-reassign"
+                                                                        onClick={() => handleOpenReassignModal(course)}
+                                                                        style={{
+                                                                            backgroundColor: '#f0f0f0',
+                                                                            border: 'none',
+                                                                            borderRadius: '4px',
+                                                                            padding: '4px 8px',
+                                                                            marginRight: '10px',
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center'
+                                                                        }}
+                                                                    >
+                                                                        <span style={{ fontSize: '14px' }}>Reassign</span>
+                                                                    </button>
+                                                                    <h4>{course.name}</h4>
+                                                                </div>
                                                             </div>
 
                                                             <div className="course-stats">
@@ -599,6 +741,17 @@ const StudentDetail = ({ student, onClose }) => {
                     )}
                 </div>
             </div>
+            <ReassignModal
+                isOpen={showReassignModal}
+                onClose={() => setShowReassignModal(false)}
+                course={currentCourseForReassign}
+                students={filteredReassignStudents}
+                searchQuery={reassignSearchQuery}
+                onSearchChange={handleReassignSearch}
+                onReassign={handleReassignStudent}
+                onCreateNew={handleCreateNewStudent}
+                safelyRenderValue={safelyRenderValue}
+            />
             <ConfirmationModal
                 isOpen={showMergeConfirmation}
                 title="Confirm Student Merge"
