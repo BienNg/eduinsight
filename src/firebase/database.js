@@ -239,3 +239,76 @@ export const queryRecordsByField = async (path, field, value) => {
     throw error;
   }
 };
+
+// Add to src/firebase/database.js
+export const mergeStudents = async (primaryStudentId, secondaryStudentId) => {
+  try {
+    console.log(`Starting merge of student ${secondaryStudentId} into ${primaryStudentId}`);
+    
+    // Get both student records
+    const primaryStudent = await getRecordById('students', primaryStudentId);
+    const secondaryStudent = await getRecordById('students', secondaryStudentId);
+    
+    if (!primaryStudent || !secondaryStudent) {
+      throw new Error("One or both students not found");
+    }
+    
+    // 1. Merge course IDs
+    const primaryCourseIds = primaryStudent.courseIds || [];
+    const secondaryCourseIds = secondaryStudent.courseIds || [];
+    const mergedCourseIds = [...new Set([...primaryCourseIds, ...secondaryCourseIds])];
+    
+    // 2. Update primary student with merged data
+    await updateRecord('students', primaryStudentId, {
+      courseIds: mergedCourseIds,
+      // Merge join dates
+      joinDates: { ...(primaryStudent.joinDates || {}), ...(secondaryStudent.joinDates || {}) },
+      // Keep notes from both students if they exist
+      notes: primaryStudent.notes ? 
+        (secondaryStudent.notes ? 
+          `${primaryStudent.notes}\n\nMerged notes from ${secondaryStudent.name}:\n${secondaryStudent.notes}` : 
+          primaryStudent.notes) : 
+        (secondaryStudent.notes || '')
+    });
+    
+    // 3. Update all sessions to replace secondaryStudentId with primaryStudentId in attendance
+    const sessions = await getAllRecords('sessions');
+    for (const session of sessions) {
+      if (session.attendance && session.attendance[secondaryStudentId]) {
+        // Copy attendance data from second student to primary student
+        const updatedAttendance = { ...session.attendance };
+        updatedAttendance[primaryStudentId] = updatedAttendance[secondaryStudentId];
+        delete updatedAttendance[secondaryStudentId];
+        
+        // Update the session record
+        await updateRecord('sessions', session.id, { attendance: updatedAttendance });
+      }
+    }
+    
+    // 4. Update all courses to replace secondaryStudentId with primaryStudentId
+    for (const courseId of secondaryCourseIds) {
+      const course = await getRecordById('courses', courseId);
+      if (course && course.studentIds) {
+        const studentIds = course.studentIds;
+        // If primary student not already in this course, add them
+        if (!studentIds.includes(primaryStudentId)) {
+          studentIds.push(primaryStudentId);
+        }
+        // Remove secondary student
+        const updatedStudentIds = studentIds.filter(id => id !== secondaryStudentId);
+        
+        // Update the course record
+        await updateRecord('courses', courseId, { studentIds: updatedStudentIds });
+      }
+    }
+    
+    // 5. Delete the secondary student
+    await deleteRecord('students', secondaryStudentId);
+    
+    console.log(`Successfully merged student ${secondaryStudentId} into ${primaryStudentId}`);
+    return true;
+  } catch (error) {
+    console.error("Error merging students:", error);
+    throw error;
+  }
+};

@@ -4,6 +4,9 @@ import { getRecordById, getAllRecords } from '../../firebase/database';
 import './SessionDetailModal.css';
 import './StudentDetailModal.css';
 
+import { mergeStudents } from '../../firebase/database';
+import ConfirmationModal from './ConfirmationModal';
+
 const StudentDetailModal = ({ student, onClose }) => {
   const [sessions, setSessions] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -12,64 +15,94 @@ const StudentDetailModal = ({ student, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedRelatedStudent, setSelectedRelatedStudent] = useState(null);
+  const [showMergeConfirmation, setShowMergeConfirmation] = useState(false);
+  const [isMerging, setIsMerging] = useState(false);
+  const [mergeError, setMergeError] = useState(null);
 
+  // Add the merge functionality
+  const handleMergeStudents = async () => {
+    if (!selectedRelatedStudent) return;
+
+    try {
+      setIsMerging(true);
+      setMergeError(null);
+
+      await mergeStudents(student.id, selectedRelatedStudent.id);
+
+      // Close confirmation modal
+      setShowMergeConfirmation(false);
+
+      // Reset selected student since it's now deleted
+      setSelectedRelatedStudent(null);
+
+      // Reload student data
+      fetchStudentData();
+
+    } catch (error) {
+      console.error("Error merging students:", error);
+      setMergeError(error.message);
+    } finally {
+      setIsMerging(false);
+    }
+  };
+  const fetchStudentData = async () => {
+    setLoading(true);
+    try {
+      // Fetch all sessions for this student
+      const allSessions = await getAllRecords('sessions');
+      const studentSessions = allSessions.filter(session =>
+        session.attendance && session.attendance[student.id]
+      );
+
+      // Fetch course details for each session
+      const courseIds = [...new Set(studentSessions.map(s => s.courseId))];
+
+      // Fetch all students for relations tab
+      const students = await getAllRecords('students');
+      // Filter out the current student
+      const otherStudents = students.filter(s => s.id !== student.id);
+
+      // Collect all unique course IDs that need to be fetched
+      const allCourseIds = new Set([
+        ...courseIds,
+        ...(student.courseIds || []),
+        ...otherStudents.flatMap(s => s.courseIds || [])
+      ]);
+
+      // Fetch all needed courses at once
+      const coursesData = await Promise.all(
+        [...allCourseIds].map(id => getRecordById('courses', id))
+      );
+
+      // Sort sessions by date
+      const sortedSessions = studentSessions.sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+
+        const partsA = a.date.split('.');
+        const partsB = b.date.split('.');
+
+        if (partsA.length === 3 && partsB.length === 3) {
+          const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+          const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+          return dateA - dateB;
+        }
+
+        return 0;
+      });
+
+      setSessions(sortedSessions);
+      setCourses(coursesData.filter(Boolean));
+      setAllStudents(otherStudents);
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+    } finally {
+      setLoading(false);
+      setIsMerging(false);
+    }
+  };
   useEffect(() => {
-    const fetchStudentData = async () => {
-      try {
-        // Fetch all sessions for this student
-        const allSessions = await getAllRecords('sessions');
-        const studentSessions = allSessions.filter(session =>
-          session.attendance && session.attendance[student.id]
-        );
-   
-        // Fetch course details for each session
-        const courseIds = [...new Set(studentSessions.map(s => s.courseId))];
-        
-        // Fetch all students for relations tab
-        const students = await getAllRecords('students');
-        // Filter out the current student
-        const otherStudents = students.filter(s => s.id !== student.id);
-        
-        // Collect all unique course IDs that need to be fetched
-        const allCourseIds = new Set([
-          ...courseIds,
-          ...(student.courseIds || []),
-          ...otherStudents.flatMap(s => s.courseIds || [])
-        ]);
-        
-        // Fetch all needed courses at once
-        const coursesData = await Promise.all(
-          [...allCourseIds].map(id => getRecordById('courses', id))
-        );
-   
-        // Sort sessions by date
-        const sortedSessions = studentSessions.sort((a, b) => {
-          if (!a.date || !b.date) return 0;
-   
-          const partsA = a.date.split('.');
-          const partsB = b.date.split('.');
-   
-          if (partsA.length === 3 && partsB.length === 3) {
-            const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
-            const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
-            return dateA - dateB;
-          }
-   
-          return 0;
-        });
-   
-        setSessions(sortedSessions);
-        setCourses(coursesData.filter(Boolean));
-        setAllStudents(otherStudents);
-      } catch (error) {
-        console.error("Error fetching student data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-   
     fetchStudentData();
-   }, [student.id]);
+  }, [student.id]);
 
 
   // Function to handle student selection in relations tab
@@ -534,6 +567,27 @@ const StudentDetailModal = ({ student, onClose }) => {
                                   <p className="empty-courses">Keine Kurse gefunden</p>
                                 )}
                               </div>
+                              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                                <button
+                                  className="confirm-button"
+                                  onClick={() => setShowMergeConfirmation(true)}
+                                  disabled={isMerging}
+                                >
+                                  {isMerging ? 'Merging...' : 'Merge with Current Student'}
+                                </button>
+                              </div>
+                              {mergeError && (
+                                <div style={{
+                                  marginTop: '10px',
+                                  color: '#c62828',
+                                  backgroundColor: '#ffebee',
+                                  padding: '8px',
+                                  borderRadius: '4px',
+                                  fontSize: '14px'
+                                }}>
+                                  Error: {mergeError}
+                                </div>
+                              )}
                             </div>
                           </>
                         ) : (
@@ -550,6 +604,13 @@ const StudentDetailModal = ({ student, onClose }) => {
           )}
         </div>
       </div>
+      <ConfirmationModal
+        isOpen={showMergeConfirmation}
+        title="Confirm Student Merge"
+        message={`Are you sure you want to merge ${selectedRelatedStudent ? safelyRenderValue(selectedRelatedStudent.name) : ''} into ${safelyRenderValue(student.name)}? This will combine all courses and attendance records, and delete the merged student record. This action cannot be undone.`}
+        onConfirm={handleMergeStudents}
+        onCancel={() => setShowMergeConfirmation(false)}
+      />
     </div>
   );
 };
