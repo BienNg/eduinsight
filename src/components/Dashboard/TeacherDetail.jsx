@@ -5,6 +5,7 @@ import CourseDetail from './CourseDetail'; // Import CourseDetail component
 import SessionDetailModal from './SessionDetailModal';
 import './CourseDetail.css'; // Reuse existing styles
 import '../../styles/common/Tabs.css';
+import TabComponent from '../common/TabComponent';
 
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -24,6 +25,13 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [selectedSession, setSelectedSession] = useState(null);
     const [editingCountry, setEditingCountry] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState('');
+
+    const tabs = [
+        { id: 'overview', label: 'Übersicht' },
+        { id: 'courses', label: 'Kurse' },
+        { id: 'sessions', label: 'Lektionen' },
+        { id: 'monthly', label: 'Monatlich' }
+    ];
 
 
     // Add this useEffect to initialize the selectedCountry
@@ -307,32 +315,28 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 <div className="course-level-badge">{teacher.country || 'No Country'}</div>
             </div>
 
-            <div className="course-detail-tabs app-tab-list">
-                <button
-                    className={`app-tab  ${activeTab === 'overview' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('overview')}
-                >
-                    Übersicht
-                </button>
-                <button
-                    className={`tab ${activeTab === 'courses' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('courses')}
-                >
-                    Kurse
-                </button>
-                <button
-                    className={`tab ${activeTab === 'sessions' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('sessions')}
-                >
-                    Lektionen
-                </button>
-                <button
-                    className={`tab ${activeTab === 'monthly' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('monthly')}
-                >
-                    Monatlich
-                </button>
-            </div>
+            <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
+                {activeTab === 'overview' && (
+                    <div className="overview-tab">
+                        {/* Overview tab content */}
+                    </div>
+                )}
+                {activeTab === 'courses' && (
+                    <div className="courses-tab">
+                        {/* Courses tab content */}
+                    </div>
+                )}
+                {activeTab === 'sessions' && (
+                    <div className="sessions-tab">
+                        {/* Sessions tab content */}
+                    </div>
+                )}
+                {activeTab === 'monthly' && (
+                    <div className="monthly-tab">
+                        {/* Monthly tab content */}
+                    </div>
+                )}
+            </TabComponent>
 
             <div className="course-detail-content">
                 {activeTab === 'overview' && (

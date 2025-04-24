@@ -7,6 +7,7 @@ import StudentDetailModal from './StudentDetailModal';
 import './CourseDetail.css';
 import './Content.css'
 import '../../styles/common/Tabs.css';
+import TabComponent from '../common/TabComponent';
 
 
 const CourseDetail = ({ courseId, onClose, groupName }) => {
@@ -23,6 +24,12 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
     const [sortConfig, setSortConfig] = useState({ key: 'sessionOrder', direction: 'ascending' });
     const [showOptions, setShowOptions] = useState(false);
     const [deleting, setDeleting] = useState(false);
+
+    const tabs = [
+        { id: 'overview', label: 'Overview' },
+        { id: 'students', label: 'Students' },
+        { id: 'sessions', label: 'Sessions' }
+    ];
 
     const onDeleteCourse = async (courseId, courseName, event) => {
         setDeleting(true);
@@ -381,26 +388,23 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
                     </div>
                 </div>
 
-                <div className="course-detail-tabs app-tab-list">
-                    <button
-                        className={`app-tab  ${activeTab === 'overview' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('overview')}
-                    >
-                        Overview
-                    </button>
-                    <button
-                        className={`app-tab ${activeTab === 'students' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('students')}
-                    >
-                        Students
-                    </button>
-                    <button
-                        className={`app-tab ${activeTab === 'sessions' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('sessions')}
-                    >
-                        Sessions
-                    </button>
-                </div>
+                <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
+                    {activeTab === 'overview' && (
+                        <div className="overview-tab">
+                            {/* Overview tab content */}
+                        </div>
+                    )}
+                    {activeTab === 'students' && (
+                        <div className="students-tab">
+                            {/* Students tab content */}
+                        </div>
+                    )}
+                    {activeTab === 'sessions' && (
+                        <div className="sessions-tab">
+                            {/* Sessions tab content */}
+                        </div>
+                    )}
+                </TabComponent>
 
                 <div className="app-tab-panel">
                     {activeTab === 'overview' && (

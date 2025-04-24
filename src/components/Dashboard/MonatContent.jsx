@@ -8,6 +8,7 @@ import { calculateTotalHours } from '../../utils/timeUtils';
 import './MonthDetail.css';
 import './MonthTabs.css'; // We'll create this CSS file
 import '../../styles/common/Tabs.css';
+import TabComponent from '../common/TabComponent';
 
 const MonatContent = () => {
   const [months, setMonths] = useState([]);
@@ -23,7 +24,10 @@ const MonatContent = () => {
   const [currentMonthId, setCurrentMonthId] = useState(null);
   const [activeTab, setActiveTab] = useState('current')
   const tabsContainerRef = useRef(null);
-
+  const tabs = [
+    { id: 'current', label: 'Aktueller Monat' },
+    { id: 'all', label: 'Alle Monate' }
+  ];
 
   // Add this useEffect to handle the underline animation
   // Update the useEffect to work with your custom tab buttons
@@ -442,20 +446,19 @@ const MonatContent = () => {
 
   return (
     <div className="notion-page monat-content">
-      <div className="app-tab-list" ref={tabsContainerRef}>
-        <button
-          className={`app-tab ${activeTab === 'current' ? 'active' : ''}`}
-          onClick={() => setActiveTab('current')}
-        >
-          Aktueller Monat
-        </button>
-        <button
-          className={`app-tab ${activeTab === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveTab('all')}
-        >
-          Alle Monate
-        </button>
-      </div>
+      <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
+        {activeTab === 'current' && renderCurrentMonthDetails()}
+        {activeTab === 'all' && (
+          <>
+            <div className="all-months-header">
+              {/* Search container and other elements */}
+            </div>
+            <div className="notion-blocks">
+              {/* Month blocks */}
+            </div>
+          </>
+        )}
+      </TabComponent>
 
       <div className="app-tab-panel">
         {activeTab === 'current' && renderCurrentMonthDetails()}
