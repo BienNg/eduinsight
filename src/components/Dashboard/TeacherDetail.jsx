@@ -32,12 +32,22 @@ const TeacherDetail = ({ teacherId, onClose }) => {
         // Create a map to store hours by month
         const monthlyHours = {};
 
+        // Month names in German
+        const monthNames = [
+            'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'
+        ];
+
         sessions.forEach(session => {
             if (session.date && session.startTime && session.endTime) {
                 // Extract month from date (format: DD.MM.YYYY)
                 const dateParts = session.date.split('.');
                 if (dateParts.length === 3) {
-                    const monthKey = `${dateParts[1]}.${dateParts[2]}`; // MM.YYYY format
+                    const monthNum = parseInt(dateParts[1]) - 1; // Convert to 0-based index
+                    const fullYear = dateParts[2];
+                    const shortYear = fullYear.slice(2);
+                    const monthKey = `${dateParts[1]}.${fullYear}`; // MM.YYYY format for sorting
+                    const displayMonth = `${monthNames[monthNum]} ${shortYear}`; // "Month Year" format
 
                     // Calculate session duration
                     let durationHours = 1.5; // Default duration
@@ -63,20 +73,23 @@ const TeacherDetail = ({ teacherId, onClose }) => {
 
                     // Add to monthly total
                     if (!monthlyHours[monthKey]) {
-                        monthlyHours[monthKey] = 0;
+                        monthlyHours[monthKey] = {
+                            month: displayMonth,
+                            hours: 0,
+                            sortKey: monthKey
+                        };
                     }
-                    monthlyHours[monthKey] += durationHours;
+                    monthlyHours[monthKey].hours += durationHours;
                 }
             }
         });
 
         // Convert to array format needed by Recharts
-        return Object.entries(monthlyHours)
-            .map(([month, hours]) => ({ month, hours }))
+        return Object.values(monthlyHours)
             .sort((a, b) => {
-                // Sort by date (MM.YYYY format)
-                const [monthA, yearA] = a.month.split('.');
-                const [monthB, yearB] = b.month.split('.');
+                // Sort by date (MM.YYYY format) using sortKey
+                const [monthA, yearA] = a.sortKey.split('.');
+                const [monthB, yearB] = b.sortKey.split('.');
                 return (yearA - yearB) || (monthA - monthB);
             });
     };
@@ -418,39 +431,42 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                 <h3>Unterrichtsstunden</h3>
                                 <div className="stat-value">{totalHours.toFixed(1)}</div>
                             </div>
-                            
+
                         </div>
                         <div className="course-info-card">
-                                <h3>Unterrichtsstunden pro Monat</h3>
-                                <div style={{ width: '100%', height: 300 }}>
-                                    <ResponsiveContainer>
-                                        <LineChart
-                                            data={chartData}
-                                            margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis
-                                                dataKey="month"
-                                                label={{ value: 'Monat', position: 'insideBottomRight', offset: -10 }}
-                                                tick={{ angle: -45, textAnchor: 'end', dy: 10 }}
-                                            />
-                                            <YAxis
-                                                label={{ value: 'Stunden', angle: -90, position: 'insideLeft' }}
-                                            />
-                                            <Tooltip formatter={(value) => [`${value.toFixed(1)} Stunden`, 'Unterrichtsstunden']} />
-                                            <Legend />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="hours"
-                                                name="Unterrichtsstunden"
-                                                stroke="var(--primary-blue)"
-                                                strokeWidth={2}
-                                                activeDot={{ r: 6 }}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
+                            <h3>Unterrichtsstunden pro Monat</h3>
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer>
+                                    <LineChart
+                                        data={chartData}
+                                        margin={{ top: 20, right: 40, left: 20, bottom: 25 }}
+                                    >
+                                        <CartesianGrid stroke="#e0e0e0" strokeDasharray="0 0" vertical={false} horizontal={false} />
+                                        <XAxis
+                                            dataKey="month"
+                                            tick={{ angle: 0, textAnchor: 'middle', dy: 10 }}
+                                            axisLine={true}
+                                            tickLine={false}
+                                        />
+                                        <YAxis
+                                            tickFormatter={(value) => `${value}h`}
+                                            axisLine={true}
+                                            tickLine={false}
+                                            dx={-10}
+                                        />
+                                        <Tooltip formatter={(value) => [`${value.toFixed(1)} Stunden`]} />
+                                        <Legend />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="hours"
+                                            stroke="var(--primary-blue)"
+                                            strokeWidth={2}
+                                            dot={false}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
                             </div>
+                        </div>
                     </div>
                 )}
 
