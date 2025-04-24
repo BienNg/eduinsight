@@ -381,8 +381,12 @@ const TeacherDetail = ({ teacherId, onClose }) => {
 
     return (
         <div className="teacher-detail-wrapper">
+            <div className="breadcrumb">
+                <span className="breadcrumb-link" onClick={onClose}>Lehrer</span>
+                <span className="breadcrumb-separator">›</span>
+                <span className="breadcrumb-current">{teacher.name}</span>
+            </div>
             <div className="teacher-detail-header">
-                <button className="back-button" onClick={onClose}>← Back</button>
                 <h2>{teacher.name}</h2>
                 <div className="teacher-country-badge">{teacher.country || 'No Country'}</div>
             </div>
