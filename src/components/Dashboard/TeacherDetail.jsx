@@ -631,7 +631,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                     <p>Keine Kurse im aktuellen Monat.</p>
                                 </div>
                             )}
-                        </div>f
+                        </div>
                     </div>
                 )}
 
