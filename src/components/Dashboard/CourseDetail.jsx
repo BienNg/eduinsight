@@ -18,7 +18,7 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedSession, setSelectedSession] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
-    const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'ascending' });
+    const [sortConfig, setSortConfig] = useState({ key: 'sessionOrder', direction: 'ascending' });
     const [showOptions, setShowOptions] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
@@ -38,11 +38,18 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
 
     // Add this function to handle column header clicks
     const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
+        if (sortConfig.key === key) {
+            if (sortConfig.direction === 'ascending') {
+                // Second click: change to descending
+                setSortConfig({ key, direction: 'descending' });
+            } else {
+                // Third click: reset to default (sessionOrder ascending)
+                setSortConfig({ key: 'sessionOrder', direction: 'ascending' });
+            }
+        } else {
+            // First click on a new column: set to ascending
+            setSortConfig({ key, direction: 'ascending' });
         }
-        setSortConfig({ key, direction });
     };
 
     // Add this function to get sorted sessions
@@ -91,6 +98,13 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
                     return sortConfig.direction === 'ascending'
                         ? teacherIdA.localeCompare(teacherIdB)
                         : teacherIdB.localeCompare(teacherIdA);
+                }
+                if (sortConfig.key === 'sessionOrder') {
+                    const orderA = a.sessionOrder || 0;
+                    const orderB = b.sessionOrder || 0;
+                    return sortConfig.direction === 'ascending'
+                        ? orderA - orderB
+                        : orderB - orderA;
                 }
 
                 // Default case - compare by value
@@ -152,14 +166,20 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
                 const sortedSessions = sessionData
                     .filter(s => s !== null)
                     .sort((a, b) => {
-                        // Try to parse dates and compare them
+                        // Sort by sessionOrder by default
+                        const orderA = a.sessionOrder || 0;
+                        const orderB = b.sessionOrder || 0;
+                        if (orderA !== orderB) {
+                            return orderA - orderB;
+                        }
+
+                        // Fall back to date if sessionOrder is the same
                         const dateA = parseGermanDate(a.date);
                         const dateB = parseGermanDate(b.date);
-
                         if (dateA && dateB) {
                             return dateA - dateB;
                         }
-                        // Fallback to string comparison
+                        // Further fallback to string comparison
                         return a.date.localeCompare(b.date);
                     });
 
@@ -477,10 +497,10 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
                                 <thead>
                                     <tr>
                                         <th
-                                            onClick={() => requestSort('title')}
+                                            onClick={() => requestSort('sessionOrder')}
                                             className={sortConfig.key === 'title' ? `sorted-${sortConfig.direction}` : ''}
                                         >
-                                            Title {sortConfig.key === 'title' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                                            Title {sortConfig.key === 'sessionOrder' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
                                         </th>
                                         <th
                                             onClick={() => requestSort('date')}
