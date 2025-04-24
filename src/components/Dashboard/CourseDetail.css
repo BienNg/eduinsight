@@ -598,3 +598,40 @@
 /*END Lehrer/Kurse Tab */
 
 
+/* Add to CourseDetail.css */
+.teacher-detail-wrapper {
+  width: 100%;
+  padding: 20px;
+}
+
+.teacher-detail-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.teacher-detail-header h2 {
+  margin: 0 16px 0 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.teacher-country-badge {
+  background-color: #f0f7ff;
+  color: #0066cc;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.teacher-detail-content {
+  width: 100%;
+}
+
+/* Remove any card-specific box-shadow or borders from inner content */
+.course-info-card, .stats-row .stat-box {
+  box-shadow: none;
+  border: 1px solid #eaeaea;
+  background-color: #fafafa;
+}

@@ -380,11 +380,11 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     };
 
     return (
-        <div className="course-detail-container">
-            <div className="course-detail-header">
+        <div className="teacher-detail-wrapper">
+            <div className="teacher-detail-header">
                 <button className="back-button" onClick={onClose}>← Back</button>
                 <h2>{teacher.name}</h2>
-                <div className="course-level-badge">{teacher.country || 'No Country'}</div>
+                <div className="teacher-country-badge">{teacher.country || 'No Country'}</div>
             </div>
 
             <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
@@ -415,7 +415,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 )}
             </TabComponent>
 
-            <div className="course-detail-content">
+            <div className="teacher-detail-content">
                 {activeTab === 'overview' && (
                     <div className="overview-tab">
                         <div className="stats-row">
@@ -433,7 +433,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                             </div>
 
                         </div>
-                        <div className="course-info-card">
+                        <div className="course-info-card" style={{ backgroundColor: 'white' }}>
                             <h3>Unterrichtsstunden pro Monat</h3>
                             <div style={{ width: '100%', height: 300 }}>
                                 <ResponsiveContainer>
