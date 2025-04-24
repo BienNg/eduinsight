@@ -185,14 +185,6 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                                 <span className="value">{safelyRenderValue(session.notes)}</span>
                             </div>
                             <div className="info-item">
-                                <span className="label">Preparation:</span>
-                                <span className="value">{session.checked ? 'Checked' : 'Not Checked'}</span>
-                            </div>
-                            <div className="info-item">
-                                <span className="label">Status:</span>
-                                <span className="value">{session.completed ? 'Completed' : 'Not Completed'}</span>
-                            </div>
-                            <div className="info-item">
                                 <span className="label">Dauer:</span>
                                 <span className="value">
                                     {isLongSession(session.startTime, session.endTime) ? (
@@ -205,12 +197,6 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                                     )}
                                 </span>
                             </div>
-                            {session.message && (
-                                <div className="info-item full-width">
-                                    <span className="label">Message:</span>
-                                    <span className="value">{safelyRenderValue(session.message)}</span>
-                                </div>
-                            )}
                         </div>
                     </div>
 
@@ -229,7 +215,6 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                                     <tr>
                                         <th>Content</th>
                                         <th>Notes</th>
-                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -237,7 +222,6 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                                         <tr key={index}>
                                             <td>{safelyRenderValue(item.content)}</td>
                                             <td>{safelyRenderValue(item.notes)}</td>
-                                            <td>{item.checked ? 'Checked' : 'Not Checked'}</td>
                                         </tr>
                                     ))}
                                 </tbody>

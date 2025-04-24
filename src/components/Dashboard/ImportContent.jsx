@@ -675,9 +675,7 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
     folien: findColumnIndex(headerRow, ["Folien", "Canva"]),
     inhalt: findColumnIndex(headerRow, ["Inhalt"]),
     notizen: findColumnIndex(headerRow, ["Notizen"]),
-    checked: findColumnIndex(headerRow, ["die Folien gecheckt"]),
-    gemacht: findColumnIndex(headerRow, ["gemacht"]),
-    date: findColumnIndex(headerRow, ["Datum", "Date", "Unterrichtstag"]), // More specific date column detection
+    date: findColumnIndex(headerRow, ["Datum", "Date", "Unterrichtstag"]),
     startTime: findColumnIndex(headerRow, ["von"]),
     endTime: findColumnIndex(headerRow, ["bis"]),
     teacher: findColumnIndex(headerRow, ["Lehrer"]),
@@ -920,14 +918,11 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
           title: folienTitle,
           content: contentValue || '',
           notes: notesValue || '',
-          checked: checkedValue === 'TRUE',
-          completed: completedValue === 'TRUE',
           date: formattedDate || '', // Remove lastKnownDate fallback
           // Allow empty time values if columns are missing
           startTime: columnIndices.startTime !== -1 ? formatTime(startTimeValue) : '',
           endTime: columnIndices.endTime !== -1 ? formatTime(endTimeValue) : '',
           teacherId: teacherId || '',
-          message: messageValue || '',
           contentItems: [],
           attendance: {},
           monthId: monthId,
@@ -967,7 +962,6 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
         currentSession.contentItems.push({
           content: contentValue,
           notes: notesValue || '',
-          checked: checkedValue === 'TRUE'
         });
       }
     } else if (currentSession && contentValue) {
@@ -975,7 +969,6 @@ const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => 
       currentSession.contentItems.push({
         content: contentValue,
         notes: notesValue || '',
-        checked: checkedValue === 'TRUE'
       });
     }
 
