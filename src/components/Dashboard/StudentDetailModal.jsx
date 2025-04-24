@@ -1,7 +1,8 @@
 // Update src/components/Dashboard/StudentDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords } from '../../firebase/database';
-import './SessionDetailModal.css'; // Reuse the modal styling
+import './SessionDetailModal.css';
+import './StudentDetailModal.css';
 
 const StudentDetailModal = ({ student, onClose }) => {
   const [sessions, setSessions] = useState([]);
@@ -14,32 +15,32 @@ const StudentDetailModal = ({ student, onClose }) => {
       try {
         // Fetch all sessions for this student
         const allSessions = await getAllRecords('sessions');
-        const studentSessions = allSessions.filter(session => 
+        const studentSessions = allSessions.filter(session =>
           session.attendance && session.attendance[student.id]
         );
-        
+
         // Fetch course details for each session
         const courseIds = [...new Set(studentSessions.map(s => s.courseId))];
         const coursesData = await Promise.all(
           courseIds.map(id => getRecordById('courses', id))
         );
-        
+
         // Sort sessions by date
         const sortedSessions = studentSessions.sort((a, b) => {
           if (!a.date || !b.date) return 0;
-          
+
           const partsA = a.date.split('.');
           const partsB = b.date.split('.');
-          
+
           if (partsA.length === 3 && partsB.length === 3) {
             const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
             const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
             return dateA - dateB;
           }
-          
+
           return 0;
         });
-        
+
         setSessions(sortedSessions);
         setCourses(coursesData);
       } catch (error) {
@@ -48,7 +49,7 @@ const StudentDetailModal = ({ student, onClose }) => {
         setLoading(false);
       }
     };
-    
+
     fetchStudentData();
   }, [student.id]);
 
@@ -154,10 +155,10 @@ const StudentDetailModal = ({ student, onClose }) => {
   // Calculate course-specific stats
   const getCourseStats = () => {
     const courseStats = {};
-    
+
     sessions.forEach(session => {
       if (!session.courseId || !session.attendance || !session.attendance[student.id]) return;
-      
+
       if (!courseStats[session.courseId]) {
         courseStats[session.courseId] = {
           present: 0,
@@ -168,46 +169,46 @@ const StudentDetailModal = ({ student, onClose }) => {
           total: 0
         };
       }
-      
+
       const stats = courseStats[session.courseId];
       stats.total++;
-      
+
       const attendanceData = session.attendance[student.id];
       const status = typeof attendanceData === 'object' ? attendanceData.status : attendanceData;
-      
+
       if (status === 'present') stats.present++;
       else if (status === 'absent') stats.absent++;
       else if (status === 'sick') stats.sick++;
       else if (status === 'technical_issues') stats.technical++;
       else stats.unknown++;
     });
-    
+
     return courseStats;
   };
 
   return (
     <div className="modal-backdrop">
-      <div className="session-detail-modal student-detail-modal">
+      <div className="session-detail-modal student-detail-modal fixed-size-modal">
         <div className="modal-header">
           <h2>{safelyRenderValue(student.name)}</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
         <div className="modal-tabs">
-          <button 
-            className={activeTab === 'overview' ? 'active' : ''} 
+          <button
+            className={activeTab === 'overview' ? 'active' : ''}
             onClick={() => setActiveTab('overview')}
           >
             Übersicht
           </button>
-          <button 
-            className={activeTab === 'attendance' ? 'active' : ''} 
+          <button
+            className={activeTab === 'attendance' ? 'active' : ''}
             onClick={() => setActiveTab('attendance')}
           >
             Anwesenheit
           </button>
-          <button 
-            className={activeTab === 'courses' ? 'active' : ''} 
+          <button
+            className={activeTab === 'courses' ? 'active' : ''}
             onClick={() => setActiveTab('courses')}
           >
             Kurse
@@ -294,7 +295,7 @@ const StudentDetailModal = ({ student, onClose }) => {
                           // Get course name
                           const course = courses.find(c => c.id === session.courseId);
                           const courseName = course ? course.name : '-';
-                          
+
                           // Get attendance data
                           const attendanceData = session.attendance[student.id];
                           const status = typeof attendanceData === 'object' ?
@@ -312,7 +313,7 @@ const StudentDetailModal = ({ student, onClose }) => {
                               </td>
                               <td>{comment}</td>
                             </tr>
-                          );return (
+                          ); return (
                             <tr key={session.id}>
                               <td>{safelyRenderValue(session.date)}</td>
                               <td>{courseName}</td>
@@ -337,7 +338,7 @@ const StudentDetailModal = ({ student, onClose }) => {
               {activeTab === 'courses' && (
                 <div className="courses-section">
                   <h3>Kursbeteiligung</h3>
-                  
+
                   {courses.length > 0 ? (
                     <>
                       {courses.map(course => {
@@ -345,18 +346,18 @@ const StudentDetailModal = ({ student, onClose }) => {
                         const courseStats = getCourseStats()[course.id] || {
                           total: 0, present: 0, absent: 0, sick: 0, technical: 0
                         };
-                        
-                        const attendanceRate = courseStats.total > 0 
-                          ? Math.round((courseStats.present / courseStats.total) * 100) 
+
+                        const attendanceRate = courseStats.total > 0
+                          ? Math.round((courseStats.present / courseStats.total) * 100)
                           : 0;
-                        
+
                         return (
                           <div key={course.id} className="course-card">
                             <div className="course-header">
                               <h4>{course.name}</h4>
                               <span className="level-badge">{course.level}</span>
                             </div>
-                            
+
                             <div className="course-stats">
                               <div className="course-stat">
                                 <span className="label">Anwesenheitsquote:</span>
@@ -379,27 +380,27 @@ const StudentDetailModal = ({ student, onClose }) => {
                                 </span>
                               </div>
                             </div>
-                            
+
                             <div className="attendance-breakdown">
                               <div className="progress-bar">
-                                <div 
-                                  className="progress-segment present" 
-                                  style={{width: `${(courseStats.present / courseStats.total) * 100}%`}}
+                                <div
+                                  className="progress-segment present"
+                                  style={{ width: `${(courseStats.present / courseStats.total) * 100}%` }}
                                   title={`Anwesend: ${courseStats.present}`}
                                 ></div>
-                                <div 
-                                  className="progress-segment absent" 
-                                  style={{width: `${(courseStats.absent / courseStats.total) * 100}%`}}
+                                <div
+                                  className="progress-segment absent"
+                                  style={{ width: `${(courseStats.absent / courseStats.total) * 100}%` }}
                                   title={`Abwesend: ${courseStats.absent}`}
                                 ></div>
-                                <div 
-                                  className="progress-segment sick" 
-                                  style={{width: `${(courseStats.sick / courseStats.total) * 100}%`}}
+                                <div
+                                  className="progress-segment sick"
+                                  style={{ width: `${(courseStats.sick / courseStats.total) * 100}%` }}
                                   title={`Krank: ${courseStats.sick}`}
                                 ></div>
-                                <div 
-                                  className="progress-segment technical" 
-                                  style={{width: `${(courseStats.technical / courseStats.total) * 100}%`}}
+                                <div
+                                  className="progress-segment technical"
+                                  style={{ width: `${(courseStats.technical / courseStats.total) * 100}%` }}
                                   title={`Technische Probleme: ${courseStats.technical}`}
                                 ></div>
                               </div>
