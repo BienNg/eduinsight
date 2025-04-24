@@ -727,3 +727,41 @@
 .slide-pane__close:hover {
   opacity: 1 !important;
 }
+
+/* Overview tab layout */
+.overview-flex-container {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 30%; /* Adjust as needed for your desired proportion */
+}
+
+.stats-column .stat-box {
+  flex: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.graph-container {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 70%; /* Adjust as needed for your desired proportion */
+}
+
+.graph-container h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--primary-blue);
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}

@@ -1,15 +1,15 @@
 // src/components/Dashboard/TeacherDetail.jsx
+import './CourseDetail.css';
+import '../../styles/common/Tabs.css';
+import "react-sliding-pane/dist/react-sliding-pane.css";
+import "../../styles/common/SlidingPane.css";
 import { useState, useEffect, useMemo } from 'react';
 import { getRecordById, getAllRecords, updateRecord } from '../../firebase/database'
 import CourseDetail from './CourseDetail'; // Import CourseDetail component
 import SessionDetailModal from './SessionDetailModal';
-import './CourseDetail.css';
-import '../../styles/common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SlidingPane from 'react-sliding-pane';
-import "react-sliding-pane/dist/react-sliding-pane.css";
-import "../../styles/common/SlidingPane.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faClock, faEye } from '@fortawesome/free-solid-svg-icons';
 
@@ -85,13 +85,13 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const prepareChartData = (sessions) => {
         // Create a map to store hours by month
         const monthlyHours = {};
-    
+
         // Month names in German
         const monthNames = [
             'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
             'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'
         ];
-    
+
         sessions.forEach(session => {
             if (session.date) {
                 // Extract month from date (format: DD.MM.YYYY)
@@ -102,10 +102,10 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                     const shortYear = fullYear.slice(2);
                     const monthKey = `${dateParts[1]}.${fullYear}`; // MM.YYYY format for sorting
                     const displayMonth = `${monthNames[monthNum]} ${shortYear}`; // "Month Year" format
-    
+
                     // Calculate session duration using the same logic as in the courses table
                     const sessionHours = isLongSession(session.startTime, session.endTime) ? 2 : 1.5;
-    
+
                     // Add to monthly total
                     if (!monthlyHours[monthKey]) {
                         monthlyHours[monthKey] = {
@@ -118,7 +118,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 }
             }
         });
-    
+
         // Convert to array format needed by Recharts
         return Object.values(monthlyHours)
             .sort((a, b) => {
@@ -219,18 +219,18 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     useEffect(() => {
         // Apply will-change property before animation starts
         if (isPaneOpen) {
-          document.querySelector('.slide-pane_from_right')?.style.setProperty('will-change', 'transform');
+            document.querySelector('.slide-pane_from_right')?.style.setProperty('will-change', 'transform');
         }
-        
+
         // Clean up will-change after animation completes
         const cleanupTimer = setTimeout(() => {
-          if (isPaneOpen) {
-            document.querySelector('.slide-pane_from_right')?.style.removeProperty('will-change');
-          }
+            if (isPaneOpen) {
+                document.querySelector('.slide-pane_from_right')?.style.removeProperty('will-change');
+            }
         }, 300); // slightly longer than animation duration
-        
+
         return () => clearTimeout(cleanupTimer);
-      }, [isPaneOpen]);
+    }, [isPaneOpen]);
 
     const openSessionDetail = (session) => {
         setSelectedSession(session);
@@ -521,57 +521,63 @@ const TeacherDetail = ({ teacherId, onClose }) => {
             </TabComponent>
 
             <div className="teacher-detail-content">
+
+
                 {activeTab === 'overview' && (
                     <div className="overview-tab">
-                        <div className="stats-row">
-                            <div className="stat-box">
-                                <h3>Kurse</h3>
-                                <div className="stat-value">{courses.length}</div>
-                            </div>
-                            <div className="stat-box">
-                                <h3>Lektionen</h3>
-                                <div className="stat-value">{sessions.length}</div>
-                            </div>
-                            <div className="stat-box">
-                                <h3>Unterrichtsstunden</h3>
-                                <div className="stat-value">{totalHours.toFixed(1)}</div>
+                        <div className="overview-flex-container">
+                            <div className="stats-column">
+                                <div className="stat-box">
+                                    <h3>Kurse</h3>
+                                    <div className="stat-value">{courses.length}</div>
+                                </div>
+                                <div className="stat-box">
+                                    <h3>Lektionen</h3>
+                                    <div className="stat-value">{sessions.length}</div>
+                                </div>
+                                <div className="stat-box">
+                                    <h3>Unterrichtsstunden</h3>
+                                    <div className="stat-value">{totalHours.toFixed(1)}</div>
+                                </div>
                             </div>
 
-                        </div>
-                        <div className="course-info-card" style={{ backgroundColor: 'white' }}>
-                            <h3>Unterrichtsstunden pro Monat</h3>
-                            <div style={{ width: '100%', height: 300 }}>
-                                <ResponsiveContainer>
-                                    <LineChart
-                                        data={chartData}
-                                        margin={{ top: 20, right: 40, left: 20, bottom: 25 }}
-                                    >
-                                        <CartesianGrid stroke="#e0e0e0" strokeDasharray="0 0" vertical={false} horizontal={false} />
-                                        <XAxis
-                                            dataKey="month"
-                                            tick={{ angle: 0, textAnchor: 'middle', dy: 10 }}
-                                            axisLine={true}
-                                            tickLine={false}
-                                        />
-                                        <YAxis
-                                            tickFormatter={(value) => `${value}h`}
-                                            axisLine={true}
-                                            tickLine={false}
-                                            dx={-10}
-                                        />
-                                        <Tooltip formatter={(value) => [`${value.toFixed(1)} Stunden`]} />
-                                        <Legend />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="hours"
-                                            stroke="var(--primary-blue)"
-                                            strokeWidth={2}
-                                            dot={false}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                            <div className="graph-container">
+                                <h3>Unterrichtsstunden pro Monat</h3>
+                                <div style={{ width: '100%', height: 300 }}>
+                                    <ResponsiveContainer>
+                                        <LineChart
+                                            data={chartData}
+                                            margin={{ top: 20, right: 40, left: 0, bottom: 0 }}
+                                        >
+                                            <CartesianGrid stroke="#e0e0e0" strokeDasharray="0 0" vertical={false} horizontal={false} />
+                                            <XAxis
+                                                dataKey="month"
+                                                tick={{ angle: 0, textAnchor: 'middle', dy: 10 }}
+                                                axisLine={true}
+                                                tickLine={false}
+                                            />
+                                            <YAxis
+                                                tickFormatter={(value) => `${value}h`}
+                                                axisLine={true}
+                                                tickLine={false}
+                                                dx={-10}
+                                            />
+                                            <Tooltip formatter={(value) => [`${value.toFixed(1)} Stunden`]} />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="hours"
+                                                stroke="var(--primary-blue)"
+                                                strokeWidth={2}
+                                                dot={false}
+                                            />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         </div>
+
+
+
                         <div className="course-info-card" style={{ backgroundColor: 'white', marginTop: '24px' }}>
                             <h3>Kurse im aktuellen Monat ({new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' })})</h3>
 
@@ -625,7 +631,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                     <p>Keine Kurse im aktuellen Monat.</p>
                                 </div>
                             )}
-                        </div>
+                        </div>f
                     </div>
                 )}
 
@@ -644,79 +650,54 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {activeTab === 'courses' && (
-                                        <div className="courses-tab">
-                                            {courses.length > 0 ? (
-                                                <table className="sessions-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Kurs</th>
-                                                            <th>Level</th>
-                                                            <th>Lektionen</th>
-                                                            <th>Zeitraum</th>
-                                                            <th>Anzahl Schüler</th>
-                                                            <th>Aktionen</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {courses.map((course) => {
-                                                            const { startDateDisplay, endDateDisplay, isOngoing } = formatCourseDates(course);
-                                                            return (
-                                                                <tr
-                                                                    key={course.id}
-                                                                    className="clickable-row"
-                                                                    onClick={() => handleCourseSelect(course.id)}
-                                                                >
-                                                                    <td>{course.name}</td>
-                                                                    <td>{course.level}</td>
-                                                                    <td>
-                                                                        {
-                                                                            sessions.filter(
-                                                                                (session) => session.courseId === course.id && session.teacherId === teacher.id
-                                                                            ).length
-                                                                        }
-                                                                    </td>
-                                                                    <td>
-                                                                        {startDateDisplay} - {isOngoing ? (
-                                                                            <span className="status-badge ongoing">Ongoing</span>
-                                                                        ) : (
-                                                                            endDateDisplay || '-'
-                                                                        )}
-                                                                    </td>
-                                                                    <td>{course.studentIds ? course.studentIds.length : 0}</td>
-                                                                    <td>
-                                                                        <div className="action-buttons">
-                                                                            <button
-                                                                                className="btn-peek"
-                                                                                onClick={(e) => handleCourseSidePeek(course, e)}
-                                                                                title="Lektionen anzeigen"
-                                                                            >
-                                                                                <FontAwesomeIcon icon={faEye} />
-                                                                            </button>
-                                                                            <button
-                                                                                className="btn-details"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    handleCourseSelect(course.id);
-                                                                                }}
-                                                                            >
-                                                                                Details
-                                                                            </button>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            ) : (
-                                                <div className="empty-state">
-                                                    <p>Keine Kurse gefunden.</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
+                                    {courses.map((course) => {
+                                        const { startDateDisplay, endDateDisplay, isOngoing } = formatCourseDates(course);
+                                        return (
+                                            <tr
+                                                key={course.id}
+                                                className="clickable-row"
+                                                onClick={() => handleCourseSelect(course.id)}
+                                            >
+                                                <td>{course.name}</td>
+                                                <td>{course.level}</td>
+                                                <td>
+                                                    {
+                                                        sessions.filter(
+                                                            (session) => session.courseId === course.id && session.teacherId === teacher.id
+                                                        ).length
+                                                    }
+                                                </td>
+                                                <td>
+                                                    {startDateDisplay} - {isOngoing ? (
+                                                        <span className="status-badge ongoing">Ongoing</span>
+                                                    ) : (
+                                                        endDateDisplay || '-'
+                                                    )}
+                                                </td>
+                                                <td>{course.studentIds ? course.studentIds.length : 0}</td>
+                                                <td>
+                                                    <div className="action-buttons">
+                                                        <button
+                                                            className="btn-peek"
+                                                            onClick={(e) => handleCourseSidePeek(course, e)}
+                                                            title="Lektionen anzeigen"
+                                                        >
+                                                            <FontAwesomeIcon icon={faEye} />
+                                                        </button>
+                                                        <button
+                                                            className="btn-details"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleCourseSelect(course.id);
+                                                            }}
+                                                        >
+                                                            Details
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         ) : (
