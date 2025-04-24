@@ -7,10 +7,12 @@ import './CourseDetail.css';
 import '../../styles/common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-
+import SlidingPane from 'react-sliding-pane';
+import "react-sliding-pane/dist/react-sliding-pane.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faClock, faEye } from '@fortawesome/free-solid-svg-icons';
+
+
 import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
 
 const TeacherDetail = ({ teacherId, onClose }) => {
@@ -26,6 +28,11 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [selectedSession, setSelectedSession] = useState(null);
     const [editingCountry, setEditingCountry] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState('');
+    // Add new state for side peek functionality
+    const [isPaneOpen, setIsPaneOpen] = useState(false);
+    const [peekCourse, setPeekCourse] = useState(null);
+    const [courseSessions, setCourseSessions] = useState([]);
+    const [sessionsLoading, setSessionsLoading] = useState(false);
 
     const getCurrentMonthSessionsData = () => {
         // Get current month and year
@@ -234,6 +241,51 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const closeSessionDetail = () => {
         setSelectedSession(null);
     };
+
+    // Add this new function for the side peek
+    const handleCourseSidePeek = (course, e) => {
+        e.stopPropagation(); // Prevent full course detail from opening
+        setPeekCourse(course);
+        setSessionsLoading(true);
+
+        // Filter sessions for this course
+        const courseSessionsList = sessions.filter(session =>
+            session.courseId === course.id
+        );
+
+        // Sort by date
+        const sortedSessions = [...courseSessionsList].sort((a, b) => {
+            if (!a.date || !b.date) return 0;
+
+            const partsA = a.date.split('.');
+            const partsB = b.date.split('.');
+
+            if (partsA.length === 3 && partsB.length === 3) {
+                const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+                const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+                return dateA - dateB;
+            }
+
+            return 0;
+        });
+
+        setCourseSessions(sortedSessions);
+        setSessionsLoading(false);
+        setIsPaneOpen(true);
+    };
+
+
+    // Function to open full course detail with sessions tab focused
+    const handleOpenCourseDetails = () => {
+        if (peekCourse) {
+            setIsPaneOpen(false);
+            // We need to delay setting the selectedCourseId to ensure the pane closes first
+            setTimeout(() => {
+                setSelectedCourseId(peekCourse.id);
+            }, 100);
+        }
+    };
+
     // Function to handle course selection
     const handleCourseSelect = (courseId) => {
         setSelectedCourseId(courseId);
@@ -344,7 +396,11 @@ const TeacherDetail = ({ teacherId, onClose }) => {
 
     // If a course is selected, render the CourseDetail component
     if (selectedCourseId) {
-        return <CourseDetail courseId={selectedCourseId} onClose={handleBackToTeacher} />;
+        return <CourseDetail
+            courseId={selectedCourseId}
+            onClose={handleBackToTeacher}
+            initialActiveTab={isPaneOpen ? 'sessions' : 'overview'}
+        />;
     }
 
     if (loading) return <div className="loading">Loading teacher details...</div>;
@@ -424,6 +480,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
 
         return { startDateDisplay, endDateDisplay, isOngoing };
     };
+
 
     return (
         <div className="teacher-detail-wrapper">
@@ -536,7 +593,10 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                             <tr
                                                 key={data.course.id}
                                                 className="clickable-row"
-                                                onClick={() => handleCourseSelect(data.course.id)}
+                                                onClick={(e) => {
+                                                    // Change this to use handleCourseSidePeek instead of handleCourseSelect
+                                                    handleCourseSidePeek(data.course, e);
+                                                }}
                                             >
                                                 <td>{data.course.name}</td>
                                                 <td>{data.course.level}</td>
@@ -586,46 +646,79 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {courses.map((course) => {
-                                        const { startDateDisplay, endDateDisplay, isOngoing } = formatCourseDates(course);
-                                        return (
-                                            <tr
-                                                key={course.id}
-                                                className="clickable-row"
-                                                onClick={() => handleCourseSelect(course.id)}
-                                            >
-                                                <td>{course.name}</td>
-                                                <td>{course.level}</td>
-                                                <td>
-                                                    {
-                                                        // Count only sessions in this course taught by the current teacher
-                                                        sessions.filter(
-                                                            (session) => session.courseId === course.id && session.teacherId === teacher.id
-                                                        ).length
-                                                    }
-                                                </td>
-                                                <td>
-                                                    {startDateDisplay} - {isOngoing ? (
-                                                        <span className="status-badge ongoing">Ongoing</span>
-                                                    ) : (
-                                                        endDateDisplay || '-'
-                                                    )}
-                                                </td>
-                                                <td>{course.studentIds ? course.studentIds.length : 0}</td>
-                                                <td>
-                                                    <button
-                                                        className="btn-details"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleCourseSelect(course.id);
-                                                        }}
-                                                    >
-                                                        Details
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                    {activeTab === 'courses' && (
+                                        <div className="courses-tab">
+                                            {courses.length > 0 ? (
+                                                <table className="sessions-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Kurs</th>
+                                                            <th>Level</th>
+                                                            <th>Lektionen</th>
+                                                            <th>Zeitraum</th>
+                                                            <th>Anzahl Schüler</th>
+                                                            <th>Aktionen</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {courses.map((course) => {
+                                                            const { startDateDisplay, endDateDisplay, isOngoing } = formatCourseDates(course);
+                                                            return (
+                                                                <tr
+                                                                    key={course.id}
+                                                                    className="clickable-row"
+                                                                    onClick={() => handleCourseSelect(course.id)}
+                                                                >
+                                                                    <td>{course.name}</td>
+                                                                    <td>{course.level}</td>
+                                                                    <td>
+                                                                        {
+                                                                            sessions.filter(
+                                                                                (session) => session.courseId === course.id && session.teacherId === teacher.id
+                                                                            ).length
+                                                                        }
+                                                                    </td>
+                                                                    <td>
+                                                                        {startDateDisplay} - {isOngoing ? (
+                                                                            <span className="status-badge ongoing">Ongoing</span>
+                                                                        ) : (
+                                                                            endDateDisplay || '-'
+                                                                        )}
+                                                                    </td>
+                                                                    <td>{course.studentIds ? course.studentIds.length : 0}</td>
+                                                                    <td>
+                                                                        <div className="action-buttons">
+                                                                            <button
+                                                                                className="btn-peek"
+                                                                                onClick={(e) => handleCourseSidePeek(course, e)}
+                                                                                title="Lektionen anzeigen"
+                                                                            >
+                                                                                <FontAwesomeIcon icon={faEye} />
+                                                                            </button>
+                                                                            <button
+                                                                                className="btn-details"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleCourseSelect(course.id);
+                                                                                }}
+                                                                            >
+                                                                                Details
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            ) : (
+                                                <div className="empty-state">
+                                                    <p>Keine Kurse gefunden.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                 </tbody>
                             </table>
                         ) : (
@@ -839,6 +932,73 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                     </div>
                 )}
             </div>
+            <SlidingPane
+                isOpen={isPaneOpen}
+                title={peekCourse ? `Lektionen: ${peekCourse.name}` : 'Lektionen'}
+                subtitle={peekCourse ? `Level: ${peekCourse.level}` : ''}
+                width="66%"
+                onRequestClose={() => setIsPaneOpen(false)}
+                hideHeader={false}
+            >
+                <div className="side-peek-content">
+                    <div className="side-peek-actions">
+                        <button
+                            className="btn-view-details"
+                            onClick={handleOpenCourseDetails}
+                        >
+                            Kurs Details anzeigen
+                        </button>
+                    </div>
+
+                    {sessionsLoading ? (
+                        <div className="loading-indicator">Lektionen werden geladen...</div>
+                    ) : courseSessions.length > 0 ? (
+                        <table className="sessions-table">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Titel</th>
+                                    <th>Zeit</th>
+                                    <th>Lehrer</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {courseSessions.map(session => (
+                                    <tr key={session.id}>
+                                        <td>{safelyRenderValue(session.date)}</td>
+                                        <td>{safelyRenderValue(session.title)}</td>
+                                        <td>
+                                            {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
+                                            {isLongSession(session.startTime, session.endTime) && (
+                                                <span className="long-session-indicator">
+                                                    <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td>{session.teacherId === teacher.id ? teacher.name : 'Anderer Lehrer'}</td>
+                                        <td>
+                                            <button
+                                                className="btn-details"
+                                                onClick={() => {
+                                                    setSelectedSession(session);
+                                                    setIsPaneOpen(false);
+                                                }}
+                                            >
+                                                Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="empty-state">
+                            <p>Keine Lektionen für diesen Kurs gefunden.</p>
+                        </div>
+                    )}
+                </div>
+            </SlidingPane>
             {selectedSession && (
                 <SessionDetailModal
                     session={selectedSession}

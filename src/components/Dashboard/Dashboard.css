@@ -19,6 +19,7 @@
   background-color: white;
   /* Changed from var(--dark-blue) to white */
   color: #4d5d78;
+  font-weight: 500;
   /* Light grey text */
   transition: width 0.3s ease;
   overflow-y: auto;

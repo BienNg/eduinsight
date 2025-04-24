@@ -10,7 +10,7 @@ import '../../styles/common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 
 
-const CourseDetail = ({ courseId, onClose, groupName }) => {
+const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overview' }) => {
     const [course, setCourse] = useState(null);
     const [teacher, setTeacher] = useState(null);
     const [teachers, setTeachers] = useState([]);
@@ -18,7 +18,7 @@ const CourseDetail = ({ courseId, onClose, groupName }) => {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState(initialActiveTab);
     const [selectedSession, setSelectedSession] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'sessionOrder', direction: 'ascending' });

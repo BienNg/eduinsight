@@ -635,3 +635,95 @@
   border: 1px solid #eaeaea;
   background-color: #fafafa;
 }
+
+/* Action buttons in rows */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-peek {
+  background-color: #f0f7ff;
+  color: var(--primary-blue);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-peek:hover {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+/* Side Peek Styles */
+.side-peek-content {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.side-peek-actions {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-view-details {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-view-details:hover {
+  background-color: var(--dark-blue);
+}
+
+.btn-view-details::after {
+  content: '→';
+  font-size: 1.2em;
+}
+
+/* Override some of the react-sliding-pane default styles */
+.slide-pane {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.slide-pane__header {
+  background-color: var(--primary-blue) !important;
+  color: white !important;
+  padding: 16px 24px !important;
+}
+
+.slide-pane__title {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+}
+
+.slide-pane__subtitle {
+  font-size: 14px !important;
+  opacity: 0.8 !important;
+}
+
+.slide-pane__close {
+  color: white !important;
+  opacity: 0.8 !important;
+}
+
+.slide-pane__close:hover {
+  opacity: 1 !important;
+}
