@@ -36,3 +36,195 @@
       height: 650px;
     }
   }
+
+  /* Add to src/components/Dashboard/StudentDetailModal.css */
+
+/* Relations tab styles */
+.relations-section {
+    padding: 0 16px;
+  }
+  
+  .search-container {
+    margin: 16px 0;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
+  }
+  
+  .students-list {
+    margin-top: 16px;
+    max-height: calc(100% - 100px);
+    overflow-y: auto;
+  }
+  
+  
+  .student-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+
+  /* Add to StudentDetailModal.css */
+.relations-container {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+  }
+  
+  .relations-list-container {
+    flex: 1;
+    max-width: 50%;
+  }
+  
+  .student-preview-card {
+    flex: 1;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+  }
+  
+  .preview-header {
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 12px 16px;
+  }
+  
+  .preview-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  
+  .preview-content {
+    padding: 16px;
+    flex: 1;
+  }
+  
+  .preview-section {
+    margin-bottom: 20px;
+  }
+  
+  .preview-section h5 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+  
+  .preview-info-item {
+    display: flex;
+    margin-bottom: 8px;
+  }
+  
+  .preview-label {
+    font-weight: 500;
+    color: #666;
+    width: 80px;
+    flex-shrink: 0;
+  }
+  
+  .preview-value {
+    color: #333;
+  }
+  
+  .course-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .course-badge {
+    background-color: #e3f2fd;
+    color: var(--primary-blue);
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .empty-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .empty-courses {
+    color: #999;
+    font-style: italic;
+    margin: 0;
+  }
+  
+  .student-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .student-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .student-item:hover {
+    background-color: #f5f7fa;
+  }
+  
+  .student-item.selected {
+    background-color: #e3f2fd;
+    border-left: 3px solid var(--primary-blue);
+  }
+  
+  .student-name {
+    font-weight: 500;
+  }
+
+  .preview-cards {
+    height: 420px; /* Even smaller fixed height */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+  }
+  
+  .student-preview-card {
+    height: 420px; /* Even smaller fixed height */
+    min-height: 0; /* Override the previous min-height */
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Prevent shrinking */
+  }
+  
+  /* When there's no selected student, adjust the current student card to take full space */
+  .preview-cards:has(.empty-preview) .student-preview-card:first-child {
+    height: 256px; /* Adjusted for the smaller height (120px * 2 + 16px gap) */
+  }

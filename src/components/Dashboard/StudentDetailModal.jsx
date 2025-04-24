@@ -1,4 +1,4 @@
-// Update src/components/Dashboard/StudentDetailModal.jsx
+// src/components/Dashboard/StudentDetailModal.jsx
 import React, { useState, useEffect } from 'react';
 import { getRecordById, getAllRecords } from '../../firebase/database';
 import './SessionDetailModal.css';
@@ -7,8 +7,11 @@ import './StudentDetailModal.css';
 const StudentDetailModal = ({ student, onClose }) => {
   const [sessions, setSessions] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedRelatedStudent, setSelectedRelatedStudent] = useState(null);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -18,40 +21,61 @@ const StudentDetailModal = ({ student, onClose }) => {
         const studentSessions = allSessions.filter(session =>
           session.attendance && session.attendance[student.id]
         );
-
+   
         // Fetch course details for each session
         const courseIds = [...new Set(studentSessions.map(s => s.courseId))];
+        
+        // Fetch all students for relations tab
+        const students = await getAllRecords('students');
+        // Filter out the current student
+        const otherStudents = students.filter(s => s.id !== student.id);
+        
+        // Collect all unique course IDs that need to be fetched
+        const allCourseIds = new Set([
+          ...courseIds,
+          ...(student.courseIds || []),
+          ...otherStudents.flatMap(s => s.courseIds || [])
+        ]);
+        
+        // Fetch all needed courses at once
         const coursesData = await Promise.all(
-          courseIds.map(id => getRecordById('courses', id))
+          [...allCourseIds].map(id => getRecordById('courses', id))
         );
-
+   
         // Sort sessions by date
         const sortedSessions = studentSessions.sort((a, b) => {
           if (!a.date || !b.date) return 0;
-
+   
           const partsA = a.date.split('.');
           const partsB = b.date.split('.');
-
+   
           if (partsA.length === 3 && partsB.length === 3) {
             const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
             const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
             return dateA - dateB;
           }
-
+   
           return 0;
         });
-
+   
         setSessions(sortedSessions);
-        setCourses(coursesData);
+        setCourses(coursesData.filter(Boolean));
+        setAllStudents(otherStudents);
       } catch (error) {
         console.error("Error fetching student data:", error);
       } finally {
         setLoading(false);
       }
     };
-
+   
     fetchStudentData();
-  }, [student.id]);
+   }, [student.id]);
+
+
+  // Function to handle student selection in relations tab
+  const handleStudentSelect = (selectedStudent) => {
+    setSelectedRelatedStudent(selectedStudent);
+  };
 
   // Function to safely render values (reused from other components)
   const safelyRenderValue = (value) => {
@@ -186,6 +210,11 @@ const StudentDetailModal = ({ student, onClose }) => {
     return courseStats;
   };
 
+  // Function to filter students based on search query
+  const filteredStudents = allStudents.filter(s =>
+    s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="modal-backdrop">
       <div className="session-detail-modal student-detail-modal fixed-size-modal">
@@ -212,6 +241,12 @@ const StudentDetailModal = ({ student, onClose }) => {
             onClick={() => setActiveTab('courses')}
           >
             Kurse
+          </button>
+          <button
+            className={activeTab === 'relations' ? 'active' : ''}
+            onClick={() => setActiveTab('relations')}
+          >
+            Relations
           </button>
         </div>
 
@@ -313,16 +348,6 @@ const StudentDetailModal = ({ student, onClose }) => {
                               </td>
                               <td>{comment}</td>
                             </tr>
-                          ); return (
-                            <tr key={session.id}>
-                              <td>{safelyRenderValue(session.date)}</td>
-                              <td>{courseName}</td>
-                              <td>{safelyRenderValue(session.title)}</td>
-                              <td className={`status-${status}`}>
-                                {getAttendanceStatus(status)}
-                              </td>
-                              <td>{comment}</td>
-                            </tr>
                           );
                         })}
                       </tbody>
@@ -414,6 +439,111 @@ const StudentDetailModal = ({ student, onClose }) => {
                       <p>Keine Kurse gefunden.</p>
                     </div>
                   )}
+                </div>
+              )}
+              {activeTab === 'relations' && (
+                <div className="relations-section">
+                  <h3>Schülerbeziehungen</h3>
+                  <div className="relations-container">
+                    <div className="relations-list-container">
+                      <div className="search-container">
+                        <input
+                          type="text"
+                          placeholder="Schüler suchen..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="search-input"
+                        />
+                      </div>
+
+                      <div className="students-list">
+                        {filteredStudents.length > 0 ? (
+                          <ul className="student-items">
+                            {filteredStudents.map((s) => (
+                              <li
+                                key={s.id}
+                                className={`student-item ${selectedRelatedStudent?.id === s.id ? 'selected' : ''}`}
+                                onClick={() => handleStudentSelect(s)}
+                              >
+                                <div className="student-info">
+                                  <span className="student-name">{safelyRenderValue(s.name)}</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="empty-state">
+                            {searchQuery ?
+                              <p>Keine Schüler mit diesem Namen gefunden.</p> :
+                              <p>Keine anderen Schüler verfügbar.</p>
+                            }
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="preview-cards">
+                      {/* Current student card */}
+                      <div className="student-preview-card">
+                        <div className="preview-header">
+                          <h4>{safelyRenderValue(student.name)} (Aktueller Schüler)</h4>
+                        </div>
+                        <div className="preview-content">
+                          <div className="preview-section">
+                            <h5>Kurse</h5>
+                            {student.courseIds && student.courseIds.length > 0 ? (
+                              <div className="course-badges">
+                                {student.courseIds.map((courseId) => {
+                                  const course = courses.find((c) => c.id === courseId);
+                                  return (
+                                    <div key={courseId} className="course-badge">
+                                      {course ? safelyRenderValue(course.name) : `Kurs ${courseId}`}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="empty-courses">Keine Kurse gefunden</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Selected student card */}
+                      <div className="student-preview-card">
+                        {selectedRelatedStudent ? (
+                          <>
+                            <div className="preview-header">
+                              <h4>{safelyRenderValue(selectedRelatedStudent.name)}</h4>
+                            </div>
+                            <div className="preview-content">
+                              <div className="preview-section">
+                                <h5>Kurse</h5>
+                                {selectedRelatedStudent.courseIds && selectedRelatedStudent.courseIds.length > 0 ? (
+                                  <div className="course-badges">
+                                    {selectedRelatedStudent.courseIds.map((courseId) => {
+                                      const course = courses.find((c) => c.id === courseId);
+                                      return (
+                                        <div key={courseId} className="course-badge">
+                                          {course ? safelyRenderValue(course.name) : `Kurs ${courseId}`}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <p className="empty-courses">Keine Kurse gefunden</p>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="empty-preview">
+                            <p>Wählen Sie einen Schüler aus, um die Details anzuzeigen</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </>
