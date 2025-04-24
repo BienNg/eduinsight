@@ -1,11 +1,12 @@
 // src/components/Dashboard/TeacherDetail.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getRecordById, getAllRecords, updateRecord } from '../../firebase/database'
 import CourseDetail from './CourseDetail'; // Import CourseDetail component
 import SessionDetailModal from './SessionDetailModal';
 import './CourseDetail.css';
 import '../../styles/common/Tabs.css';
 import TabComponent from '../common/TabComponent';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -25,6 +26,63 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [selectedSession, setSelectedSession] = useState(null);
     const [editingCountry, setEditingCountry] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState('');
+
+    // Define the prepareChartData function BEFORE using it in useMemo
+    const prepareChartData = (sessions) => {
+        // Create a map to store hours by month
+        const monthlyHours = {};
+
+        sessions.forEach(session => {
+            if (session.date && session.startTime && session.endTime) {
+                // Extract month from date (format: DD.MM.YYYY)
+                const dateParts = session.date.split('.');
+                if (dateParts.length === 3) {
+                    const monthKey = `${dateParts[1]}.${dateParts[2]}`; // MM.YYYY format
+
+                    // Calculate session duration
+                    let durationHours = 1.5; // Default duration
+
+                    // If we have actual times, calculate actual duration
+                    if (session.startTime && session.endTime) {
+                        const [startHours, startMinutes] = session.startTime.split(':').map(Number);
+                        const [endHours, endMinutes] = session.endTime.split(':').map(Number);
+
+                        // Calculate total minutes
+                        const startTotalMinutes = startHours * 60 + startMinutes;
+                        const endTotalMinutes = endHours * 60 + endMinutes;
+
+                        // Calculate duration in minutes, handling sessions that cross midnight
+                        let durationMinutes = endTotalMinutes - startTotalMinutes;
+                        if (durationMinutes < 0) {
+                            durationMinutes += 24 * 60;
+                        }
+
+                        // Convert to hours
+                        durationHours = durationMinutes / 60;
+                    }
+
+                    // Add to monthly total
+                    if (!monthlyHours[monthKey]) {
+                        monthlyHours[monthKey] = 0;
+                    }
+                    monthlyHours[monthKey] += durationHours;
+                }
+            }
+        });
+
+        // Convert to array format needed by Recharts
+        return Object.entries(monthlyHours)
+            .map(([month, hours]) => ({ month, hours }))
+            .sort((a, b) => {
+                // Sort by date (MM.YYYY format)
+                const [monthA, yearA] = a.month.split('.');
+                const [monthB, yearB] = b.month.split('.');
+                return (yearA - yearB) || (monthA - monthB);
+            });
+    };
+
+    // Now use the function in useMemo
+    const chartData = useMemo(() => prepareChartData(sessions), [sessions]);
 
     const tabs = [
         { id: 'overview', label: 'Übersicht' },
@@ -360,7 +418,39 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                                 <h3>Unterrichtsstunden</h3>
                                 <div className="stat-value">{totalHours.toFixed(1)}</div>
                             </div>
+                            
                         </div>
+                        <div className="course-info-card">
+                                <h3>Unterrichtsstunden pro Monat</h3>
+                                <div style={{ width: '100%', height: 300 }}>
+                                    <ResponsiveContainer>
+                                        <LineChart
+                                            data={chartData}
+                                            margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis
+                                                dataKey="month"
+                                                label={{ value: 'Monat', position: 'insideBottomRight', offset: -10 }}
+                                                tick={{ angle: -45, textAnchor: 'end', dy: 10 }}
+                                            />
+                                            <YAxis
+                                                label={{ value: 'Stunden', angle: -90, position: 'insideLeft' }}
+                                            />
+                                            <Tooltip formatter={(value) => [`${value.toFixed(1)} Stunden`, 'Unterrichtsstunden']} />
+                                            <Legend />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="hours"
+                                                name="Unterrichtsstunden"
+                                                stroke="var(--primary-blue)"
+                                                strokeWidth={2}
+                                                activeDot={{ r: 6 }}
+                                            />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
                     </div>
                 )}
 
