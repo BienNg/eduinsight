@@ -199,7 +199,9 @@ const MonatContent = () => {
 
   // Handler for opening the course detail modal
   const handleCourseClick = (course) => {
+    console.log("Course clicked:", course);
     setSelectedCourse(course);
+    console.log("Selected course set to:", course.id);
   };
 
   // Handler for closing the course detail modal
@@ -306,7 +308,10 @@ const MonatContent = () => {
                         <div
                           key={course.id}
                           className="level-badge clickable"
-                          onClick={() => handleCourseClick(course)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Stop propagation to prevent any parent click handlers
+                            handleCourseClick(course);
+                          }}
                         >
                           {course.name || 'Unbenannter Kurs'}
                         </div>
@@ -513,11 +518,42 @@ const MonatContent = () => {
         {activeTab === 'all' && renderAllMonthsDetails()}
       </TabComponent>
       {selectedCourse && (
-        <CourseDetail
-          courseId={selectedCourse.id}
-          onClose={handleCloseModal}
-          groupName={selectedCourse.group}
-        />
+        <div
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={handleCloseModal}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '90%',
+              maxWidth: '1000px',
+              height: '90%',
+              maxHeight: '800px',
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              overflow: 'auto'
+            }}
+          >
+            <CourseDetail
+              courseId={selectedCourse.id}
+              onClose={handleCloseModal}
+              groupName={selectedCourse.group}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
