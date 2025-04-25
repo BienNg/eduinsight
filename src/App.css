@@ -17,10 +17,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
   color: #333;
+  background-color: #F2F4FA;
 }
 
 .App {
   height: 100vh;
+  background-color: #F2F4FA;
 }
 
 /* In your global CSS or App.css */
