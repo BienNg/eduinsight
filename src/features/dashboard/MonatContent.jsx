@@ -9,7 +9,7 @@ import { isLongSession, countLongSessions } from '../utils/sessionUtils';
 import { calculateTotalHours } from '../utils/timeUtils';
 import CourseDetail from './CourseDetail';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Area } from 'recharts';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 
@@ -49,30 +49,31 @@ const MonatContent = () => {
   };
 
   const prepareChartData = () => {
-    const monthlyData = [];
+    // Get current month and previous 3 months
+    const currentDate = new Date();
+    const last4Months = Array.from({length: 4}, (_, i) => {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (3-i), 1);
+      return {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1
+      };
+    });
+
     const monthNames = [
       'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
       'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'
     ];
 
-    months.forEach(month => {
-      const details = monthDetails[month.id];
-      if (details) {
-        const [year, monthNum] = month.id.split('-');
-        const monthIndex = parseInt(monthNum) - 1;
-        monthlyData.push({
-          month: `${monthNames[monthIndex]} ${year.slice(2)}`,
-          courses: details.courseCount
-        });
-      }
-    });
-
-    return monthlyData.sort((a, b) => {
-      const [monthA, yearA] = a.month.split(' ');
-      const [monthB, yearB] = b.month.split(' ');
-      return yearA - yearB || monthNames.indexOf(monthA) - monthNames.indexOf(monthB);
+    return last4Months.map(({year, month}) => {
+      const monthId = `${year}-${month.toString().padStart(2, '0')}`;
+      const details = monthDetails[monthId];
+      return {
+        month: monthNames[month - 1].substring(0, 3),
+        courses: details ? details.courseCount : 0
+      };
     });
   };
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 
@@ -669,16 +670,24 @@ const MonatContent = () => {
                 <h3>Anzahl Kurse pro Monat</h3>
                 <div style={{ width: '100%', height: '200px' }}>
                   <ResponsiveContainer>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
+                    <LineChart 
+                      data={chartData}
+                      margin={{ top: 5, right: 20, bottom: 5, left: 20 }}
+                    >
+                      <XAxis 
+                        dataKey="month" 
+                        interval={0}
+                        tickMargin={5}
+                      />
+                      <YAxis hide={true} />
                       <Tooltip />
                       <Line
                         type="monotone"
                         dataKey="courses"
                         stroke="#8884d8"
-                        activeDot={{ r: 8 }}
+                        strokeWidth={2}
+                        dot={{ fill: '#8884d8', r: 4 }}
+                        activeDot={{ r: 6 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
