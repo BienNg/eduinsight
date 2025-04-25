@@ -1,65 +1,55 @@
 /* src/styles/common/Tabs.css */
+.tab-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 20px 0;
+}
+
 .app-tab-list {
-    display: flex;
-    list-style-type: none;
-    margin: 0 0 24px;
-    padding: 0;
-    border-bottom: 2px solid #f1f1f1;
-    position: relative;
-    --slider-left: 0;
-    --slider-width: 150px;
-  }
-  
-  .app-tab {
-    padding: 12px 24px;
-    cursor: pointer;
-    transition: color 0.3s ease;
-    font-weight: 500;
-    color: #666;
-    margin-right: 8px;
-    margin-bottom: -2px;
-    background: none;
-    border: none;
-    font-size: 16px;
-    position: relative;
-    z-index: 1;
-  }
-  
-  .app-tab:hover {
-    color: var(--primary-blue);
-  }
-  
-  /* Remove the border from individual tabs */
-  .app-tab[aria-selected="true"],
-  .app-tab.active {
-    color: var(--primary-blue);
-    border-bottom: none; /* Remove default border */
-  }
-  
-  /* Add sliding indicator */
-  .app-tab-list::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: var(--slider-left);
-    width: var(--slider-width);
-    height: 2px;
-    background: var(--primary-blue);
-    transition: all 0.3s ease;
-    z-index: 0;
-  }
-  
-  /* The sliding indicator positions - these will be set by JavaScript */
-  .app-tab-list[data-active-tab="0"]::after {
-    left: 0;
-    width: 0; /* Will be set by JS */
-  }
-  
-  .app-tab-list[data-active-tab="1"]::after {
-    left: 0; /* Will be set by JS */
-    width: 0; /* Will be set by JS */
-  }
-  
-  .app-tab-panel {
-    padding: 0 16px 16px 16px;
-  }
+  display: flex;
+  justify-content: center;
+  list-style-type: none;
+  margin: 0 0 24px;
+  padding: 0;
+  border-bottom: none;
+  position: relative;
+  --slider-left: 0;
+  --slider-width: 150px;
+  gap: 8px;
+}
+
+.app-tab {
+  padding: 15px 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  color: #0C1F22;
+  background: none;
+  border: 1px solid #0C1F22;
+  border-radius: 30px;
+  font-size: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.app-tab:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.app-tab.active {
+  color: white;
+  background-color: #0C1F22;
+  border-color: #0C1F22;
+}
+
+/* Remove the sliding indicator since we're using a different style */
+.app-tab-list::after {
+  display: none;
+}
+
+.app-tab-panel {
+  padding: 16px;
+  width: 100%;
+}

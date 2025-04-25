@@ -1,12 +1,12 @@
 // src/components/Dashboard/MonatContent.jsx
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { getAllRecords } from '../firebase/database';
-import { isLongSession, countLongSessions } from '../utils/sessionUtils';
-import { calculateTotalHours } from '../utils/timeUtils';
 import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
 import TabComponent from '../common/TabComponent';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { getAllRecords } from '../firebase/database';
+import { isLongSession, countLongSessions } from '../utils/sessionUtils';
+import { calculateTotalHours } from '../utils/timeUtils';
 import CourseDetail from './CourseDetail';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -236,6 +236,10 @@ const MonatContent = () => {
     <div className="notion-callout">
       <div className="notion-callout-content">
         <div className="notion-stat-grid">
+          <div className="notion-stat">
+            <div className="notion-stat-value">{details.teacherCount}</div>
+            <div className="notion-stat-label">Lehrer aktiv</div>
+          </div>
           <div className="notion-stat">
             <div className="notion-stat-value">{details.courseCount}</div>
             <div className="notion-stat-label">Kurse</div>
