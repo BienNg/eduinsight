@@ -1,4 +1,5 @@
 // src/components/Dashboard/MonatContent.jsx
+import './MonatContent.css';
 import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
@@ -642,7 +643,7 @@ const MonatContent = () => {
           <div className="overview-column">
             {/* Analytics Cards Row */}
             <div className="analytics-row">
-              <div className="analytics-card">
+              <div className="analytics-card animate-card">
                 <h3>Kurse nach Niveau</h3>
                 <div style={{ width: '100%', height: '200px' }}>
                   <ResponsiveContainer>
@@ -655,6 +656,9 @@ const MonatContent = () => {
                         outerRadius={80}
                         paddingAngle={5}
                         dataKey="value"
+                        nameKey="name"
+                        label={false}
+                        labelLine={false}
                         animationBegin={0}
                         animationDuration={1500}
                         animationEasing="ease-out"
@@ -678,18 +682,19 @@ const MonatContent = () => {
                       <Legend
                         wrapperStyle={{
                           paddingTop: '20px',
-                          opacity: 0
+                          opacity: 1,
+                          transition: 'opacity 0.5s ease-in'
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.opacity = 1;
-                          e.currentTarget.style.transition = 'opacity 0.5s ease-in';
-                        }}
+                        layout="horizontal"
+                        align="center"
+                        verticalAlign="bottom"
+                        iconType="circle"
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-              <div className="analytics-card">
+              <div className="analytics-card animate-card">
                 <h3>Anzahl Kurse pro Monat</h3>
                 <div style={{ width: '100%', height: '200px' }}>
                   <ResponsiveContainer>
@@ -701,7 +706,8 @@ const MonatContent = () => {
                         dataKey="month" 
                         interval={0}
                         tickMargin={5}
-                        opacity={0}
+                        height={40}
+                        tick={{ fill: '#666', fontSize: 12 }}
                       >
                         <animate
                           attributeName="opacity"
