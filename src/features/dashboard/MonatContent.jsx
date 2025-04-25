@@ -8,8 +8,10 @@ import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 import CourseDetail from './CourseDetail';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const MonatContent = () => {
+  const navigate = useNavigate();
   const [months, setMonths] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -198,10 +200,8 @@ const MonatContent = () => {
   }, []);
 
   // Handler for opening the course detail modal
-  const handleCourseClick = (course) => {
-    console.log("Course clicked:", course);
-    setSelectedCourse(course);
-    console.log("Selected course set to:", course.id);
+  const handleCourseClick = (courseId) => {
+    navigate(`/courses/${courseId}`);
   };
 
   // Handler for closing the course detail modal
@@ -309,8 +309,8 @@ const MonatContent = () => {
                           key={course.id}
                           className="level-badge clickable"
                           onClick={(e) => {
-                            e.stopPropagation(); // Stop propagation to prevent any parent click handlers
-                            handleCourseClick(course);
+                            e.stopPropagation();
+                            handleCourseClick(course.id);
                           }}
                         >
                           {course.name || 'Unbenannter Kurs'}

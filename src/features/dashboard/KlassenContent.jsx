@@ -29,7 +29,7 @@ const KlassenContent = () => {
     );
 
     if (matchingCourse) {
-      setSelectedCourseId(matchingCourse.id);
+      navigate(`/courses/${matchingCourse.id}`, { state: { groupName } });
     } else {
       // Handle case where no matching course is found
       alert(`No course found for ${level} in group ${groupName}`);
