@@ -23,10 +23,11 @@ const MonatContent = () => {
   const [monthDetails, setMonthDetails] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [currentMonthId, setCurrentMonthId] = useState(null);
-  const [activeTab, setActiveTab] = useState('current');
+  const [activeTab, setActiveTab] = useState('overview');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const tabsContainerRef = useRef(null);
   const tabs = [
+    { id: 'overview', label: 'Overview' },
     { id: 'current', label: 'Aktueller Monat' },
     { id: 'all', label: 'Alle Monate' }
   ];
@@ -364,45 +365,102 @@ const MonatContent = () => {
   );
 
   // New component for the current month details
-  const renderCurrentMonthDetails = () => {
-    if (!currentMonthId || !monthDetails[currentMonthId]) {
-      return <div className="notion-empty">Keine Daten für den aktuellen Monat verfügbar.</div>;
-    }
+  // Updated renderCurrentMonthDetails function in MonatContent.jsx
+const renderCurrentMonthDetails = () => {
+  if (!currentMonthId || !monthDetails[currentMonthId]) {
+    return <div className="notion-empty">Keine Daten für den aktuellen Monat verfügbar.</div>;
+  }
 
-    const month = months.find(m => m.id === currentMonthId);
-    const details = monthDetails[currentMonthId];
+  const month = months.find(m => m.id === currentMonthId);
+  const details = monthDetails[currentMonthId];
 
-    return (
-      <div className="current-month-details">
-        <h1 className="notion-h1">{month ? month.name : 'Aktueller Monat'}</h1>
+  return (
+    <div className="current-month-details">
+      <h2 className="notion-h2">{month ? month.name : 'Aktueller Monat'}</h2>
 
-        {/* Summary Stats */}
-        <div className="current-month-summary">
-          {renderMonthSummary(details)}
+      {/* Compact Summary Stats Card */}
+      <div className="compact-stats-grid">
+        <div className="stat-card compact">
+          <div className="stat-value">{details.courseCount}</div>
+          <div className="stat-label">Kurse</div>
         </div>
-
-        {/* Teachers Section */}
-        <div className="current-month-section">
-          <h2 className="notion-h2">Lehrer</h2>
-          {details.teachers.length === 0 ? (
-            <div className="notion-empty-message">Keine Lehrer in diesem Monat.</div>
-          ) : (
-            renderTeacherCards(details.teachers)
-          )}
+        <div className="stat-card compact">
+          <div className="stat-value">{details.sessionCount}</div>
+          <div className="stat-label">Lektionen</div>
         </div>
-
-        {/* Courses Section */}
-        <div className="current-month-section">
-          <h2 className="notion-h2">Kurse</h2>
-          {details.courses.length === 0 ? (
-            <div className="notion-empty-message">Keine Kurse in diesem Monat.</div>
-          ) : (
-            renderCourseCards(details.courses)
-          )}
+        <div className="stat-card compact">
+          <div className="stat-value">{details.studentCount}</div>
+          <div className="stat-label">Schüler</div>
+        </div>
+        <div className="stat-card compact">
+          <div className="stat-value">{details.hours.toFixed(1)}</div>
+          <div className="stat-label">Stunden</div>
+        </div>
+        <div className="stat-card compact">
+          <div className="stat-value">{details.longSessions}</div>
+          <div className="stat-label">2h-Lektionen</div>
         </div>
       </div>
-    );
-  };
+
+      {/* Compact Teacher and Course Overview */}
+      <div className="compact-overview-grid">
+        {/* Teachers Overview Panel */}
+        <div className="overview-panel">
+          <div className="panel-header">
+            <h3 className="panel-title">Lehrer ({details.teachers.length})</h3>
+          </div>
+          <div className="panel-content">
+            <div className="compact-teacher-list">
+              {details.teachers.length > 0 ? (
+                details.teachers.map((teacher) => (
+                  <div className="compact-teacher-item" key={teacher.id}>
+                    <div className="teacher-name">{teacher.name}</div>
+                    <div className="teacher-meta">
+                      <span>{teacher.sessionCount} Lektionen</span>
+                      <span>{teacher.hours.toFixed(1)}h</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-message">Keine Lehrer in diesem Monat.</div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Courses Overview Panel */}
+        <div className="overview-panel">
+          <div className="panel-header">
+            <h3 className="panel-title">Kurse ({details.courses.length})</h3>
+          </div>
+          <div className="panel-content">
+            <div className="compact-course-list">
+              {details.courses.length > 0 ? (
+                details.courses.map((course) => (
+                  <div 
+                    className="compact-course-item clickable" 
+                    key={course.id}
+                    onClick={() => handleCourseClick(course)}
+                  >
+                    <div className="course-name-wrapper">
+                      <div className="course-name">{course.name || 'Unbenannter Kurs'}</div>
+                      <div className="course-level">{course.level || 'N/A'}</div>
+                    </div>
+                    <div className="course-meta">
+                      <span>{sessions.filter(s => s.courseId === course.id && s.monthId === currentMonthId).length} Lektionen</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-message">Keine Kurse in diesem Monat.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
   // Function to render all months view with search
   const renderAllMonthsDetails = () => {
@@ -456,6 +514,159 @@ const MonatContent = () => {
           })}
         </div>
       </>
+    );
+  };
+
+  // New function to render the overview tab
+  const renderOverviewTab = () => {
+    if (!currentMonthId || !monthDetails[currentMonthId]) {
+      return <div className="notion-empty">Keine Daten für den aktuellen Monat verfügbar.</div>;
+    }
+
+    const details = monthDetails[currentMonthId];
+
+    // Get current month's sessions sorted by date (newest first)
+    const currentMonthSessions = sessions
+      .filter(session => session.monthId === currentMonthId)
+      .sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        const partsA = a.date.split('.');
+        const partsB = b.date.split('.');
+        if (partsA.length === 3 && partsB.length === 3) {
+          const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+          const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+          return dateB - dateA; // Descending order
+        }
+        return 0;
+      });
+
+    // Get current month's courses
+    const currentMonthCourses = courses.filter(course =>
+      currentMonthSessions.some(session => session.courseId === course.id)
+    );
+
+    // Get current month's teachers
+    const currentMonthTeachers = teachers.filter(teacher =>
+      currentMonthSessions.some(session => session.teacherId === teacher.id)
+    );
+
+    return (
+      <div className="overview-tab-content">
+        <h1 className="notion-h1">Übersicht</h1>
+
+        <div className="overview-cards-grid">
+          {/* Column 1: Sessions List */}
+          <div className="overview-card">
+            <div className="overview-card-header">
+              <h3>Lektionen diesen Monat</h3>
+            </div>
+            <div className="overview-card-content">
+              {currentMonthSessions.length > 0 ? (
+                <div className="sessions-list">
+                  {currentMonthSessions.map(session => {
+                    const course = courses.find(c => c.id === session.courseId) || {};
+                    const teacher = teachers.find(t => t.id === session.teacherId) || {};
+                    return (
+                      <div className="session-item" key={session.id}>
+                        <div className="session-date">{session.date}</div>
+                        <div className="session-title">{session.title}</div>
+                        <div className="session-course">{course.name || 'Unbekannter Kurs'}</div>
+                        <div className="session-teacher">{teacher.name || 'Unbekannter Lehrer'}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-list-message">Keine Lektionen in diesem Monat.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Courses List */}
+          <div className="overview-card">
+            <div className="overview-card-header">
+              <h3>Kurse diesen Monat</h3>
+            </div>
+            <div className="overview-card-content">
+              {currentMonthCourses.length > 0 ? (
+                <div className="courses-list">
+                  {currentMonthCourses.map(course => {
+                    const courseTeachers = teachers.filter(t =>
+                      course.teacherIds && course.teacherIds.includes(t.id)
+                    );
+                    const studentCount = course.studentIds ? course.studentIds.length : 0;
+
+                    return (
+                      <div className="course-item" key={course.id}>
+                        <div className="course-name">{course.name || 'Unbenannter Kurs'}</div>
+                        <div className="course-details">
+                          <span className="student-count">{studentCount} Schüler</span>
+                        </div>
+                        <div className="teacher-badges-container">
+                          {courseTeachers.length > 0 ?
+                            courseTeachers.map(teacher => (
+                              <div className="teacher-badge" key={teacher.id}>
+                                {teacher.name}
+                              </div>
+                            )) :
+                            <div className="no-teachers-hint">Keine Lehrer zugewiesen</div>
+                          }
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-list-message">Keine Kurse in diesem Monat.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Teachers List */}
+          <div className="overview-card">
+            <div className="overview-card-header">
+              <h3>Lehrer diesen Monat</h3>
+            </div>
+            <div className="overview-card-content">
+              {currentMonthTeachers.length > 0 ? (
+                <div className="teachers-list">
+                  {currentMonthTeachers.map(teacher => {
+                    // Find all courses taught by this teacher this month
+                    const teacherCourses = currentMonthCourses.filter(course =>
+                      course.teacherIds && course.teacherIds.includes(teacher.id)
+                    );
+
+                    return (
+                      <div className="teacher-item" key={teacher.id}>
+                        <div className="teacher-name">{teacher.name}</div>
+                        <div className="course-badges">
+                          {teacherCourses.length > 0 ?
+                            teacherCourses.map(course => (
+                              <div
+                                key={course.id}
+                                className="level-badge clickable"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCourseClick(course);
+                                }}
+                              >
+                                {course.name || 'Unbenannter Kurs'}
+                              </div>
+                            )) :
+                            <div className="no-courses-hint">Keine aktiven Kurse</div>
+                          }
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-list-message">Keine Lehrer in diesem Monat.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -518,6 +729,7 @@ const MonatContent = () => {
         setActiveTab={setActiveTab}
         ref={tabsContainerRef}
       >
+        {activeTab === 'overview' && renderOverviewTab()}
         {activeTab === 'current' && renderCurrentMonthDetails()}
         {activeTab === 'all' && renderAllMonthsDetails()}
       </TabComponent>
