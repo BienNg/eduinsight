@@ -377,3 +377,15 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+.clickable-student-name {
+  cursor: pointer;
+  color: var(--primary-blue);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.clickable-student-name:hover {
+  text-decoration: underline;
+  color: #0056b3;
+}

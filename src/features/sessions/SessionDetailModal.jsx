@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getRecordById, updateRecord, getAllRecords } from '../firebase/database';
 import TeacherSelect from '../../features/common/TeacherSelect'; //
 import '../styles/SessionDetailModal.css';
+import StudentDetailModal from '../students/StudentDetailModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock } from '@fortawesome/free-solid-svg-icons';
 import { isLongSession } from '../utils/sessionUtils';
@@ -17,6 +18,15 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
     const [savingChanges, setSavingChanges] = useState(false);
     const [newStudents, setNewStudents] = useState({});
     const [loadingNewStudents, setLoadingNewStudents] = useState(true);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+
+    const handleStudentClick = (student) => {
+        setSelectedStudent(student);
+    };
+
+    const closeStudentDetail = () => {
+        setSelectedStudent(null);
+    };
 
     const parseGermanDate = (dateStr) => {
         if (!dateStr) return null;
@@ -321,28 +331,30 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                                 </thead>
                                 <tbody>
                                     {students.map((student) => {
-                                        // Get the attendance data for this student
+                                        // Existing student attendance code
                                         const attendanceData = session.attendance && session.attendance[student.id]
                                             ? session.attendance[student.id]
                                             : 'unknown';
 
-                                        // Determine the status - handle both string and object formats
                                         const status = typeof attendanceData === 'object'
                                             ? attendanceData.status
                                             : attendanceData;
 
-                                        // Get the comment if available
                                         const comment = typeof attendanceData === 'object' && attendanceData.comment
                                             ? attendanceData.comment
                                             : '';
 
-                                        // Check if new student (show loading indicator if still loading)
                                         const isNewStudent = newStudents[student.id];
 
                                         return (
                                             <tr key={student.id}>
                                                 <td>
-                                                    {student.name}
+                                                    <span
+                                                        className="clickable-student-name"
+                                                        onClick={() => handleStudentClick(student)}
+                                                    >
+                                                        {student.name}
+                                                    </span>
                                                     {loadingNewStudents ? (
                                                         <span className="badge-loading"></span>
                                                     ) : isNewStudent && (
@@ -362,6 +374,13 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                     )}
                 </div>
             </div>
+            {selectedStudent && (
+                <StudentDetailModal
+                    student={selectedStudent}
+                    sessions={[session]} // Pass the current session as a starting point
+                    onClose={closeStudentDetail}
+                />
+            )}
         </div>
     );
 };

@@ -253,8 +253,17 @@ const StudentDetailModal = ({ student, onClose }) => {
   );
 
   return (
-    <div className="modal-backdrop">
-      <div className="session-detail-modal student-detail-modal fixed-size-modal">
+    <div
+      className="modal-backdrop"
+      onClick={(e) => {
+        // Only close if clicking directly on the backdrop, not on modal content
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="session-detail-modal student-detail-modal fixed-size-modal"
+        onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{safelyRenderValue(student.name)}</h2>
           <button className="close-button" onClick={onClose}>×</button>
