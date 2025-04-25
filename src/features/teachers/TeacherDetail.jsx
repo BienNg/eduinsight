@@ -13,8 +13,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import SlidingPane from 'react-sliding-pane';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faClock, faEye } from '@fortawesome/free-solid-svg-icons';
+import { useParams, useNavigate } from 'react-router-dom';
 
-const TeacherDetail = ({ teacherId, onClose }) => {
+const TeacherDetail = () => {
     const [teacher, setTeacher] = useState(null);
     const [courses, setCourses] = useState([]);
     const [sessions, setSessions] = useState([]);
@@ -32,6 +33,12 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     const [peekCourse, setPeekCourse] = useState(null);
     const [courseSessions, setCourseSessions] = useState([]);
     const [sessionsLoading, setSessionsLoading] = useState(false);
+    const { id } = useParams();
+    const navigate = useNavigate();
+
+    const handleClose = () => {
+        navigate('/teachers');
+      };
 
     const getCurrentMonthSessionsData = () => {
         // Get current month and year
@@ -146,7 +153,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 setLoading(true);
 
                 // Fetch teacher data
-                const teacherData = await getRecordById('teachers', teacherId);
+                const teacherData = await getRecordById('teachers', id);
                 if (!teacherData) {
                     throw new Error("Teacher not found");
                 }
@@ -174,7 +181,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                 // Filter sessions where this teacher is the assigned teacher
                 const validSessions = sessionsData
                     .filter(s => s !== null)
-                    .filter(s => s.teacherId === teacherId); // This is the key change
+                    .filter(s => s.teacherId === id); // This is the key change
 
                 // Sort sessions by date
                 const sortedSessions = validSessions.sort((a, b) => {
@@ -209,10 +216,10 @@ const TeacherDetail = ({ teacherId, onClose }) => {
             }
         };
 
-        if (teacherId) {
+        if (id) {
             fetchTeacherDetails();
         }
-    }, [teacherId]);
+    }, [id]);
 
     useEffect(() => {
         // Apply will-change property before animation starts
@@ -350,7 +357,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     // Add a function to handle saving the country change
     const handleSaveCountry = async () => {
         try {
-            await updateRecord('teachers', teacherId, { country: selectedCountry });
+            await updateRecord('teachers', id, { country: selectedCountry });
             // Update the local teacher state
             setTeacher({ ...teacher, country: selectedCountry });
             setEditingCountry(false);
@@ -486,7 +493,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
     return (
         <DetailLayout
             title={teacher.name}
-            onClose={onClose}
+            onClose={handleClose}
             tabs={tabs}
             activeTab={activeTab}
             setActiveTab={setActiveTab}

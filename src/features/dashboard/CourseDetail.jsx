@@ -8,9 +8,17 @@ import '../styles/CourseDetail.css';
 import '../styles/Content.css'
 import '../common/Tabs.css';
 import TabComponent from '../common/TabComponent';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
 
-const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overview' }) => {
+
+const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { state } = location;
+    const groupName = state?.groupName;
+
     const [course, setCourse] = useState(null);
     const [teacher, setTeacher] = useState(null);
     const [teachers, setTeachers] = useState([]);
@@ -30,11 +38,18 @@ const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overvi
         { id: 'students', label: 'Students' },
         { id: 'sessions', label: 'Sessions' }
     ];
+    const handleClose = () => {
+        if (groupName) {
+            navigate(`/courses/group/${groupName}`);
+        } else {
+            navigate('/courses');
+        }
+    };
 
-    const onDeleteCourse = async (courseId, courseName, event) => {
+    const onDeleteCourse = async (id, courseName, event) => {
         setDeleting(true);
         await handleDeleteCourse(
-            courseId,
+            id,
             courseName,
             setDeleting, // Pass setDeleting to show loading state
             null,        // setCourses not needed here
@@ -42,7 +57,7 @@ const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overvi
             event
         );
         setDeleting(false);
-        onClose(); // Close the detail view after deletion
+        handleClose();
     };
 
     // Add this function to handle column header clicks
@@ -140,7 +155,7 @@ const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overvi
                 setLoading(true);
 
                 // Fetch course data
-                const courseData = await getRecordById('courses', courseId);
+                const courseData = await getRecordById('courses', id);
                 if (!courseData) {
                     throw new Error("Course not found");
                 }
@@ -201,10 +216,10 @@ const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overvi
             }
         };
 
-        if (courseId) {
+        if (id) {
             fetchCourseDetails();
         }
-    }, [courseId]);
+    }, [id]);
 
 
     // Helper function to parse German date format (DD.MM.YYYY)
@@ -336,7 +351,7 @@ const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overvi
     return (
         <>{/* Minimalistic Modern Breadcrumb */}
             <nav className="breadcrumb">
-                <span className="breadcrumb-link" onClick={onClose}>Courses</span>
+                <span className="breadcrumb-link" onClick={handleClose}>Courses</span>
                 <span className="breadcrumb-separator">
                     <svg width="16" height="16" fill="none">
                         <path d="M6 4l4 4-4 4" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -344,7 +359,7 @@ const CourseDetail = ({ courseId, onClose, groupName, initialActiveTab = 'overvi
                 </span>
                 {groupName && (
                     <>
-                        <span className="breadcrumb-link" onClick={onClose}>{groupName}</span>
+                        <span className="breadcrumb-link" onClick={handleClose}>{groupName}</span>
                         <span className="breadcrumb-separator">
                             <svg width="16" height="16" fill="none">
                                 <path d="M6 4l4 4-4 4" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

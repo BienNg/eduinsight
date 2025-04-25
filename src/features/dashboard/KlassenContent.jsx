@@ -5,8 +5,11 @@ import { sortLanguageLevels } from '../utils/levelSorting';
 import CourseDetail from './CourseDetail';
 import GroupDetail from './GroupDetail'; // We'll create this component
 import '../styles/Content.css';
+import { useNavigate } from 'react-router-dom';
+
 
 const KlassenContent = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,9 +107,12 @@ const KlassenContent = () => {
     fetchCourses();
   };
 
-  const handleViewCourseDetails = (courseId) => {
-    setSelectedCourseId(courseId);
-  };
+  const handleViewCourseDetails = (courseId, groupName = null) => {
+    // Pass groupName as state to maintain the breadcrumb hierarchy
+    navigate(`/courses/${courseId}`, { 
+        state: { groupName } 
+    });
+};
 
   const handleCloseCourseDetails = () => {
     setSelectedCourseId(null);

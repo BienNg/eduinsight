@@ -1,13 +1,21 @@
-// Update src/components/Dashboard/Dashboard.jsx
-import { useNavigate, useLocation } from 'react-router-dom';
+// src/features/dashboard/DashboardLayout.jsx
 import { useState } from 'react';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import '../styles/Dashboard.css';
+
+// Content components
 import DashboardContent from './DashboardContent';
+import ImportContent from './ImportContent';
 import MonatContent from './MonatContent';
 import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
-import LehrerContent from './LehrerContent'; // Add this import
-import ImportContent from './ImportContent';
+import LehrerContent from './LehrerContent';
+
+// Route components for detail views
+import TeacherDetail from '../teachers/TeacherDetail';
+import CourseDetail from './CourseDetail';
+import StudentDetail from '../students/StudentDetail';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChartLine,
@@ -17,14 +25,13 @@ import {
   faChevronLeft,
   faChevronRight,
   faFileExcel,
-  faUserTie // Add this for teacher icon
+  faUserTie
 } from '@fortawesome/free-solid-svg-icons';
 
-const Dashboard = () => {
+const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -55,29 +62,30 @@ const Dashboard = () => {
     }
   };
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <DashboardContent />;
-      case 'monat':
-        return <MonatContent />;
-      case 'klassen':
-        return <KlassenContent />;
-      case 'lehrer':
-        return <LehrerContent />;
-      case 'schuler':
-        return <SchulerContent />;
-      case 'import':
-        return <ImportContent />;
-      default:
-        return <DashboardContent />;
-    }
+  // Helper function to determine page title
+  const getPageTitle = () => {
+    const path = location.pathname;
+    
+    if (path === '/') return 'Dashboard';
+    if (path.startsWith('/import')) return 'Excel Import';
+    if (path.startsWith('/months')) return 'Monat';
+    if (path.startsWith('/courses')) return 'Klassen';
+    if (path.startsWith('/teachers')) return 'Lehrer';
+    if (path.startsWith('/students')) return 'Schüler';
+    
+    return 'Dashboard';
   };
 
   return (
     <div className="dashboard-container">
+      {/* Sidebar - This stays consistent */}
       <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-        {/* ... sidebar header ... */}
+        <div className="sidebar-header">
+          <h2>{collapsed ? 'EI' : 'EduInsight'}</h2>
+          <button className="toggle-btn" onClick={toggleSidebar}>
+            <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} />
+          </button>
+        </div>
         
         <div className="nav-section">
           <div className="nav-title">{collapsed ? 'I' : 'Import'}</div>
@@ -134,23 +142,37 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Content Area - This updates with route changes */}
       <div className="content-area">
         <div className="content-header">
-          <h1>
-            {activeTab === 'dashboard' && 'Dashboard'}
-            {activeTab === 'monat' && 'Monat'}
-            {activeTab === 'klassen' && 'Klassen'}
-            {activeTab === 'lehrer' && 'Lehrer'} {/* Add this line */}
-            {activeTab === 'schuler' && 'Schüler'}
-            {activeTab === 'import' && 'Excel Import'}
-          </h1>
+          <h1>{getPageTitle()}</h1>
         </div>
         <div className="content-body">
-          {renderContent()}
+          <Routes>
+            <Route path="/" element={<DashboardContent />} />
+            <Route path="/import" element={<ImportContent />} />
+            
+            {/* Month routes */}
+            <Route path="/months" element={<MonatContent />} />
+            <Route path="/months/:id" element={<MonatContent />} />
+            
+            {/* Course routes */}
+            <Route path="/courses" element={<KlassenContent />} />
+            <Route path="/courses/:id" element={<CourseDetail />} />
+            <Route path="/courses/group/:groupName" element={<KlassenContent />} />
+            
+            {/* Teacher routes */}
+            <Route path="/teachers" element={<LehrerContent />} />
+            <Route path="/teachers/:id" element={<TeacherDetail />} />
+            
+            {/* Student routes */}
+            <Route path="/students" element={<SchulerContent />} />
+            <Route path="/students/:id" element={<StudentDetail />} />
+          </Routes>
         </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default DashboardLayout;

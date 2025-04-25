@@ -4,8 +4,10 @@ import { getAllRecords, updateRecord } from '../firebase/database';
 import { calculateTotalHours } from '../utils/timeUtils';
 import TeacherDetail from '../teachers/TeacherDetail';
 import '../styles/Content.css';
+import { useNavigate } from 'react-router-dom';
 
 const LehrerContent = () => {
+  const navigate = useNavigate();
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,6 +15,7 @@ const LehrerContent = () => {
   const [countryFilter, setCountryFilter] = useState(''); // Add this state
   const [editingTeacher, setEditingTeacher] = useState(null); // Add this state
 
+  
   useEffect(() => {
     fetchTeachers();
   }, []);
@@ -69,7 +72,7 @@ const LehrerContent = () => {
   };
 
   const handleViewDetails = (teacherId) => {
-    setSelectedTeacherId(teacherId);
+    navigate(`/teachers/${teacherId}`);
   };
 
   const handleCloseDetails = () => {
