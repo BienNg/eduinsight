@@ -341,3 +341,39 @@
 .teacher-select-wrapper.edited .teacher-select {
   border-color: #4caf50;
 }
+
+.new-student-badge {
+  display: inline-block;
+  background-color: #4caf50;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  vertical-align: middle;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.badge-loading {
+  display: inline-block;
+  width: 30px;
+  height: 12px;
+  margin-left: 8px;
+  background: linear-gradient(90deg, #f0f0f0, #e0e0e0, #f0f0f0);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 12px;
+  vertical-align: middle;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

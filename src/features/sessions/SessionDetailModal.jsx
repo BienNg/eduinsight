@@ -1,7 +1,7 @@
 // src/components/Dashboard/SessionDetailModal.jsx
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { getRecordById, updateRecord } from '../firebase/database';
+import { getRecordById, updateRecord, getAllRecords } from '../firebase/database';
 import TeacherSelect from '../../features/common/TeacherSelect'; //
 import '../styles/SessionDetailModal.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -15,6 +15,85 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
     const [editedFields, setEditedFields] = useState({});
     const [editMode, setEditMode] = useState(false);
     const [savingChanges, setSavingChanges] = useState(false);
+    const [newStudents, setNewStudents] = useState({});
+    const [loadingNewStudents, setLoadingNewStudents] = useState(true);
+
+    const parseGermanDate = (dateStr) => {
+        if (!dateStr) return null;
+
+        const parts = dateStr.split('.');
+        if (parts.length !== 3) return null;
+
+        // Note: JS months are 0-indexed
+        return new Date(parts[2], parts[1] - 1, parts[0]);
+    };
+
+    useEffect(() => {
+        const detectNewStudents = async () => {
+            if (!students || students.length === 0) {
+                setLoadingNewStudents(false);
+                return;
+            }
+
+            setLoadingNewStudents(true);
+
+            try {
+                // 1. Get all sessions in a single query
+                const allSessions = await getAllRecords('sessions');
+
+                // 2. Create a lookup of student IDs and their first session dates
+                const studentFirstSessions = {};
+
+                // 3. Process all sessions to find the earliest session for each student
+                allSessions.forEach(s => {
+                    if (!s.attendance) return;
+
+                    const sessionDate = parseGermanDate(s.date);
+                    if (!sessionDate) return;
+
+                    // Check attendance for each student
+                    Object.keys(s.attendance).forEach(studentId => {
+                        // If we haven't seen this student yet, or if this session is earlier
+                        if (!studentFirstSessions[studentId] ||
+                            sessionDate < studentFirstSessions[studentId].date) {
+                            studentFirstSessions[studentId] = {
+                                date: sessionDate,
+                                sessionId: s.id
+                            };
+                        }
+                    });
+                });
+
+                // 4. Now determine which students are new in this session
+                const result = {};
+                const currentSessionDate = parseGermanDate(session.date);
+
+                // Only proceed if we have a valid date for the current session
+                if (currentSessionDate) {
+                    students.forEach(student => {
+                        // If student doesn't have any sessions or their first session is this one,
+                        // they are considered new
+                        const firstSession = studentFirstSessions[student.id];
+
+                        // A student is new if:
+                        // 1. This is their first session ever, or
+                        // 2. Their first session is this current session
+                        result[student.id] = !firstSession ||
+                            (firstSession.sessionId === session.id) ||
+                            (firstSession.date.getTime() === currentSessionDate.getTime());
+                    });
+                }
+
+                setNewStudents(result);
+            } catch (error) {
+                console.error("Error detecting new students:", error);
+            } finally {
+                setLoadingNewStudents(false);
+            }
+        };
+
+        detectNewStudents();
+    }, [session, students]);
 
     const handleTeacherChange = async (teacherId) => {
         try {
@@ -257,9 +336,19 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                                             ? attendanceData.comment
                                             : '';
 
+                                        // Check if new student (show loading indicator if still loading)
+                                        const isNewStudent = newStudents[student.id];
+
                                         return (
                                             <tr key={student.id}>
-                                                <td>{student.name}</td>
+                                                <td>
+                                                    {student.name}
+                                                    {loadingNewStudents ? (
+                                                        <span className="badge-loading"></span>
+                                                    ) : isNewStudent && (
+                                                        <span className="new-student-badge">New</span>
+                                                    )}
+                                                </td>
                                                 <td className={`status-${status}`}>
                                                     {getAttendanceStatus(status)}
                                                 </td>
@@ -268,7 +357,6 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                                         );
                                     })}
                                 </tbody>
-
                             </table>
                         </div>
                     )}
