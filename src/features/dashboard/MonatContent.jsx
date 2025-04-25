@@ -655,13 +655,36 @@ const MonatContent = () => {
                         outerRadius={80}
                         paddingAngle={5}
                         dataKey="value"
+                        animationBegin={0}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
                       >
                         {prepareLevelData(currentMonthCourses).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]}>
+                            <animate
+                              attributeName="opacity"
+                              from="0"
+                              to="1"
+                              dur="1s"
+                              begin={`${index * 200}ms`}
+                            />
+                          </Cell>
                         ))}
                       </Pie>
-                      <Tooltip />
-                      <Legend />
+                      <Tooltip 
+                        animationDuration={200}
+                        animationEasing="ease-in-out"
+                      />
+                      <Legend
+                        wrapperStyle={{
+                          paddingTop: '20px',
+                          opacity: 0
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = 1;
+                          e.currentTarget.style.transition = 'opacity 0.5s ease-in';
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -678,9 +701,22 @@ const MonatContent = () => {
                         dataKey="month" 
                         interval={0}
                         tickMargin={5}
-                      />
+                        opacity={0}
+                      >
+                        <animate
+                          attributeName="opacity"
+                          from="0"
+                          to="1"
+                          dur="1s"
+                          begin="1.2s"
+                          fill="freeze"
+                        />
+                      </XAxis>
                       <YAxis hide={true} />
-                      <Tooltip />
+                      <Tooltip 
+                        animationDuration={200}
+                        animationEasing="ease-in-out"
+                      />
                       <Line
                         type="monotone"
                         dataKey="courses"
@@ -688,7 +724,19 @@ const MonatContent = () => {
                         strokeWidth={2}
                         dot={{ fill: '#8884d8', r: 4 }}
                         activeDot={{ r: 6 }}
-                      />
+                        animationBegin={600}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                      >
+                        <animate
+                          attributeName="stroke-dashoffset"
+                          from="500"
+                          to="0"
+                          dur="1.5s"
+                          begin="0.5s"
+                          fill="freeze"
+                        />
+                      </Line>
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
