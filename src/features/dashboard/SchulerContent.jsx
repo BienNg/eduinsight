@@ -8,6 +8,7 @@ import StudentDetail from '../students/StudentDetail';
 import CourseDetail from './CourseDetail';
 import '../styles/Content.css';
 import '../styles/SchulerContent.css'; // We'll create this file
+import { useParams, useNavigate } from 'react-router-dom';
 
 const SchulerContent = () => {
   const [students, setStudents] = useState([]);
@@ -23,11 +24,12 @@ const SchulerContent = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
   const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const navigate = useNavigate();
 
 
   // Handle course badge click
   const handleCourseClick = (courseId) => {
-    setSelectedCourseId(courseId);
+    navigate(`/courses/${courseId}`);
   };
 
   // Handle closing course detail
@@ -271,13 +273,6 @@ const SchulerContent = () => {
     setSelectedStudent(null);
   };
 
-  // If a course is selected, show the CourseDetail component
-  if (selectedCourseId) {
-    return <CourseDetail
-      courseId={selectedCourseId}
-      onClose={handleCloseCourseDetail}
-    />;
-  }
   if (selectedStudent) {
     return <StudentDetail
       student={selectedStudent}

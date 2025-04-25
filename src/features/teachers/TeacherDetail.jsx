@@ -291,7 +291,7 @@ const TeacherDetail = () => {
 
     // Function to handle course selection
     const handleCourseSelect = (courseId) => {
-        setSelectedCourseId(courseId);
+        navigate(`/courses/${courseId}`);
     };
 
     // Function to go back from course detail to teacher detail
@@ -396,15 +396,6 @@ const TeacherDetail = () => {
             })
         );
     };
-
-    // If a course is selected, render the CourseDetail component
-    if (selectedCourseId) {
-        return <CourseDetail
-            courseId={selectedCourseId}
-            onClose={handleBackToTeacher}
-            initialActiveTab={isPaneOpen ? 'sessions' : 'overview'}
-        />;
-    }
 
     if (loading) return <div className="loading">Loading teacher details...</div>;
     if (error) return <div className="error">{error}</div>;
