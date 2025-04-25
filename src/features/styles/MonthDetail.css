@@ -874,3 +874,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Analytics row styling */
+.analytics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.analytics-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.analytics-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+}
+
+/* Add styles for the overview column */
+.overview-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+@media (max-width: 1200px) {
+  .analytics-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .analytics-card {
+    height: 250px;
+  }
+}
