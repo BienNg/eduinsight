@@ -144,9 +144,6 @@ const DashboardLayout = () => {
 
       {/* Content Area - This updates with route changes */}
       <div className="content-area">
-        <div className="content-header">
-          <h1>{getPageTitle()}</h1>
-        </div>
         <div className="content-body">
           <Routes>
             <Route path="/" element={<DashboardContent />} />
