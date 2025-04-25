@@ -518,175 +518,142 @@ const renderCurrentMonthDetails = () => {
   };
 
   // New function to render the overview tab
-  // Updated renderOverviewTab function in MonatContent.jsx
-const renderOverviewTab = () => {
-  if (!currentMonthId || !monthDetails[currentMonthId]) {
-    return <div className="notion-empty">Keine Daten für den aktuellen Monat verfügbar.</div>;
-  }
-
-  const details = monthDetails[currentMonthId];
-  const month = months.find(m => m.id === currentMonthId);
-
-  // Get current month's sessions sorted by date (newest first)
-  const currentMonthSessions = sessions
-    .filter(session => session.monthId === currentMonthId)
-    .sort((a, b) => {
-      if (!a.date || !b.date) return 0;
-      const partsA = a.date.split('.');
-      const partsB = b.date.split('.');
-      if (partsA.length === 3 && partsB.length === 3) {
-        const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
-        const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
-        return dateB - dateA; // Descending order
-      }
-      return 0;
-    });
-
-  // Get current month's courses
-  const currentMonthCourses = courses.filter(course =>
-    currentMonthSessions.some(session => session.courseId === course.id)
-  );
-
-  // Get current month's teachers
-  const currentMonthTeachers = teachers.filter(teacher =>
-    currentMonthSessions.some(session => session.teacherId === teacher.id)
-  );
-
-  return (
-    <div className="overview-tab-content">
-      <h2 className="notion-h2">{month ? month.name : 'Übersicht'}</h2>
-      
-
-      {/* Compact Overview Grid */}
-      <div className="compact-overview-grid">
-        {/* Sessions Panel */}
-        <div className="overview-panel">
-          <div className="panel-header">
-            <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
-          </div>
-          <div className="panel-content">
-            {currentMonthSessions.length > 0 ? (
-              <div className="compact-session-list">
-                {currentMonthSessions.slice(0, 10).map(session => {
-                  const course = courses.find(c => c.id === session.courseId) || {};
-                  const teacher = teachers.find(t => t.id === session.teacherId) || {};
-                  return (
-                    <div className="compact-session-item" key={session.id}>
-                      <div className="session-main-info">
-                        <div className="session-date">{session.date}</div>
-                        <div className="session-title">{session.title}</div>
+  const renderOverviewTab = () => {
+    if (!currentMonthId || !monthDetails[currentMonthId]) {
+      return <div className="notion-empty">Keine Daten für den aktuellen Monat verfügbar.</div>;
+    }
+  
+    const details = monthDetails[currentMonthId];
+    const month = months.find(m => m.id === currentMonthId);
+  
+    // Get current month's sessions sorted by date (newest first)
+    const currentMonthSessions = sessions
+      .filter(session => session.monthId === currentMonthId)
+      .sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        const partsA = a.date.split('.');
+        const partsB = b.date.split('.');
+        if (partsA.length === 3 && partsB.length === 3) {
+          const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+          const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+          return dateB - dateA; // Descending order
+        }
+        return 0;
+      });
+  
+    // Get current month's courses
+    const currentMonthCourses = courses.filter(course =>
+      currentMonthSessions.some(session => session.courseId === course.id)
+    );
+  
+    // Get current month's teachers
+    const currentMonthTeachers = teachers.filter(teacher =>
+      currentMonthSessions.some(session => session.teacherId === teacher.id)
+    );
+  
+    return (
+      <div className="overview-tab-content">
+        
+        {/* Three-column Overview Grid */}
+        <div className="three-column-overview-grid">
+          {/* Sessions Panel - First Column */}
+          <div className="overview-panel">
+            <div className="panel-header">
+              <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
+            </div>
+            <div className="panel-content">
+              {currentMonthSessions.length > 0 ? (
+                <div className="compact-session-list">
+                  {currentMonthSessions.slice(0, 10).map(session => {
+                    const course = courses.find(c => c.id === session.courseId) || {};
+                    const teacher = teachers.find(t => t.id === session.teacherId) || {};
+                    return (
+                      <div className="compact-session-item" key={session.id}>
+                        <div className="session-main-info">
+                          <div className="session-date">{session.date}</div>
+                          <div className="session-title">{session.title}</div>
+                        </div>
+                        <div className="session-meta">
+                          <span className="meta-course">{course.name || 'Unbekannter Kurs'}</span>
+                          <span className="meta-teacher">{teacher.name || 'Unbekannter Lehrer'}</span>
+                        </div>
                       </div>
-                      <div className="session-meta">
-                        <span className="meta-course">{course.name || 'Unbekannter Kurs'}</span>
-                        <span className="meta-teacher">{teacher.name || 'Unbekannter Lehrer'}</span>
+                    );
+                  })}
+                  {currentMonthSessions.length > 10 && (
+                    <div className="more-items-hint">
+                      +{currentMonthSessions.length - 10} weitere Lektionen
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="empty-message">Keine Lektionen in diesem Monat.</div>
+              )}
+            </div>
+          </div>
+  
+          {/* Courses Panel - Second Column */}
+          <div className="overview-panel">
+            <div className="panel-header">
+              <h3 className="panel-title">Kurse ({currentMonthCourses.length})</h3>
+            </div>
+            <div className="panel-content">
+              {currentMonthCourses.length > 0 ? (
+                <div className="compact-course-list">
+                  {currentMonthCourses.map(course => (
+                    <div 
+                      className="compact-course-item clickable" 
+                      key={course.id}
+                      onClick={() => handleCourseClick(course)}
+                    >
+                      <div className="course-name-wrapper">
+                        <div className="course-name">{course.name || 'Unbenannter Kurs'}</div>
+                        <div className="course-level">{course.level || 'N/A'}</div>
                       </div>
-                    </div>
-                  );
-                })}
-                {currentMonthSessions.length > 10 && (
-                  <div className="more-items-hint">
-                    +{currentMonthSessions.length - 10} weitere Lektionen
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="empty-message">Keine Lektionen in diesem Monat.</div>
-            )}
-          </div>
-        </div>
-
-        {/* Courses Panel */}
-        <div className="overview-panel">
-          <div className="panel-header">
-            <h3 className="panel-title">Kurse ({currentMonthCourses.length})</h3>
-          </div>
-          <div className="panel-content">
-            {currentMonthCourses.length > 0 ? (
-              <div className="compact-course-list">
-                {currentMonthCourses.map(course => (
-                  <div 
-                    className="compact-course-item clickable" 
-                    key={course.id}
-                    onClick={() => handleCourseClick(course)}
-                  >
-                    <div className="course-name-wrapper">
-                      <div className="course-name">{course.name || 'Unbenannter Kurs'}</div>
-                      <div className="course-level">{course.level || 'N/A'}</div>
-                    </div>
-                    <div className="course-meta">
-                      <span>{sessions.filter(s => s.courseId === course.id && s.monthId === currentMonthId).length} Lektionen</span>
-                      <span>{course.studentIds ? course.studentIds.length : 0} Schüler</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-message">Keine Kurse in diesem Monat.</div>
-            )}
-          </div>
-        </div>
-
-        {/* Teachers Panel */}
-        <div className="overview-panel">
-          <div className="panel-header">
-            <h3 className="panel-title">Lehrer ({currentMonthTeachers.length})</h3>
-          </div>
-          <div className="panel-content">
-            {currentMonthTeachers.length > 0 ? (
-              <div className="compact-teacher-list">
-                {currentMonthTeachers.map(teacher => {
-                  const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
-                  const teacherHours = calculateTotalHours(teacherSessions);
-                  return (
-                    <div className="compact-teacher-item" key={teacher.id}>
-                      <div className="teacher-name">{teacher.name}</div>
-                      <div className="teacher-meta">
-                        <span>{teacherSessions.length} Lektionen</span>
-                        <span>{teacherHours.toFixed(1)}h</span>
+                      <div className="course-meta">
+                        <span>{sessions.filter(s => s.courseId === course.id && s.monthId === currentMonthId).length} Lektionen</span>
+                        <span>{course.studentIds ? course.studentIds.length : 0} Schüler</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="empty-message">Keine Lehrer in diesem Monat.</div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-message">Keine Kurse in diesem Monat.</div>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Statistics Panel */}
-        <div className="overview-panel">
-          <div className="panel-header">
-            <h3 className="panel-title">Level Übersicht</h3>
-          </div>
-          <div className="panel-content">
-            {currentMonthCourses.length > 0 ? (
-              <div className="level-summary">
-                {Array.from(new Set(currentMonthCourses.map(c => c.level).filter(l => l))).map(level => {
-                  const levelCourses = currentMonthCourses.filter(c => c.level === level);
-                  const levelSessions = currentMonthSessions.filter(s => 
-                    levelCourses.some(c => c.id === s.courseId)
-                  );
-                  return (
-                    <div className="level-item" key={level}>
-                      <div className="level-badge">{level}</div>
-                      <div className="level-stats">
-                        <span>{levelCourses.length} Kurse</span>
-                        <span>{levelSessions.length} Lektionen</span>
+  
+          {/* Teachers Panel - Third Column */}
+          <div className="overview-panel">
+            <div className="panel-header">
+              <h3 className="panel-title">Lehrer ({currentMonthTeachers.length})</h3>
+            </div>
+            <div className="panel-content">
+              {currentMonthTeachers.length > 0 ? (
+                <div className="compact-teacher-list">
+                  {currentMonthTeachers.map(teacher => {
+                    const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
+                    const teacherHours = calculateTotalHours(teacherSessions);
+                    return (
+                      <div className="compact-teacher-item" key={teacher.id}>
+                        <div className="teacher-name">{teacher.name}</div>
+                        <div className="teacher-meta">
+                          <span>{teacherSessions.length} Lektionen</span>
+                          <span>{teacherHours.toFixed(1)}h</span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="empty-message">Keine Kurse in diesem Monat.</div>
-            )}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-message">Keine Lehrer in diesem Monat.</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   // Filter function for search
   const filterMonths = (months) => {

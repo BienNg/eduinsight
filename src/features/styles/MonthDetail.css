@@ -860,3 +860,17 @@
   font-size: 12px;
   color: #666;
 }
+
+/* Three-column overview grid */
+.three-column-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* Make it responsive */
+@media (max-width: 1100px) {
+  .three-column-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
