@@ -7,6 +7,7 @@ import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
 import TabComponent from '../common/TabComponent';
+import CourseDetail from './CourseDetail';
 
 const MonatContent = () => {
   const [months, setMonths] = useState([]);
@@ -21,6 +22,7 @@ const MonatContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentMonthId, setCurrentMonthId] = useState(null);
   const [activeTab, setActiveTab] = useState('current');
+  const [selectedCourse, setSelectedCourse] = useState(null);
   const tabsContainerRef = useRef(null);
   const tabs = [
     { id: 'current', label: 'Aktueller Monat' },
@@ -149,7 +151,8 @@ const MonatContent = () => {
               sessionCount: teacherSessions.length,
               studentCount: teacherStudentIds.size,
               hours: teacherHours,
-              longSessions: countLongSessions(teacherSessions)
+              longSessions: countLongSessions(teacherSessions),
+              courses: teacherCourses
             };
           }).filter((t) => t !== null);
 
@@ -161,7 +164,7 @@ const MonatContent = () => {
             hours: totalHours,
             teachers: teacherDetails,
             longSessions: countLongSessions(monthSessions),
-            courses: monthCourses  // Adding courses to details for more detailed view
+            courses: monthCourses
           };
         });
 
@@ -193,6 +196,16 @@ const MonatContent = () => {
 
     fetchData();
   }, []);
+
+  // Handler for opening the course detail modal
+  const handleCourseClick = (course) => {
+    setSelectedCourse(course);
+  };
+
+  // Handler for closing the course detail modal
+  const handleCloseModal = () => {
+    setSelectedCourse(null);
+  };
 
   const toggleMonthExpansion = (monthId) => {
     setExpandedMonth(expandedMonth === monthId ? null : monthId);
@@ -284,6 +297,24 @@ const MonatContent = () => {
                   </div>
                 </div>
               )}
+              {teacher.courses && teacher.courses.length > 0 && (
+                <div className="teacher-stat-row">
+                  <div className="teacher-stat">
+                    <div className="stat-label">Unterrichtete Kurse</div>
+                    <div className="course-badges">
+                      {teacher.courses.map((course) => (
+                        <div
+                          key={course.id}
+                          className="level-badge clickable"
+                          onClick={() => handleCourseClick(course)}
+                        >
+                          {course.name || 'Unbenannter Kurs'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -367,7 +398,7 @@ const MonatContent = () => {
   // Function to render all months view with search
   const renderAllMonthsDetails = () => {
     const filteredMonths = filterMonths(months).sort((a, b) => b.id.localeCompare(a.id));
-    
+
     return (
       <>
         <div className="all-months-header">
@@ -472,15 +503,22 @@ const MonatContent = () => {
 
   return (
     <div className="notion-page monat-content">
-      <TabComponent 
-        tabs={tabs} 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+      <TabComponent
+        tabs={tabs}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         ref={tabsContainerRef}
       >
         {activeTab === 'current' && renderCurrentMonthDetails()}
         {activeTab === 'all' && renderAllMonthsDetails()}
       </TabComponent>
+      {selectedCourse && (
+        <CourseDetail
+          courseId={selectedCourse.id}
+          onClose={handleCloseModal}
+          groupName={selectedCourse.group}
+        />
+      )}
     </div>
   );
 };

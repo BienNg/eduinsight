@@ -423,3 +423,31 @@
     grid-template-columns: repeat(1, 1fr);
   }
 }
+
+.course-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.level-badge.clickable {
+  cursor: pointer;
+  background-color: #e3f2fd;
+  color: var(--primary-blue);
+  transition: background-color 0.2s, transform 0.1s;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.level-badge.clickable:hover {
+  background-color: var(--primary-blue);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.level-badge.clickable:active {
+  transform: translateY(0);
+}
