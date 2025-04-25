@@ -13,6 +13,11 @@ import ConfirmationModal from './ConfirmationModal';
 import ReassignModal from './ReassignModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExchangeAlt } from '@fortawesome/free-solid-svg-icons';
+import DetailLayout from '../common/DetailLayout';
+import StatBox from '../common/StatBox';
+import InfoGrid from '../common/InfoGrid';
+import EntityDetailContent from '../common/EntityDetailContent';
+import './StudentDetail.css';
 
 const StudentDetail = ({ student, onClose }) => {
     const [sessions, setSessions] = useState([]);
@@ -390,388 +395,349 @@ const StudentDetail = ({ student, onClose }) => {
         s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+
+    // Create info items for InfoGrid
+    const infoItems = [
+        { label: 'Name', value: safelyRenderValue(student.name) },
+        { label: 'Info', value: safelyRenderValue(student.info) },
+        { label: 'Anwesenheitsquote', value: `${stats.rate}%` },
+        { label: 'Anzahl Kurse', value: student.courses ? student.courses.length : 0 },
+        { label: 'Gesamte Lektionen', value: stats.total },
+        { label: 'Notizen', value: safelyRenderValue(student.notes) }
+    ];
     return (
-        <div className="student-detail-container">
-            <div className="student-detail-view">
-                <div className="detail-header">
-                    <h2>{safelyRenderValue(student.name)}</h2>
-                    <button className="close-button" onClick={onClose}>×</button>
+        <DetailLayout
+          title={safelyRenderValue(student.name)}
+          tabs={tabs}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onClose={onClose}
+        >
+          {loading ? (
+            <div className="loading-indicator">Daten werden geladen...</div>
+          ) : (
+            <>
+              {activeTab === 'overview' && (
+                <>
+                  <div className="session-info-section">
+                    <h3>Schülerinformation</h3>
+                    <InfoGrid items={infoItems} />
+                  </div>
+      
+                  <div className="session-info-section">
+                    <h3>Anwesenheitsstatistik</h3>
+                    <div className="stats-row">
+                      <StatBox title="Anwesend" value={stats.present} />
+                      <StatBox title="Abwesend" value={stats.absent} />
+                      <StatBox title="Krank" value={stats.sick} />
+                      <StatBox title="Technische Probleme" value={stats.technical} />
+                    </div>
+                  </div>
+                </>
+              )}
+      
+              {activeTab === 'attendance' && (
+                <EntityDetailContent
+                  title="Anwesenheitsverlauf"
+                  empty={sessions.length === 0}
+                  emptyMessage="Keine Anwesenheitsdaten gefunden."
+                >
+                  <table className="attendance-table">
+                    <thead>
+                      <tr>
+                        <th>Datum</th>
+                        <th>Kurs</th>
+                        <th>Lektion</th>
+                        <th>Status</th>
+                        <th>Kommentar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sessions.map((session) => {
+                        // Get course name
+                        const course = courses.find(c => c.id === session.courseId);
+                        const courseName = course ? course.name : '-';
+      
+                        // Get attendance data
+                        const attendanceData = session.attendance[student.id];
+                        const status = typeof attendanceData === 'object' ?
+                          attendanceData.status : attendanceData;
+                        const comment = typeof attendanceData === 'object' && attendanceData.comment ?
+                          attendanceData.comment : '';
+      
+                        return (
+                          <tr key={session.id}>
+                            <td>{safelyRenderValue(session.date)}</td>
+                            <td>{courseName}</td>
+                            <td>{safelyRenderValue(session.title)}</td>
+                            <td className={`status-${status}`}>
+                              {getAttendanceStatus(status)}
+                            </td>
+                            <td>{comment}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </EntityDetailContent>
+              )}
+      
+              {activeTab === 'courses' && (
+                <EntityDetailContent
+                  title="Kursbeteiligung"
+                  empty={!courses.filter(course => student.courseIds && student.courseIds.includes(course.id)).length}
+                  emptyMessage="Keine Kurse gefunden."
+                >
+                  <>
+                    {courses
+                      .filter(course => student.courseIds && student.courseIds.includes(course.id))
+                      .map(course => {
+                        // Get course-specific attendance statistics
+                        const courseStats = getCourseStats()[course.id] || {
+                          total: 0, present: 0, absent: 0, sick: 0, technical: 0
+                        };
+      
+                        const attendanceRate = courseStats.total > 0
+                          ? Math.round((courseStats.present / courseStats.total) * 100)
+                          : 0;
+      
+                        return (
+                          <div key={course.id} className="course-card">
+                            <div className="course-header">
+                              <h4>{course.name}</h4>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <button
+                                  className="btn-icon"
+                                  onClick={() => handleOpenReassignModal(course)}
+                                  title="Reassign student to another course"
+                                  style={{
+                                    backgroundColor: 'transparent',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '32px',
+                                    height: '32px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginLeft: '10px',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faExchangeAlt}
+                                    style={{
+                                      color: 'white',
+                                      fontSize: '16px',
+                                    }}
+                                  />
+                                </button>
+                              </div>
+                            </div>
+      
+                            <div className="course-stats">
+                              <div className="course-stat">
+                                <span className="label">Anwesenheitsquote:</span>
+                                <span className="value">{attendanceRate}%</span>
+                              </div>
+                              <div className="course-stat">
+                                <span className="label">Lektionen:</span>
+                                <span className="value">{courseStats.total}</span>
+                              </div>
+                              <div className="course-stat">
+                                <span className="label">Abwesend:</span>
+                                <span className="value">
+                                  {courseStats.absent + courseStats.sick + courseStats.technical}
+                                </span>
+                              </div>
+                              <div className="course-stat">
+                                <span className="label">Zeitraum:</span>
+                                <span className="value">
+                                  {course.startDate} - {course.endDate || 'heute'}
+                                </span>
+                              </div>
+                            </div>
+      
+                            <div className="attendance-breakdown">
+                              <div className="progress-bar">
+                                <div
+                                  className="progress-segment present"
+                                  style={{ width: `${(courseStats.present / courseStats.total) * 100}%` }}
+                                  title={`Anwesend: ${courseStats.present}`}
+                                ></div>
+                                <div
+                                  className="progress-segment absent"
+                                  style={{ width: `${(courseStats.absent / courseStats.total) * 100}%` }}
+                                  title={`Abwesend: ${courseStats.absent}`}
+                                ></div>
+                                <div
+                                  className="progress-segment sick"
+                                  style={{ width: `${(courseStats.sick / courseStats.total) * 100}%` }}
+                                  title={`Krank: ${courseStats.sick}`}
+                                ></div>
+                                <div
+                                  className="progress-segment technical"
+                                  style={{ width: `${(courseStats.technical / courseStats.total) * 100}%` }}
+                                  title={`Technische Probleme: ${courseStats.technical}`}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </>
+                </EntityDetailContent>
+              )}
+      
+              {activeTab === 'relations' && (
+                <div className="relations-section">
+                  <h3>Schülerbeziehungen</h3>
+                  <div className="relations-container">
+                    <div className="relations-list-container">
+                      <div className="search-container">
+                        <input
+                          type="text"
+                          placeholder="Schüler suchen..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="search-input"
+                        />
+                      </div>
+      
+                      <div className="students-list">
+                        {filteredStudents.length > 0 ? (
+                          <ul className="student-items">
+                            {filteredStudents.map((s) => (
+                              <li
+                                key={s.id}
+                                className={`student-item ${selectedRelatedStudent?.id === s.id ? 'selected' : ''}`}
+                                onClick={() => handleStudentSelect(s)}
+                              >
+                                <div className="student-info">
+                                  <span className="student-name">{safelyRenderValue(s.name)}</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="empty-state">
+                            {searchQuery ?
+                              <p>Keine Schüler mit diesem Namen gefunden.</p> :
+                              <p>Keine anderen Schüler verfügbar.</p>
+                            }
+                          </div>
+                        )}
+                      </div>
+                    </div>
+      
+                    <div className="preview-cards">
+                      {/* Current student card */}
+                      <div className="student-preview-card">
+                        <div className="preview-header">
+                          <h4>{safelyRenderValue(student.name)} (Aktueller Schüler)</h4>
+                        </div>
+                        <div className="preview-content">
+                          <div className="preview-section">
+                            <h5>Kurse</h5>
+                            {student.courseIds && student.courseIds.length > 0 ? (
+                              <div className="course-badges">
+                                {student.courseIds.map((courseId) => {
+                                  const course = courses.find((c) => c.id === courseId);
+                                  return (
+                                    <div key={courseId} className="course-badge">
+                                      {course ? safelyRenderValue(course.name) : `Kurs ${courseId}`}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="empty-courses">Keine Kurse gefunden</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+      
+                      {/* Selected student card */}
+                      <div className="student-preview-card">
+                        {selectedRelatedStudent ? (
+                          <>
+                            <div className="preview-header">
+                              <h4>{safelyRenderValue(selectedRelatedStudent.name)}</h4>
+                            </div>
+                            <div className="preview-content">
+                              <div className="preview-section">
+                                <h5>Kurse</h5>
+                                {selectedRelatedStudent.courseIds && selectedRelatedStudent.courseIds.length > 0 ? (
+                                  <div className="course-badges">
+                                    {selectedRelatedStudent.courseIds.map((courseId) => {
+                                      const course = courses.find((c) => c.id === courseId);
+                                      return (
+                                        <div key={courseId} className="course-badge">
+                                          {course ? safelyRenderValue(course.name) : `Kurs ${courseId}`}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <p className="empty-courses">Keine Kurse gefunden</p>
+                                )}
+                              </div>
+                              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                                <button
+                                  className="confirm-button"
+                                  onClick={() => setShowMergeConfirmation(true)}
+                                  disabled={isMerging}
+                                >
+                                  {isMerging ? 'Merging...' : 'Merge with Current Student'}
+                                </button>
+                              </div>
+                              {mergeError && (
+                                <div style={{
+                                  marginTop: '10px',
+                                  color: '#c62828',
+                                  backgroundColor: '#ffebee',
+                                  padding: '8px',
+                                  borderRadius: '4px',
+                                  fontSize: '14px'
+                                }}>
+                                  Error: {mergeError}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="empty-preview">
+                            <p>Wählen Sie einen Schüler aus, um die Details anzuzeigen</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
-
-                </TabComponent>
-
-                <div className="detail-content">
-                    {loading ? (
-                        <div className="loading-indicator">Daten werden geladen...</div>
-                    ) : (
-                        <>
-                            {activeTab === 'overview' && (
-                                <>
-                                    <div className="session-info-section">
-                                        <h3>Schülerinformation</h3>
-                                        <div className="info-grid">
-                                            <div className="info-item">
-                                                <span className="label">Name:</span>
-                                                <span className="value">{safelyRenderValue(student.name)}</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <span className="label">Info:</span>
-                                                <span className="value">{safelyRenderValue(student.info)}</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <span className="label">Anwesenheitsquote:</span>
-                                                <span className="value">{stats.rate}%</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <span className="label">Anzahl Kurse:</span>
-                                                <span className="value">{student.courses ? student.courses.length : 0}</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <span className="label">Gesamte Lektionen:</span>
-                                                <span className="value">{stats.total}</span>
-                                            </div>
-                                            <div className="info-item">
-                                                <span className="label">Notizen:</span>
-                                                <span className="value">{safelyRenderValue(student.notes)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="session-info-section">
-                                        <h3>Anwesenheitsstatistik</h3>
-                                        <div className="stats-row">
-                                            <div className="stat-box">
-                                                <h3>Anwesend</h3>
-                                                <div className="stat-value">{stats.present}</div>
-                                            </div>
-                                            <div className="stat-box">
-                                                <h3>Abwesend</h3>
-                                                <div className="stat-value">{stats.absent}</div>
-                                            </div>
-                                            <div className="stat-box">
-                                                <h3>Krank</h3>
-                                                <div className="stat-value">{stats.sick}</div>
-                                            </div>
-                                            <div className="stat-box">
-                                                <h3>Technische Probleme</h3>
-                                                <div className="stat-value">{stats.technical}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-                            {activeTab === 'attendance' && (
-                                <div className="attendance-section">
-                                    <h3>Anwesenheitsverlauf</h3>
-                                    {sessions.length > 0 ? (
-                                        <table className="attendance-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Datum</th>
-                                                    <th>Kurs</th>
-                                                    <th>Lektion</th>
-                                                    <th>Status</th>
-                                                    <th>Kommentar</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {sessions.map((session) => {
-                                                    // Get course name
-                                                    const course = courses.find(c => c.id === session.courseId);
-                                                    const courseName = course ? course.name : '-';
-
-                                                    // Get attendance data
-                                                    const attendanceData = session.attendance[student.id];
-                                                    const status = typeof attendanceData === 'object' ?
-                                                        attendanceData.status : attendanceData;
-                                                    const comment = typeof attendanceData === 'object' && attendanceData.comment ?
-                                                        attendanceData.comment : '';
-
-                                                    return (
-                                                        <tr key={session.id}>
-                                                            <td>{safelyRenderValue(session.date)}</td>
-                                                            <td>{courseName}</td>
-                                                            <td>{safelyRenderValue(session.title)}</td>
-                                                            <td className={`status-${status}`}>
-                                                                {getAttendanceStatus(status)}
-                                                            </td>
-                                                            <td>{comment}</td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    ) : (
-                                        <div className="empty-state">
-                                            <p>Keine Anwesenheitsdaten gefunden.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {activeTab === 'courses' && (
-                                <div className="courses-section">
-                                    <h3>Kursbeteiligung</h3>
-
-                                    {courses.filter(course => student.courseIds && student.courseIds.includes(course.id)).length > 0 ? (
-                                        <>
-                                            {courses
-                                                .filter(course => student.courseIds && student.courseIds.includes(course.id))
-                                                .map(course => {
-                                                    // Get course-specific attendance statistics
-                                                    const courseStats = getCourseStats()[course.id] || {
-                                                        total: 0, present: 0, absent: 0, sick: 0, technical: 0
-                                                    };
-
-                                                    const attendanceRate = courseStats.total > 0
-                                                        ? Math.round((courseStats.present / courseStats.total) * 100)
-                                                        : 0;
-
-                                                    return (
-                                                        <div key={course.id} className="course-card">
-                                                            <div className="course-header">
-                                                                <h4>{course.name}</h4>
-                                                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                                    <button
-                                                                        className="btn-icon"
-                                                                        onClick={() => handleOpenReassignModal(course)}
-                                                                        title="Reassign student to another course"
-                                                                        style={{
-                                                                            backgroundColor: 'transparent',
-                                                                            border: 'none',
-                                                                            borderRadius: '50%',
-                                                                            width: '32px',
-                                                                            height: '32px',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            marginLeft: '10px',
-                                                                            cursor: 'pointer',
-                                                                        }}
-                                                                    >
-                                                                        <FontAwesomeIcon
-                                                                            icon={faExchangeAlt}
-                                                                            style={{
-                                                                                color: 'white',
-                                                                                fontSize: '16px',
-                                                                            }}
-                                                                        />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="course-stats">
-                                                                <div className="course-stat">
-                                                                    <span className="label">Anwesenheitsquote:</span>
-                                                                    <span className="value">{attendanceRate}%</span>
-                                                                </div>
-                                                                <div className="course-stat">
-                                                                    <span className="label">Lektionen:</span>
-                                                                    <span className="value">{courseStats.total}</span>
-                                                                </div>
-                                                                <div className="course-stat">
-                                                                    <span className="label">Abwesend:</span>
-                                                                    <span className="value">
-                                                                        {courseStats.absent + courseStats.sick + courseStats.technical}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="course-stat">
-                                                                    <span className="label">Zeitraum:</span>
-                                                                    <span className="value">
-                                                                        {course.startDate} - {course.endDate || 'heute'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="attendance-breakdown">
-                                                                <div className="progress-bar">
-                                                                    <div
-                                                                        className="progress-segment present"
-                                                                        style={{ width: `${(courseStats.present / courseStats.total) * 100}%` }}
-                                                                        title={`Anwesend: ${courseStats.present}`}
-                                                                    ></div>
-                                                                    <div
-                                                                        className="progress-segment absent"
-                                                                        style={{ width: `${(courseStats.absent / courseStats.total) * 100}%` }}
-                                                                        title={`Abwesend: ${courseStats.absent}`}
-                                                                    ></div>
-                                                                    <div
-                                                                        className="progress-segment sick"
-                                                                        style={{ width: `${(courseStats.sick / courseStats.total) * 100}%` }}
-                                                                        title={`Krank: ${courseStats.sick}`}
-                                                                    ></div>
-                                                                    <div
-                                                                        className="progress-segment technical"
-                                                                        style={{ width: `${(courseStats.technical / courseStats.total) * 100}%` }}
-                                                                        title={`Technische Probleme: ${courseStats.technical}`}
-                                                                    ></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                        </>
-                                    ) : (
-                                        <div className="empty-state">
-                                            <p>Keine Kurse gefunden.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {activeTab === 'relations' && (
-                                <div className="relations-section">
-                                    <h3>Schülerbeziehungen</h3>
-                                    <div className="relations-container">
-                                        <div className="relations-list-container">
-                                            <div className="search-container">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Schüler suchen..."
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    className="search-input"
-                                                />
-                                            </div>
-
-                                            <div className="students-list">
-                                                {filteredStudents.length > 0 ? (
-                                                    <ul className="student-items">
-                                                        {filteredStudents.map((s) => (
-                                                            <li
-                                                                key={s.id}
-                                                                className={`student-item ${selectedRelatedStudent?.id === s.id ? 'selected' : ''}`}
-                                                                onClick={() => handleStudentSelect(s)}
-                                                            >
-                                                                <div className="student-info">
-                                                                    <span className="student-name">{safelyRenderValue(s.name)}</span>
-                                                                </div>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                ) : (
-                                                    <div className="empty-state">
-                                                        {searchQuery ?
-                                                            <p>Keine Schüler mit diesem Namen gefunden.</p> :
-                                                            <p>Keine anderen Schüler verfügbar.</p>
-                                                        }
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="preview-cards">
-                                            {/* Current student card */}
-                                            <div className="student-preview-card">
-                                                <div className="preview-header">
-                                                    <h4>{safelyRenderValue(student.name)} (Aktueller Schüler)</h4>
-                                                </div>
-                                                <div className="preview-content">
-                                                    <div className="preview-section">
-                                                        <h5>Kurse</h5>
-                                                        {student.courseIds && student.courseIds.length > 0 ? (
-                                                            <div className="course-badges">
-                                                                {student.courseIds.map((courseId) => {
-                                                                    const course = courses.find((c) => c.id === courseId);
-                                                                    return (
-                                                                        <div key={courseId} className="course-badge">
-                                                                            {course ? safelyRenderValue(course.name) : `Kurs ${courseId}`}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="empty-courses">Keine Kurse gefunden</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Selected student card */}
-                                            <div className="student-preview-card">
-                                                {selectedRelatedStudent ? (
-                                                    <>
-                                                        <div className="preview-header">
-                                                            <h4>{safelyRenderValue(selectedRelatedStudent.name)}</h4>
-                                                        </div>
-                                                        <div className="preview-content">
-                                                            <div className="preview-section">
-                                                                <h5>Kurse</h5>
-                                                                {selectedRelatedStudent.courseIds && selectedRelatedStudent.courseIds.length > 0 ? (
-                                                                    <div className="course-badges">
-                                                                        {selectedRelatedStudent.courseIds.map((courseId) => {
-                                                                            const course = courses.find((c) => c.id === courseId);
-                                                                            return (
-                                                                                <div key={courseId} className="course-badge">
-                                                                                    {course ? safelyRenderValue(course.name) : `Kurs ${courseId}`}
-                                                                                </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                ) : (
-                                                                    <p className="empty-courses">Keine Kurse gefunden</p>
-                                                                )}
-                                                            </div>
-                                                            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-                                                                <button
-                                                                    className="confirm-button"
-                                                                    onClick={() => setShowMergeConfirmation(true)}
-                                                                    disabled={isMerging}
-                                                                >
-                                                                    {isMerging ? 'Merging...' : 'Merge with Current Student'}
-                                                                </button>
-                                                            </div>
-                                                            {mergeError && (
-                                                                <div style={{
-                                                                    marginTop: '10px',
-                                                                    color: '#c62828',
-                                                                    backgroundColor: '#ffebee',
-                                                                    padding: '8px',
-                                                                    borderRadius: '4px',
-                                                                    fontSize: '14px'
-                                                                }}>
-                                                                    Error: {mergeError}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="empty-preview">
-                                                        <p>Wählen Sie einen Schüler aus, um die Details anzuzeigen</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-            </div>
-            <ReassignModal
-                isOpen={showReassignModal}
-                onClose={() => setShowReassignModal(false)}
-                course={currentCourseForReassign}
-                students={filteredReassignStudents}
-                searchQuery={reassignSearchQuery}
-                onSearchChange={handleReassignSearch}
-                onReassign={handleReassignStudent}
-                onCreateNew={handleCreateNewStudent}
-                safelyRenderValue={safelyRenderValue}
-            />
-            <ConfirmationModal
-                isOpen={showMergeConfirmation}
-                title="Confirm Student Merge"
-                message={`Are you sure you want to merge ${selectedRelatedStudent ? safelyRenderValue(selectedRelatedStudent.name) : ''} into ${safelyRenderValue(student.name)}? This will combine all courses and attendance records, and delete the merged student record. This action cannot be undone.`}
-                onConfirm={handleMergeStudents}
-                onCancel={() => setShowMergeConfirmation(false)}
-            />
-        </div>
-    );
+              )}
+            </>
+          )}
+          
+          {/* Modals stay at the bottom of the DetailLayout */}
+          <ReassignModal
+            isOpen={showReassignModal}
+            onClose={() => setShowReassignModal(false)}
+            course={currentCourseForReassign}
+            students={filteredReassignStudents}
+            searchQuery={reassignSearchQuery}
+            onSearchChange={handleReassignSearch}
+            onReassign={handleReassignStudent}
+            onCreateNew={handleCreateNewStudent}
+            safelyRenderValue={safelyRenderValue}
+          />
+          <ConfirmationModal
+            isOpen={showMergeConfirmation}
+            title="Confirm Student Merge"
+            message={`Are you sure you want to merge ${selectedRelatedStudent ? safelyRenderValue(selectedRelatedStudent.name) : ''} into ${safelyRenderValue(student.name)}? This will combine all courses and attendance records, and delete the merged student record. This action cannot be undone.`}
+            onConfirm={handleMergeStudents}
+            onCancel={() => setShowMergeConfirmation(false)}
+          />
+        </DetailLayout>
+      );
 };
 
 export default StudentDetail;

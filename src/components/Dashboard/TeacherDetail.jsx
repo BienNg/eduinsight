@@ -5,9 +5,9 @@ import "react-sliding-pane/dist/react-sliding-pane.css";
 import "../../styles/common/SlidingPane.css";
 import { useState, useEffect, useMemo } from 'react';
 import { getRecordById, getAllRecords, updateRecord } from '../../firebase/database'
-import CourseDetail from './CourseDetail'; // Import CourseDetail component
+import CourseDetail from './CourseDetail';
 import SessionDetailModal from './SessionDetailModal';
-import TabComponent from '../common/TabComponent';
+import DetailLayout from '../common/DetailLayout';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SlidingPane from 'react-sliding-pane';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -479,438 +479,408 @@ const TeacherDetail = ({ teacherId, onClose }) => {
         return { startDateDisplay, endDateDisplay, isOngoing };
     };
 
-
+    // Create the custom header right content for DetailLayout
+    const headerRight = (
+        <div className="teacher-country-badge">
+            {teacher.country || 'No Country'}
+        </div>
+    );
     return (
-        <div className="teacher-detail-wrapper">
-            <div className="breadcrumb">
-                <span className="breadcrumb-link" onClick={onClose}>Lehrer</span>
-                <span className="breadcrumb-separator">›</span>
-                <span className="breadcrumb-current">{teacher.name}</span>
-            </div>
-            <div className="teacher-detail-header">
-                <h2>{teacher.name}</h2>
-                <div className="teacher-country-badge">{teacher.country || 'No Country'}</div>
-            </div>
-
-            <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
-                {activeTab === 'overview' && (
-                    <div className="overview-tab">
-                        {/* Overview tab content */}
-                    </div>
-                )}
-                {activeTab === 'courses' && (
-                    <div className="courses-tab">
-                        {/* Courses tab content */}
-                    </div>
-                )}
-                {activeTab === 'sessions' && (
-                    <div className="sessions-tab">
-                        {/* Sessions tab content */}
-                    </div>
-                )}
-                {activeTab === 'monthly' && (
-                    <div className="monthly-tab">
-                        {/* Monthly tab content */}
-                    </div>
-                )}
-                {activeTab === 'info' && (
-                    <div className="info-tab">
-                        {/* Monthly tab content */}
-                    </div>
-                )}
-            </TabComponent>
-
-            <div className="teacher-detail-content">
-
-
-                {activeTab === 'overview' && (
-                    <div className="overview-tab">
-                        <div className="overview-flex-container">
-                            <div className="stats-column">
-                                <div className="stat-box">
-                                    <h3>Kurse</h3>
-                                    <div className="stat-value">{courses.length}</div>
-                                </div>
-                                <div className="stat-box">
-                                    <h3>Lektionen</h3>
-                                    <div className="stat-value">{sessions.length}</div>
-                                </div>
-                                <div className="stat-box">
-                                    <h3>Unterrichtsstunden</h3>
-                                    <div className="stat-value">{totalHours.toFixed(1)}</div>
-                                </div>
+        <DetailLayout
+            title={teacher.name}
+            onClose={onClose}
+            tabs={tabs}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            headerRight={headerRight}
+            breadcrumbParent="Lehrer"
+        >
+            {activeTab === 'overview' && (
+                <div className="overview-tab">
+                    <div className="overview-flex-container">
+                        <div className="stats-column">
+                            <div className="stat-box">
+                                <h3>Kurse</h3>
+                                <div className="stat-value">{courses.length}</div>
                             </div>
-
-                            <div className="graph-container">
-                                <h3>Unterrichtsstunden pro Monat</h3>
-                                <div style={{ width: '100%', height: 300 }}>
-                                    <ResponsiveContainer>
-                                        <LineChart
-                                            data={chartData}
-                                            margin={{ top: 20, right: 40, left: 0, bottom: 0 }}
-                                        >
-                                            <CartesianGrid stroke="#e0e0e0" strokeDasharray="0 0" vertical={false} horizontal={false} />
-                                            <XAxis
-                                                dataKey="month"
-                                                tick={{ angle: 0, textAnchor: 'middle', dy: 10 }}
-                                                axisLine={true}
-                                                tickLine={false}
-                                            />
-                                            <YAxis
-                                                tickFormatter={(value) => `${value}h`}
-                                                axisLine={true}
-                                                tickLine={false}
-                                                dx={-10}
-                                            />
-                                            <Tooltip formatter={(value) => [`${value.toFixed(1)} Stunden`]} />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="hours"
-                                                stroke="var(--primary-blue)"
-                                                strokeWidth={2}
-                                                dot={false}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
+                            <div className="stat-box">
+                                <h3>Lektionen</h3>
+                                <div className="stat-value">{sessions.length}</div>
+                            </div>
+                            <div className="stat-box">
+                                <h3>Unterrichtsstunden</h3>
+                                <div className="stat-value">{totalHours.toFixed(1)}</div>
                             </div>
                         </div>
-
-
-
-                        <div className="course-info-card" style={{ backgroundColor: 'white', marginTop: '24px' }}>
-                            <h3>Kurse im aktuellen Monat ({new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' })})</h3>
-
-                            {getCurrentMonthSessionsData().length > 0 ? (
-                                <table className="sessions-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Kurs</th>
-                                            <th>Level</th>
-                                            <th>Lektionen</th>
-                                            <th>Unterrichtsstunden</th>
-                                            <th>2h-Lektionen</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {getCurrentMonthSessionsData().map(data => (
-                                            <tr
-                                                key={data.course.id}
-                                                className="clickable-row"
-                                                onClick={(e) => {
-                                                    // Change this to use handleCourseSidePeek instead of handleCourseSelect
-                                                    handleCourseSidePeek(data.course, e);
-                                                }}
-                                            >
-                                                <td>{data.course.name}</td>
-                                                <td>{data.course.level}</td>
-                                                <td>{data.sessions.length}</td>
-                                                <td>{data.totalHours.toFixed(1)}</td>
-                                                <td>
-                                                    {data.longSessionsCount > 0 && (
-                                                        <span className="long-session-count">
-                                                            <FontAwesomeIcon icon={faClock} className="long-session-icon" />
-                                                            {data.longSessionsCount}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colSpan="2"><strong>Gesamt</strong></td>
-                                            <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.sessions.length, 0)}</strong></td>
-                                            <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.totalHours, 0).toFixed(1)}</strong></td>
-                                            <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.longSessionsCount, 0)}</strong></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            ) : (
-                                <div className="empty-state">
-                                    <p>Keine Kurse im aktuellen Monat.</p>
-                                </div>
-                            )}
+    
+                        <div className="graph-container">
+                            <h3>Unterrichtsstunden pro Monat</h3>
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer>
+                                    <LineChart
+                                        data={chartData}
+                                        margin={{ top: 20, right: 40, left: 0, bottom: 0 }}
+                                    >
+                                        <CartesianGrid stroke="#e0e0e0" strokeDasharray="0 0" vertical={false} horizontal={false} />
+                                        <XAxis
+                                            dataKey="month"
+                                            tick={{ angle: 0, textAnchor: 'middle', dy: 10 }}
+                                            axisLine={true}
+                                            tickLine={false}
+                                        />
+                                        <YAxis
+                                            tickFormatter={(value) => `${value}h`}
+                                            axisLine={true}
+                                            tickLine={false}
+                                            dx={-10}
+                                        />
+                                        <Tooltip formatter={(value) => [`${value.toFixed(1)} Stunden`]} />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="hours"
+                                            stroke="var(--primary-blue)"
+                                            strokeWidth={2}
+                                            dot={false}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
                     </div>
-                )}
-
-                {activeTab === 'courses' && (
-                    <div className="courses-tab">
-                        {courses.length > 0 ? (
+    
+                    <div className="course-info-card" style={{ backgroundColor: 'white', marginTop: '24px' }}>
+                        <h3>Kurse im aktuellen Monat ({new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' })})</h3>
+    
+                        {getCurrentMonthSessionsData().length > 0 ? (
                             <table className="sessions-table">
                                 <thead>
                                     <tr>
                                         <th>Kurs</th>
                                         <th>Level</th>
                                         <th>Lektionen</th>
-                                        <th>Zeitraum</th>
-                                        <th>Anzahl Schüler</th>
-                                        <th>Aktionen</th>
+                                        <th>Unterrichtsstunden</th>
+                                        <th>2h-Lektionen</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {courses.map((course) => {
-                                        const { startDateDisplay, endDateDisplay, isOngoing } = formatCourseDates(course);
-                                        return (
-                                            <tr
-                                                key={course.id}
-                                                className="clickable-row"
-                                                onClick={() => handleCourseSelect(course.id)}
-                                            >
-                                                <td>{course.name}</td>
-                                                <td>{course.level}</td>
-                                                <td>
-                                                    {
-                                                        sessions.filter(
-                                                            (session) => session.courseId === course.id && session.teacherId === teacher.id
-                                                        ).length
-                                                    }
-                                                </td>
-                                                <td>
-                                                    {startDateDisplay} - {isOngoing ? (
-                                                        <span className="status-badge ongoing">Ongoing</span>
-                                                    ) : (
-                                                        endDateDisplay || '-'
-                                                    )}
-                                                </td>
-                                                <td>{course.studentIds ? course.studentIds.length : 0}</td>
-                                                <td>
-                                                    <div className="action-buttons">
-                                                        <button
-                                                            className="btn-peek"
-                                                            onClick={(e) => handleCourseSidePeek(course, e)}
-                                                            title="Lektionen anzeigen"
-                                                        >
-                                                            <FontAwesomeIcon icon={faEye} />
-                                                        </button>
-                                                        <button
-                                                            className="btn-details"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleCourseSelect(course.id);
-                                                            }}
-                                                        >
-                                                            Details
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                    {getCurrentMonthSessionsData().map(data => (
+                                        <tr
+                                            key={data.course.id}
+                                            className="clickable-row"
+                                            onClick={(e) => {
+                                                handleCourseSidePeek(data.course, e);
+                                            }}
+                                        >
+                                            <td>{data.course.name}</td>
+                                            <td>{data.course.level}</td>
+                                            <td>{data.sessions.length}</td>
+                                            <td>{data.totalHours.toFixed(1)}</td>
+                                            <td>
+                                                {data.longSessionsCount > 0 && (
+                                                    <span className="long-session-count">
+                                                        <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                                        {data.longSessionsCount}
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colSpan="2"><strong>Gesamt</strong></td>
+                                        <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.sessions.length, 0)}</strong></td>
+                                        <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.totalHours, 0).toFixed(1)}</strong></td>
+                                        <td><strong>{getCurrentMonthSessionsData().reduce((sum, data) => sum + data.longSessionsCount, 0)}</strong></td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         ) : (
                             <div className="empty-state">
-                                <p>Keine Kurse gefunden.</p>
+                                <p>Keine Kurse im aktuellen Monat.</p>
                             </div>
                         )}
                     </div>
-                )}
-
-                {activeTab === 'sessions' && (
-                    <div className="sessions-tab">
-                        {sessions.length > 0 ? (
-                            <table className="sessions-table">
-                                <thead>
-                                    <tr>
-                                        <th>Datum</th>
-                                        <th>Kurs</th>
-                                        <th>Titel</th>
-                                        <th>Zeit</th>
-                                        <th>Lehrer</th>
-                                        <th>Monat</th>
-                                        <th>Aktionen</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sessions.map((session) => {
-                                        const month = months.find(m => m.id === session.monthId);
-                                        return (
-                                            <tr key={session.id}>
-                                                <td>{safelyRenderValue(session.date)}</td>
-                                                <td>{getCourseNameById(session.courseId)}</td>
-                                                <td>{safelyRenderValue(session.title)}</td>
-                                                <td>
-                                                    {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
-                                                </td>
-                                                <td>{session.teacherId === teacher.id ? teacher.name : 'Unknown'}</td>
-                                                <td>{month ? month.name : '-'}</td>
-                                                <td>
+                </div>
+            )}
+    
+            {activeTab === 'courses' && (
+                <div className="courses-tab">
+                    {courses.length > 0 ? (
+                        <table className="sessions-table">
+                            <thead>
+                                <tr>
+                                    <th>Kurs</th>
+                                    <th>Level</th>
+                                    <th>Lektionen</th>
+                                    <th>Zeitraum</th>
+                                    <th>Anzahl Schüler</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {courses.map((course) => {
+                                    const { startDateDisplay, endDateDisplay, isOngoing } = formatCourseDates(course);
+                                    return (
+                                        <tr
+                                            key={course.id}
+                                            className="clickable-row"
+                                            onClick={() => handleCourseSelect(course.id)}
+                                        >
+                                            <td>{course.name}</td>
+                                            <td>{course.level}</td>
+                                            <td>
+                                                {
+                                                    sessions.filter(
+                                                        (session) => session.courseId === course.id && session.teacherId === teacher.id
+                                                    ).length
+                                                }
+                                            </td>
+                                            <td>
+                                                {startDateDisplay} - {isOngoing ? (
+                                                    <span className="status-badge ongoing">Ongoing</span>
+                                                ) : (
+                                                    endDateDisplay || '-'
+                                                )}
+                                            </td>
+                                            <td>{course.studentIds ? course.studentIds.length : 0}</td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="btn-peek"
+                                                        onClick={(e) => handleCourseSidePeek(course, e)}
+                                                        title="Lektionen anzeigen"
+                                                    >
+                                                        <FontAwesomeIcon icon={faEye} />
+                                                    </button>
                                                     <button
                                                         className="btn-details"
-                                                        onClick={() => openSessionDetail(session)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleCourseSelect(course.id);
+                                                        }}
                                                     >
                                                         Details
                                                     </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <div className="empty-state">
-                                <p>Keine Lektionen gefunden.</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'monthly' && (
-                    <div className="monthly-tab">
-                        {months.length > 0 ? (
-                            <div className="month-cards-container">
-                                {Object.entries(groupSessionsByMonth()).map(([monthId, data]) => {
-                                    // Calculate total hours for this month
-                                    const totalHours = calculateMonthlyHours(monthId);
-
-                                    // Group sessions by course
-                                    const courseGroups = {};
-                                    data.sessions.forEach(session => {
-                                        if (!courseGroups[session.courseId]) {
-                                            courseGroups[session.courseId] = {
-                                                courseName: getCourseNameById(session.courseId),
-                                                sessions: [],
-                                                hours: 0
-                                            };
-                                        }
-                                        courseGroups[session.courseId].sessions.push(session);
-                                        courseGroups[session.courseId].hours += 1.5; // Assuming average session length
-                                    });
-
-                                    return (
-                                        <div
-                                            className="month-card"
-                                            key={monthId}
-                                            onClick={() => setExpandedMonth(expandedMonth === monthId ? null : monthId)}
-                                        >
-                                            <div className="month-card-header">
-                                                <h4>{data.month.name}</h4>
-                                                <div className="month-card-actions">
-                                                    <div className="month-totals">
-                                                        <span>Lektionen: {data.sessions.length}</span>
-                                                        <span>Stunden: {totalHours}</span>
-                                                        {/* Add this new indicator */}
-                                                        {data.longSessionsCount > 0 && (
-                                                            <span className="long-session-indicator">
-                                                                <FontAwesomeIcon icon={faClock} className="long-session-icon" />
-                                                                <span className="long-session-count">{data.longSessionsCount} 2h-Lektionen</span>
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <span className={`expand-indicator ${expandedMonth === monthId ? 'expanded' : ''}`}>
-                                                        {expandedMonth === monthId ? '▼' : '▶'}
-                                                    </span>
                                                 </div>
-                                            </div>
-
-                                            <div className="month-card-courses">
-                                                {Object.entries(courseGroups).map(([courseId, courseData]) => (
-                                                    <div className="course-summary" key={courseId}>
-                                                        <span className="course-name">{courseData.courseName}</span>
-                                                        <span className="course-stats">
-                                                            <span className="session-count">{courseData.sessions.length} Lektionen</span>
-                                                            <span className="hour-count">{courseData.hours.toFixed(1)} Std</span>
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {expandedMonth === monthId && (
-                                                <div className="month-details">
-                                                    <h5>Lektionen</h5>
-                                                    <table className="sessions-table">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Datum</th>
-                                                                <th>Kurs</th>
-                                                                <th>Titel</th>
-                                                                <th>Zeit</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {data.sessions.map(session => {
-                                                                const isLong = isLongSession(session.startTime, session.endTime);
-                                                                return (
-                                                                    <tr key={session.id}>
-                                                                        <td>{safelyRenderValue(session.date)}</td>
-                                                                        <td>{getCourseNameById(session.courseId)}</td>
-                                                                        <td>
-                                                                            {safelyRenderValue(session.title)}
-                                                                            {isLong && (
-                                                                                <span className="long-session-indicator">
-                                                                                    <FontAwesomeIcon icon={faClock} className="long-session-icon" />
-                                                                                    <span>2h</span>
-                                                                                </span>
-                                                                            )}
-                                                                        </td>
-                                                                        <td>
-                                                                            {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            })}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            )}
-                                        </div>
+                                            </td>
+                                        </tr>
                                     );
                                 })}
-                            </div>
-                        ) : (
-                            <div className="empty-state">
-                                <p>Keine monatlichen Daten gefunden.</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-                {activeTab === 'info' && (
-                    <div className="info-tab">
-                        <div className="course-info-card">
-                            <h3>Lehrer Information</h3>
-                            <div className="info-grid">
-                                <div className="info-item">
-                                    <span className="label">Name:</span>
-                                    <span className="value">{teacher.name}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Land:</span>
-                                    {editingCountry ? (
-                                        <div className="country-selector-inline">
-                                            <select
-                                                value={selectedCountry}
-                                                onChange={(e) => setSelectedCountry(e.target.value)}
-                                                className="country-select"
-                                            >
-                                                <option value="Deutschland">Deutschland</option>
-                                                <option value="Vietnam">Vietnam</option>
-                                            </select>
-                                            <button onClick={handleSaveCountry} className="save-btn">Speichern</button>
-                                            <button onClick={() => setEditingCountry(false)} className="cancel-btn">Abbrechen</button>
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="empty-state">
+                            <p>Keine Kurse gefunden.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+    
+            {activeTab === 'sessions' && (
+                <div className="sessions-tab">
+                    {sessions.length > 0 ? (
+                        <table className="sessions-table">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Kurs</th>
+                                    <th>Titel</th>
+                                    <th>Zeit</th>
+                                    <th>Lehrer</th>
+                                    <th>Monat</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sessions.map((session) => {
+                                    const month = months.find(m => m.id === session.monthId);
+                                    return (
+                                        <tr key={session.id}>
+                                            <td>{safelyRenderValue(session.date)}</td>
+                                            <td>{getCourseNameById(session.courseId)}</td>
+                                            <td>{safelyRenderValue(session.title)}</td>
+                                            <td>
+                                                {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
+                                            </td>
+                                            <td>{session.teacherId === teacher.id ? teacher.name : 'Unknown'}</td>
+                                            <td>{month ? month.name : '-'}</td>
+                                            <td>
+                                                <button
+                                                    className="btn-details"
+                                                    onClick={() => openSessionDetail(session)}
+                                                >
+                                                    Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="empty-state">
+                            <p>Keine Lektionen gefunden.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+    
+            {activeTab === 'monthly' && (
+                <div className="monthly-tab">
+                    {months.length > 0 ? (
+                        <div className="month-cards-container">
+                            {Object.entries(groupSessionsByMonth()).map(([monthId, data]) => {
+                                // Calculate total hours for this month
+                                const totalHours = calculateMonthlyHours(monthId);
+    
+                                // Group sessions by course
+                                const courseGroups = {};
+                                data.sessions.forEach(session => {
+                                    if (!courseGroups[session.courseId]) {
+                                        courseGroups[session.courseId] = {
+                                            courseName: getCourseNameById(session.courseId),
+                                            sessions: [],
+                                            hours: 0
+                                        };
+                                    }
+                                    courseGroups[session.courseId].sessions.push(session);
+                                    courseGroups[session.courseId].hours += 1.5; // Assuming average session length
+                                });
+    
+                                return (
+                                    <div
+                                        className="month-card"
+                                        key={monthId}
+                                        onClick={() => setExpandedMonth(expandedMonth === monthId ? null : monthId)}
+                                    >
+                                        <div className="month-card-header">
+                                            <h4>{data.month.name}</h4>
+                                            <div className="month-card-actions">
+                                                <div className="month-totals">
+                                                    <span>Lektionen: {data.sessions.length}</span>
+                                                    <span>Stunden: {totalHours}</span>
+                                                    {/* Add this new indicator */}
+                                                    {data.longSessionsCount > 0 && (
+                                                        <span className="long-session-indicator">
+                                                            <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                                            <span className="long-session-count">{data.longSessionsCount} 2h-Lektionen</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className={`expand-indicator ${expandedMonth === monthId ? 'expanded' : ''}`}>
+                                                    {expandedMonth === monthId ? '▼' : '▶'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <span className="value editable" onClick={() => setEditingCountry(true)}>
-                                            {teacher.country || 'No Country'} <FontAwesomeIcon icon={faPencilAlt} className="edit-icon" />
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Anzahl Monate aktiv:</span>
-                                    <span className="value">{months.length}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Durchschnittliche Stunden pro Monat:</span>
-                                    <span className="value">
-                                        {months.length > 0 ? (totalHours / months.length).toFixed(1) : '0'}
+    
+                                        <div className="month-card-courses">
+                                            {Object.entries(courseGroups).map(([courseId, courseData]) => (
+                                                <div className="course-summary" key={courseId}>
+                                                    <span className="course-name">{courseData.courseName}</span>
+                                                    <span className="course-stats">
+                                                        <span className="session-count">{courseData.sessions.length} Lektionen</span>
+                                                        <span className="hour-count">{courseData.hours.toFixed(1)} Std</span>
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+    
+                                        {expandedMonth === monthId && (
+                                            <div className="month-details">
+                                                <h5>Lektionen</h5>
+                                                <table className="sessions-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Datum</th>
+                                                            <th>Kurs</th>
+                                                            <th>Titel</th>
+                                                            <th>Zeit</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {data.sessions.map(session => {
+                                                            const isLong = isLongSession(session.startTime, session.endTime);
+                                                            return (
+                                                                <tr key={session.id}>
+                                                                    <td>{safelyRenderValue(session.date)}</td>
+                                                                    <td>{getCourseNameById(session.courseId)}</td>
+                                                                    <td>
+                                                                        {safelyRenderValue(session.title)}
+                                                                        {isLong && (
+                                                                            <span className="long-session-indicator">
+                                                                                <FontAwesomeIcon icon={faClock} className="long-session-icon" />
+                                                                                <span>2h</span>
+                                                                            </span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td>
+                                                                        {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="empty-state">
+                            <p>Keine monatlichen Daten gefunden.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+    
+            {activeTab === 'info' && (
+                <div className="info-tab">
+                    <div className="course-info-card">
+                        <h3>Lehrer Information</h3>
+                        <div className="info-grid">
+                            <div className="info-item">
+                                <span className="label">Name:</span>
+                                <span className="value">{teacher.name}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="label">Land:</span>
+                                {editingCountry ? (
+                                    <div className="country-selector-inline">
+                                        <select
+                                            value={selectedCountry}
+                                            onChange={(e) => setSelectedCountry(e.target.value)}
+                                            className="country-select"
+                                        >
+                                            <option value="Deutschland">Deutschland</option>
+                                            <option value="Vietnam">Vietnam</option>
+                                        </select>
+                                        <button onClick={handleSaveCountry} className="save-btn">Speichern</button>
+                                        <button onClick={() => setEditingCountry(false)} className="cancel-btn">Abbrechen</button>
+                                    </div>
+                                ) : (
+                                    <span className="value editable" onClick={() => setEditingCountry(true)}>
+                                        {teacher.country || 'No Country'} <FontAwesomeIcon icon={faPencilAlt} className="edit-icon" />
                                     </span>
-                                </div>
+                                )}
+                            </div>
+                            <div className="info-item">
+                                <span className="label">Anzahl Monate aktiv:</span>
+                                <span className="value">{months.length}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="label">Durchschnittliche Stunden pro Monat:</span>
+                                <span className="value">
+                                    {months.length > 0 ? (totalHours / months.length).toFixed(1) : '0'}
+                                </span>
                             </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+    
             <SlidingPane
                 isOpen={isPaneOpen}
                 title={peekCourse ? `Lektionen: ${peekCourse.name}` : 'Lektionen'}
@@ -930,7 +900,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                             Kurs Details anzeigen
                         </button>
                     </div>
-
+    
                     {sessionsLoading ? (
                         <div className="loading-indicator">Lektionen werden geladen...</div>
                     ) : courseSessions.length > 0 ? (
@@ -980,6 +950,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                     )}
                 </div>
             </SlidingPane>
+            
             {selectedSession && (
                 <SessionDetailModal
                     session={selectedSession}
@@ -989,7 +960,7 @@ const TeacherDetail = ({ teacherId, onClose }) => {
                     groupName={courses.find(c => c.id === selectedSession.courseId)?.group || null}
                 />
             )}
-        </div>
+        </DetailLayout>
     );
 };
 

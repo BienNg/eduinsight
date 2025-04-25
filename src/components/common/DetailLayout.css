@@ -1,0 +1,150 @@
+/* src/components/common/DetailLayout.css */
+.detail-container {
+    width: 100%;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.detail-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-header h2 {
+    margin: 0 16px 0 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.detail-subtitle {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #666;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #666;
+}
+
+.detail-content {
+    width: 100%;
+  }
+
+.detail-wrapper {
+    width: 100%;
+    padding: 20px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1em;
+    margin-bottom: 18px;
+    color: #6b7280;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 24px;
+    margin-top: 10px;
+    user-select: none;
+}
+
+.breadcrumb .breadcrumb-link {
+    cursor: pointer;
+    color: #2563eb;
+    transition: color 0.2s;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.breadcrumb .breadcrumb-link:hover {
+    color: #1e40af;
+}
+
+.breadcrumb .breadcrumb-separator {
+    display: flex;
+    align-items: center;
+    opacity: 0.5;
+    font-size: 1.1em;
+    user-select: none;
+}
+
+.breadcrumb .breadcrumb-current {
+    color: #111827;
+    font-weight: 600;
+}
+
+.back-button {
+    background: rgba(37, 99, 235, 0.1);
+    border: none;
+    color: #2563eb;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.back-button:hover {
+    background: rgba(37, 99, 235, 0.2);
+}
+
+.course-info-card, .stats-row .stat-box {
+    box-shadow: none;
+    border: 1px solid #eaeaea;
+    background-color: #fafafa;
+  }
+  
+  .course-info-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+  }
+  
+  .course-info-card h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: var(--primary-blue);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .detail-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .back-button {
+      align-self: flex-start;
+    }
+  }
