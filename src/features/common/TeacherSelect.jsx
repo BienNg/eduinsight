@@ -1,6 +1,6 @@
 // src/components/common/TeacherSelect.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords, createRecord, updateRecord } from '../../firebase/database';
+import { getAllRecords, createRecord, updateRecord } from '../firebase/database';
 import './TeacherSelect.css';
 
 const TeacherSelect = ({ currentTeacherId, onTeacherChange, courseName }) => {

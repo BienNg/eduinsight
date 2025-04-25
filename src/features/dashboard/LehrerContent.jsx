@@ -1,9 +1,9 @@
 // src/components/Dashboard/LehrerContent.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords, updateRecord } from '../../firebase/database';
-import { calculateTotalHours } from '../../utils/timeUtils';
-import TeacherDetail from './TeacherDetail';
-import './Content.css';
+import { getAllRecords, updateRecord } from '../firebase/database';
+import { calculateTotalHours } from '../utils/timeUtils';
+import TeacherDetail from '../teachers/TeacherDetail';
+import '../styles/Content.css';
 
 const LehrerContent = () => {
   const [teachers, setTeachers] = useState([]);

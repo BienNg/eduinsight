@@ -1,6 +1,6 @@
 // In ImportContext.jsx - Updated toast implementation
 import { createContext, useContext, useState, useEffect } from 'react';
-import TimeColumnsModal from './TimeColumnsModal';
+import TimeColumnsModal from '../import/TimeColumnsModal';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 

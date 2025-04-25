@@ -1,10 +1,10 @@
 // src/components/Dashboard/KlassenContent.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords, deleteRecord, getRecordById, updateRecord } from '../../firebase/database';
-import { sortLanguageLevels } from '../../utils/levelSorting';
+import { getAllRecords, deleteRecord, getRecordById, updateRecord } from '../firebase/database';
+import { sortLanguageLevels } from '../utils/levelSorting';
 import CourseDetail from './CourseDetail';
 import GroupDetail from './GroupDetail'; // We'll create this component
-import './Content.css';
+import '../styles/Content.css';
 
 const KlassenContent = () => {
   const [courses, setCourses] = useState([]);

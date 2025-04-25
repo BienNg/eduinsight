@@ -1,7 +1,7 @@
 // src/components/Dashboard/DashboardContent.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords } from '../../firebase/database';
-import './Content.css';
+import { getAllRecords } from '../firebase/database';
+import '../styles/Content.css';
 
 const DashboardContent = () => {
   const [stats, setStats] = useState({

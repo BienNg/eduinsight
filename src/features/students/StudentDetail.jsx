@@ -4,13 +4,13 @@ import {
     getAllRecords,
     updateRecord,
     createRecord
-} from '../../firebase/database';
+} from '../firebase/database';
 import './StudentDetail.css';
-import '../../styles/common/Tabs.css'; // Import the tab styles
+import '../common/Tabs.css'; // Import the tab styles
 import TabComponent from '../common/TabComponent'; // Import TabComponent
-import { mergeStudents } from '../../firebase/database';
-import ConfirmationModal from './ConfirmationModal';
-import ReassignModal from './ReassignModal';
+import { mergeStudents } from '../firebase/database';
+import ConfirmationModal from '../common/ConfirmationModal';
+import ReassignModal from '../common/ReassignModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExchangeAlt } from '@fortawesome/free-solid-svg-icons';
 import DetailLayout from '../common/DetailLayout';

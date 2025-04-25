@@ -1,13 +1,13 @@
 // src/App.js
-import './styles/global.css';
+import './features/styles/global.css';
 import './App.css';
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import ToastProvider from './components/ToastProvider';
-import Dashboard from './components/Dashboard/Dashboard';
-import ImportContent from './components/Dashboard/ImportContent';
-import { ImportProvider } from './components/Dashboard/ImportContext';
+import ToastProvider from './features/dashboard/ToastProvider';
+import Dashboard from './features/dashboard/Dashboard';
+import ImportContent from './features/dashboard/ImportContent';
+import { ImportProvider } from './features/dashboard/ImportContext';
 
 // Create a layout component that wraps both Dashboard and ImportContent
 const DashboardLayout = () => {

@@ -3,11 +3,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useImport } from './ImportContext';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
-import { createRecord, updateRecord, getAllRecords, getRecordById } from '../../firebase/database';
+import { createRecord, updateRecord, getAllRecords, getRecordById } from '../firebase/database';
 import { ref, push, set, get, update, remove, query, orderByChild, equalTo } from "firebase/database";
-import { database } from "../../firebase/config";
-import './Content.css';
-import ErrorSummary from './ErrorSummary';
+import { database } from "../firebase/config";
+import '../styles/Content.css';
+import ErrorSummary from '../import/ErrorSummary';
 import { FOCUS_IMPORT_TAB_EVENT } from './ImportContext';
 
 // Add at the top of the component, after imports

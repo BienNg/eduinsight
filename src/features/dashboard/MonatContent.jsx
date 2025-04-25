@@ -1,11 +1,11 @@
 // src/components/Dashboard/MonatContent.jsx
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { getAllRecords } from '../../firebase/database';
-import { isLongSession, countLongSessions } from '../../utils/sessionUtils';
-import { calculateTotalHours } from '../../utils/timeUtils';
-import './MonthDetail.css';
-import './MonthTabs.css';
-import '../../styles/common/Tabs.css';
+import { getAllRecords } from '../firebase/database';
+import { isLongSession, countLongSessions } from '../utils/sessionUtils';
+import { calculateTotalHours } from '../utils/timeUtils';
+import '../styles/MonthDetail.css';
+import '../styles/MonthTabs.css';
+import '../common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 
 const MonatContent = () => {

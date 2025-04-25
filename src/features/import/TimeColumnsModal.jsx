@@ -1,6 +1,6 @@
 // src/components/Dashboard/TimeColumnsModal.jsx
 import React from 'react';
-import './Modal.css'; // Make sure to create this CSS file
+import '../styles/Modal.css'; // Make sure to create this CSS file
 
 const TimeColumnsModal = ({ isOpen, onClose, onConfirm, filename }) => {
   if (!isOpen) return null;

@@ -1,11 +1,11 @@
 // src/components/Dashboard/StudentDetailModal.jsx
 import React, { useState, useEffect } from 'react';
-import { getRecordById, getAllRecords } from '../../firebase/database';
-import './SessionDetailModal.css';
+import { getRecordById, getAllRecords } from '../../features/firebase/database';
+import '../styles/SessionDetailModal.css';
 import './StudentDetailModal.css';
 
-import { mergeStudents } from '../../firebase/database';
-import ConfirmationModal from './ConfirmationModal';
+import { mergeStudents } from '../../features/firebase/database';
+import ConfirmationModal from '../../features/common/ConfirmationModal';
 
 const StudentDetailModal = ({ student, onClose }) => {
   const [sessions, setSessions] = useState([]);

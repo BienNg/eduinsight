@@ -1,12 +1,12 @@
 // src/components/Dashboard/SessionDetailModal.jsx
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { getRecordById, updateRecord } from '../../firebase/database';
-import TeacherSelect from '../common/TeacherSelect'; //
-import './SessionDetailModal.css';
+import { getRecordById, updateRecord } from '../firebase/database';
+import TeacherSelect from '../../features/common/TeacherSelect'; //
+import '../styles/SessionDetailModal.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock } from '@fortawesome/free-solid-svg-icons';
-import { isLongSession } from '../../utils/sessionUtils';
+import { isLongSession } from '../utils/sessionUtils';
 
 const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) => {
 

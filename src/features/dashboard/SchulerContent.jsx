@@ -1,13 +1,13 @@
 // src/components/Dashboard/SchulerContent.jsx
 import { useState, useEffect, useMemo } from 'react';
-import { getAllRecords, getRecordById } from '../../firebase/database';
+import { getAllRecords, getRecordById } from '../firebase/database';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faFilter, faUserGraduate, faChalkboardTeacher, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 
-import StudentDetail from './StudentDetail';
+import StudentDetail from '../students/StudentDetail';
 import CourseDetail from './CourseDetail';
-import './Content.css';
-import './SchulerContent.css'; // We'll create this file
+import '../styles/Content.css';
+import '../styles/SchulerContent.css'; // We'll create this file
 
 const SchulerContent = () => {
   const [students, setStudents] = useState([]);

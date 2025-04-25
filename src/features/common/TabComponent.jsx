@@ -1,6 +1,6 @@
 // src/components/common/TabComponent.jsx
 import React, { useRef, useLayoutEffect } from 'react';
-import '../../styles/common/Tabs.css';
+import './Tabs.css';
 
 const TabComponent = ({ tabs, activeTab, setActiveTab, children }) => {
   const tabsContainerRef = useRef(null);

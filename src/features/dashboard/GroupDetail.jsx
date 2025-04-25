@@ -1,8 +1,8 @@
 // src/components/Dashboard/GroupDetail.jsx
 import { useState } from 'react';
-import { sortLanguageLevels } from '../../utils/levelSorting';
-import './CourseDetail.css'; // Reuse existing styles
-import './Content.css';
+import { sortLanguageLevels } from '../utils/levelSorting';
+import '../styles/CourseDetail.css'; // Reuse existing styles
+import '../styles/Content.css';
 
 const GroupDetail = ({ groupName, courses, onClose, onViewCourse, onDeleteCourse, deletingCourseId }) => {
     const [activeTab, setActiveTab] = useState('overview');

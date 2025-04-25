@@ -1,6 +1,6 @@
 // src/components/Dashboard/ConfirmationModal.jsx
 import React from 'react';
-import './Modal.css';
+import '../styles/Modal.css';
 
 const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
   if (!isOpen) return null;

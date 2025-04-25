@@ -1,6 +1,6 @@
 // Update src/components/Dashboard/Dashboard.jsx
 import { useState } from 'react';
-import './Dashboard.css';
+import '../styles/Dashboard.css';
 import DashboardContent from './DashboardContent';
 import MonatContent from './MonatContent';
 import KlassenContent from './KlassenContent';

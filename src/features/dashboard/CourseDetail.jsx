@@ -1,12 +1,12 @@
 // src/components/Dashboard/CourseDetail.jsx
 import { useState, useEffect } from 'react';
-import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '../../firebase/database';
-import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
-import SessionDetailModal from './SessionDetailModal';
-import StudentDetailModal from './StudentDetailModal';
-import './CourseDetail.css';
-import './Content.css'
-import '../../styles/common/Tabs.css';
+import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '../firebase/database';
+import { handleDeleteCourse } from '../utils/courseDeletionUtils';
+import SessionDetailModal from '../sessions/SessionDetailModal';
+import StudentDetailModal from '../students/StudentDetailModal';
+import '../styles/CourseDetail.css';
+import '../styles/Content.css'
+import '../common/Tabs.css';
 import TabComponent from '../common/TabComponent';
 
 
