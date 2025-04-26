@@ -103,7 +103,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
             ? `The latest session recorded is on the ${existingCourse.latestSessionDate}`
             : 'No sessions have been recorded yet';
 
-        const errorMessage = `The Course ${existingCourse.name} already exists. ${latestSessionInfo}`;
+        const errorMessage = `The Course ${existingCourse.name} already exists. ${latestSessionInfo}.`;
 
         // Also show a toast notification (this happens in ImportContext.jsx when catching the error)
         throw new Error(errorMessage);
