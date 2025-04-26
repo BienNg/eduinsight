@@ -148,25 +148,56 @@ export const normalizeTeacherName = (name) => {
 
   export const findExistingCourse = async (group, level) => {
     try {
-      const coursesRef = ref(database, 'courses');
-      const coursesQuery = query(
-        coursesRef,
-        orderByChild('level'),
-        equalTo(level)
-      );
-
-      const snapshot = await get(coursesQuery);
-
-      if (snapshot.exists()) {
-        const courses = Object.values(snapshot.val());
-        // Find a course with matching group and level
-        return courses.find(course => course.group === group);
+      // Get the course first
+      const courseRef = ref(database, 'courses');
+      const coursesSnapshot = await get(courseRef);
+      
+      let existingCourse = null;
+      let latestSessionDate = null;
+      
+      if (coursesSnapshot.exists()) {
+        const courses = coursesSnapshot.val();
+        
+        for (const courseId in courses) {
+          const course = courses[courseId];
+          
+          if (course.group === group && course.level === level) {
+            existingCourse = { id: courseId, ...course };
+            
+            // Find the latest session date
+            if (course.sessionIds && course.sessionIds.length > 0) {
+              // Get all sessions for this course
+              const sessionPromises = course.sessionIds.map(sessionId => 
+                get(ref(database, `sessions/${sessionId}`))
+              );
+              
+              const sessionSnapshots = await Promise.all(sessionPromises);
+              
+              // Find the latest date among all sessions
+              sessionSnapshots.forEach(snapshot => {
+                if (snapshot.exists()) {
+                  const session = snapshot.val();
+                  if (session.date) {
+                    if (!latestSessionDate || new Date(session.date.split('.').reverse().join('-')) > 
+                        new Date(latestSessionDate.split('.').reverse().join('-'))) {
+                      latestSessionDate = session.date;
+                    }
+                  }
+                }
+              });
+            }
+            
+            // Add the latest session date to the course object
+            existingCourse.latestSessionDate = latestSessionDate || 'No sessions recorded';
+            break;
+          }
+        }
       }
-
-      return null;
+      
+      return existingCourse;
     } catch (error) {
-      console.error("Error checking for existing course:", error);
-      throw error;
+      console.error('Error finding existing course:', error);
+      return null;
     }
   };
   
