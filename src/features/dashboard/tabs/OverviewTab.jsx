@@ -213,118 +213,131 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                                         const courseOrder = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
 
                                         // Return group progress components
-                                        return Object.entries(groups).map(([groupName, groupCourses]) => {
-                                            // Sort courses by level following the specified order
-                                            groupCourses.sort((a, b) => {
-                                                return courseOrder.indexOf(a.level) - courseOrder.indexOf(b.level);
-                                            });
+                                        // Find the section where you return the group progress components
+                                        // Replace or modify the Object.entries(groups).map() section with this:
 
-                                            // Find the latest course with completed sessions
-                                            let latestActiveIndex = -1;
-                                            for (let i = 0; i < groupCourses.length; i++) {
-                                                const course = groupCourses[i];
-                                                const courseSessions = sessions.filter(s => s.courseId === course.id);
-                                                const completedSessions = courseSessions.filter(s => s.status === 'completed');
+                                        return Object.entries(groups)
+                                            .map(([groupName, groupCourses]) => {
+                                                // Sort courses by level following the specified order
+                                                groupCourses.sort((a, b) => {
+                                                    return courseOrder.indexOf(a.level) - courseOrder.indexOf(b.level);
+                                                });
 
-                                                if (completedSessions.length > 0) {
-                                                    latestActiveIndex = i;
-                                                }
-                                            }
+                                                // Find the latest course with completed sessions
+                                                let latestActiveIndex = -1;
+                                                for (let i = 0; i < groupCourses.length; i++) {
+                                                    const course = groupCourses[i];
+                                                    const courseSessions = sessions.filter(s => s.courseId === course.id);
+                                                    const completedSessions = courseSessions.filter(s => s.status === 'completed');
 
-                                            // Calculate progress for the current course
-                                            let currentCourse = null;
-                                            let currentProgress = 0;
-                                            let isGroupComplete = false;
-
-                                            if (latestActiveIndex >= 0) {
-                                                // Current course is the one that has the most recent completed sessions
-                                                currentCourse = groupCourses[latestActiveIndex];
-
-                                                // Calculate progress for current course
-                                                const courseSessions = sessions.filter(s => s.courseId === currentCourse.id);
-                                                const completedSessions = courseSessions.filter(s => s.status === 'completed');
-                                                const totalExpectedSessions = ['A1.1', 'A1.2'].includes(currentCourse.level) ? 18 : 20;
-
-                                                currentProgress = (completedSessions.length / totalExpectedSessions) * 100;
-
-                                                // Check if the group is complete (B1.2 is complete)
-                                                if (currentCourse.level === 'B1.2' && completedSessions.length === totalExpectedSessions) {
-                                                    isGroupComplete = true;
-                                                }
-                                            }
-
-                                            // Calculate overall group progress
-                                            let overallProgress = 0;
-
-                                            const courseLevels = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
-                                            const sessionsPerLevel = {
-                                                'A1.1': 18,
-                                                'A1.2': 18,
-                                                'A2.1': 20,
-                                                'A2.2': 20,
-                                                'B1.1': 20,
-                                                'B1.2': 20
-                                            };
-
-                                            const totalExpectedSessions = Object.values(sessionsPerLevel).reduce((sum, sessions) => sum + sessions, 0);
-
-                                            const latestLevel = currentCourse ? currentCourse.level : null;
-                                            const latestLevelIndex = latestLevel ? courseLevels.indexOf(latestLevel) : -1;
-
-                                            if (latestLevelIndex >= 0) {
-                                                // Calculate completed sessions for the current level
-                                                const currentLevelSessions = sessions.filter(s => s.courseId === currentCourse.id);
-                                                const completedCurrentSessions = currentLevelSessions.filter(s => s.status === 'completed').length;
-
-                                                // Calculate sessions for completed previous levels
-                                                let completedPreviousSessions = 0;
-                                                for (let i = 0; i < latestLevelIndex; i++) {
-                                                    completedPreviousSessions += sessionsPerLevel[courseLevels[i]];
+                                                    if (completedSessions.length > 0) {
+                                                        latestActiveIndex = i;
+                                                    }
                                                 }
 
-                                                // Total completed sessions (previous levels + current level progress)
-                                                const totalCompletedSessions = completedPreviousSessions + completedCurrentSessions;
+                                                // Calculate progress based on your updated logic
+                                                let currentCourse = null;
+                                                let currentProgress = 0;
+                                                let isGroupComplete = false;
+                                                let overallProgress = 0;
 
-                                                // Calculate overall progress
-                                                overallProgress = (totalCompletedSessions / totalExpectedSessions) * 100;
-                                            }
+                                                // Define the course structure with expected sessions
+                                                const courseLevels = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
+                                                const sessionsPerLevel = {
+                                                    'A1.1': 18,
+                                                    'A1.2': 18,
+                                                    'A2.1': 20,
+                                                    'A2.2': 20,
+                                                    'B1.1': 20,
+                                                    'B1.2': 20
+                                                };
 
-                                            // Cap at 100%
-                                            overallProgress = Math.min(overallProgress, 100);
+                                                // Calculate total expected sessions across all levels
+                                                const totalExpectedSessions = Object.values(sessionsPerLevel).reduce((sum, sessions) => sum + sessions, 0);
 
-                                            return (
-                                                <div className="progress-card" key={groupName}>
-                                                    <div className="progress-card-header">
-                                                        <div className="progress-title">{groupName}</div>
-                                                        <div className="progress-stats">
-                                                            <span>{Math.round(overallProgress)}%</span>
+                                                if (latestActiveIndex >= 0) {
+                                                    // Current course is the one that has the most recent completed sessions
+                                                    currentCourse = groupCourses[latestActiveIndex];
+
+                                                    // Get the latest level this group has
+                                                    const latestLevel = currentCourse ? currentCourse.level : null;
+                                                    const latestLevelIndex = latestLevel ? courseLevels.indexOf(latestLevel) : -1;
+
+                                                    if (latestLevelIndex >= 0) {
+                                                        // Calculate completed sessions for the current level
+                                                        const currentLevelSessions = sessions.filter(s => s.courseId === currentCourse.id);
+                                                        const completedCurrentSessions = currentLevelSessions.filter(s => s.status === 'completed').length;
+
+                                                        // Calculate current level progress
+                                                        const currentLevelExpectedSessions = sessionsPerLevel[latestLevel];
+                                                        currentProgress = (completedCurrentSessions / currentLevelExpectedSessions) * 100;
+
+                                                        // Calculate sessions for completed previous levels
+                                                        let completedPreviousSessions = 0;
+                                                        for (let i = 0; i < latestLevelIndex; i++) {
+                                                            completedPreviousSessions += sessionsPerLevel[courseLevels[i]];
+                                                        }
+
+                                                        // Total completed sessions (previous levels + current level progress)
+                                                        const totalCompletedSessions = completedPreviousSessions + completedCurrentSessions;
+
+                                                        // Calculate overall progress
+                                                        overallProgress = (totalCompletedSessions / totalExpectedSessions) * 100;
+
+                                                        // Check if the group is complete (B1.2 is complete)
+                                                        if (latestLevel === 'B1.2' && completedCurrentSessions === currentLevelExpectedSessions) {
+                                                            isGroupComplete = true;
+                                                        }
+                                                    }
+                                                }
+
+                                                // Cap at 100%
+                                                overallProgress = Math.min(overallProgress, 100);
+
+                                                return {
+                                                    groupName,
+                                                    currentCourse,
+                                                    currentProgress,
+                                                    isGroupComplete,
+                                                    overallProgress,
+                                                    jsx: (
+                                                        <div className="progress-card" key={groupName}>
+                                                            <div className="progress-card-header">
+                                                                <div className="progress-title">{groupName}</div>
+                                                                <div className="progress-stats">
+                                                                    <span>{Math.round(overallProgress)}%</span>
+                                                                    {currentCourse && !isGroupComplete && (
+                                                                        <>
+                                                                            <span className="progress-divider"></span>
+                                                                            <span className="current-level">{currentCourse.level}</span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="progress-bar-container">
+                                                                <div
+                                                                    className="progress-bar"
+                                                                    style={{
+                                                                        '--target-width': `${Math.max(0, overallProgress)}%`
+                                                                    }}
+                                                                ></div>
+                                                            </div>
+
                                                             {currentCourse && !isGroupComplete && (
-                                                                <>
-                                                                    <span className="progress-divider"></span>
-                                                                    <span className="current-level">{currentCourse.level}</span>
-                                                                </>
+                                                                <div className="current-course-info">
+                                                                    <span>Current course progress:</span>
+                                                                    <span>{Math.round(currentProgress)}%</span>
+                                                                </div>
                                                             )}
                                                         </div>
-                                                    </div>
-
-                                                    <div className="progress-bar-container">
-                                                        <div
-                                                            className="progress-bar"
-                                                            style={{
-                                                                '--target-width': `${Math.max(0, overallProgress)}%`
-                                                            }}
-                                                        ></div>
-                                                    </div>
-
-                                                    {currentCourse && !isGroupComplete && (
-                                                        <div className="current-course-info">
-                                                            <span>Current course progress:</span>
-                                                            <span>{Math.round(currentProgress)}%</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        });
+                                                    )
+                                                };
+                                            })
+                                            // Sort groups by overall progress in descending order
+                                            .sort((a, b) => b.overallProgress - a.overallProgress)
+                                            // Return the JSX for each group
+                                            .map(group => group.jsx);
                                     })()}
                                 </div>
                             ) : (
