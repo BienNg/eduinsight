@@ -807,25 +807,6 @@
   padding: 16px;
 }
 
-.teacher-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.teacher-stat-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.teacher-stat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: flex-start;
-}
 
 .stat-label {
   font-size: 14px;
@@ -841,12 +822,7 @@
 
 
 /* Center the stat value above its label */
-.teacher-stat .stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
-  align-self: flex-start; /* Align with the label below */
-}
+
 .long-sessions {
   margin-top: 4px;
   padding-top: 12px;
@@ -860,25 +836,10 @@
 
 
 /* For the long sessions, adjust alignment to match the label */
-.long-sessions .teacher-stat {
-  width: 100%; /* Take full width of container */
-}
+
 
 
 .long-sessions .stat-value,
 .long-sessions .stat-label {
   align-self: flex-start; /* Align with left edge like the label */
-}
-
-
-/* Make it responsive */
-@media (max-width: 640px) {
-  .teacher-cards-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .teacher-stat-row {
-    flex-direction: column;
-    gap: 12px;
-  }
 }

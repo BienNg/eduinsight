@@ -62,32 +62,6 @@
     padding: 20px;
   }
   
-  .month-summary {
-    display: flex;
-    justify-content: space-between;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 24px;
-  }
-  
-  .summary-item {
-    text-align: center;
-    flex: 1;
-  }
-  
-  .summary-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--primary-blue);
-  }
-  
-  .summary-label {
-    font-size: 14px;
-    color: #666;
-    margin-top: 4px;
-  }
-  
   .month-card-details h4 {
     margin: 0 0 16px;
     color: #333;
@@ -132,34 +106,6 @@
   .teacher-card-body {
     padding: 12px 16px;
   }
-  
-  .teacher-stat {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  
-  .teacher-stat:last-child {
-    margin-bottom: 0;
-  }
-  
-  .teacher-stat .label {
-    color: #666;
-    font-weight: 500;
-  }
-  
-  .teacher-stat .value {
-    font-weight: 600;
-    color: #333;
-  }
-  
-  .no-data-message {
-    text-align: center;
-    color: #666;
-    padding: 16px;
-    font-style: italic;
-  }
-  
   /* Add responsiveness */
   @media (max-width: 768px) {
     .month-card-stats {
@@ -197,30 +143,6 @@
   color: rgb(55, 53, 47);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji";
   line-height: 1.5;
-}
-
-.notion-h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  color: rgb(55, 53, 47);
-}
-
-.notion-h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 1.5rem 0 0.75rem;
-  color: rgb(55, 53, 47);
-}
-
-.notion-blocks {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.notion-block-group {
-  margin-bottom: 2px;
 }
 
 .notion-block {
@@ -283,13 +205,6 @@
   margin-bottom: 6px;
 }
 
-.notion-callout {
-  border-radius: 4px;
-  padding: 16px;
-  background: rgba(235, 236, 237, 0.3);
-  margin: 4px 0 12px;
-}
-
 .notion-stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -315,44 +230,6 @@
   letter-spacing: 0.5px;
 }
 
-.notion-property-table {
-  font-size: 0.875rem;
-  border-left: 1px solid rgba(55, 53, 47, 0.09);
-  margin: 4px 0;
-}
-
-.notion-property-row {
-  display: flex;
-  border-bottom: 1px solid rgba(55, 53, 47, 0.09);
-  min-height: 32px;
-}
-
-.notion-property-name {
-  width: 140px;
-  padding: 6px 8px;
-  color: rgba(55, 53, 47, 0.65);
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-}
-
-.notion-property-value {
-  flex: 1;
-  padding: 6px 8px;
-  display: flex;
-  align-items: center;
-  font-weight: 500;
-}
-
-.notion-tag {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  background: rgba(55, 53, 47, 0.08);
-  border-radius: 3px;
-  color: rgba(55, 53, 47, 0.65);
-  margin-left: 8px;
-  white-space: nowrap;
-}
 
 .notion-inline-metadata {
   display: flex;
@@ -383,9 +260,6 @@
   font-style: italic;
 }
 
-.teacher-block {
-  margin-top: 1px;
-}
 
 /* Media queries for responsive design */
 @media (max-width: 768px) {
@@ -407,20 +281,6 @@
   .notion-inline-metadata {
     margin-top: 4px;
     margin-left: 24px;
-  }
-}
-
-@media (max-width: 480px) {
-  .notion-property-table {
-    font-size: 0.8125rem;
-  }
-  
-  .notion-property-name {
-    width: 100px;
-  }
-  
-  .notion-stat-grid {
-    grid-template-columns: repeat(1, 1fr);
   }
 }
 
@@ -453,54 +313,13 @@
 }
 
 /* Three-column overview cards */
-.overview-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 24px;
-  margin-bottom: 32px;
-}
-
-.overview-card {
-  background-color: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.overview-card-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
 .overview-card-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 500;
   color: #333;
 }
-
-.overview-card-content {
-  padding: 16px 20px;
-  flex: 1;
-  overflow-y: auto;
-  max-height: 480px;
-}
-
 /* Sessions list styling */
-.sessions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.session-item {
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
 
 .session-item:last-child {
   border-bottom: none;
@@ -524,17 +343,6 @@
 }
 
 /* Course list styling */
-.courses-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.course-item {
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
 .course-item:last-child {
   border-bottom: none;
 }
@@ -553,23 +361,7 @@
   margin-bottom: 8px;
 }
 
-.student-count {
-  color: #666;
-  font-size: 14px;
-}
-
 /* Teacher list styling */
-.teachers-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.teacher-item {
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
 .teacher-item:last-child {
   border-bottom: none;
 }
@@ -586,24 +378,6 @@
   font-style: italic;
   text-align: center;
   padding: 24px 0;
-}
-
-.no-courses-hint {
-  color: #b0b8c9;
-  font-style: italic;
-  font-size: 0.92em;
-  padding: 4px 0;
-}
-
-/* Responsive design for mobile */
-@media (max-width: 1100px) {
-  .overview-cards-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .overview-card {
-    margin-bottom: 16px;
-  }
 }
 
 /* Compact Stats Grid */
