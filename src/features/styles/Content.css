@@ -843,3 +843,79 @@
 .long-sessions .stat-label {
   align-self: flex-start; /* Align with left edge like the label */
 }
+
+.group-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.group-progress-item {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.group-progress-item:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.group-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.progress-percentage {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.progress-bar-container {
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #4285f4;
+  border-radius: 4px;
+  transition: width 0.5s ease-in-out;
+  min-width: 2px; /* Ensure it's visible even with very small progress */
+  position: relative; /* Add this */
+}
+
+.current-course {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+}
+
+.course-level {
+  font-weight: 500;
+}
+
+.course-progress {
+  color: #4285f4;
+}
+.group-progress-item .progress-bar {
+  height: 100%;
+  background-color: #4285f4;
+  border-radius: 4px;
+  transition: width 0.5s ease-in-out;
+  min-width: 2px;
+}
