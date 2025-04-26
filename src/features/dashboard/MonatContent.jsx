@@ -29,7 +29,6 @@ const MonatContent = () => {
   const tabsContainerRef = useRef(null);
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'current', label: 'Aktueller Monat' },
     { id: 'all', label: 'Alle Monate' }
   ];
 
@@ -184,93 +183,6 @@ const MonatContent = () => {
 
   const handleCourseClick = (course) => {
     navigate(`/courses/${course.id}`);
-  };
-
-  const renderCurrentMonthDetails = () => {
-    if (!currentMonthId || !monthDetails[currentMonthId]) {
-      return <div className="notion-empty">Keine Daten für den aktuellen Monat verfügbar.</div>;
-    }
-    const month = months.find(m => m.id === currentMonthId);
-    const details = monthDetails[currentMonthId];
-    return (
-      <div className="current-month-details">
-        <h2 className="notion-h2">{month ? month.name : 'Aktueller Monat'}</h2>
-        <div className="compact-stats-grid">
-          <div className="stat-card compact">
-            <div className="stat-value">{details.courseCount}</div>
-            <div className="stat-label">Kurse</div>
-          </div>
-          <div className="stat-card compact">
-            <div className="stat-value">{details.sessionCount}</div>
-            <div className="stat-label">Lektionen</div>
-          </div>
-          <div className="stat-card compact">
-            <div className="stat-value">{details.studentCount}</div>
-            <div className="stat-label">Schüler</div>
-          </div>
-          <div className="stat-card compact">
-            <div className="stat-value">{details.hours.toFixed(1)}</div>
-            <div className="stat-label">Stunden</div>
-          </div>
-          <div className="stat-card compact">
-            <div className="stat-value">{details.longSessions}</div>
-            <div className="stat-label">2h-Lektionen</div>
-          </div>
-        </div>
-        <div className="compact-overview-grid">
-          <div className="overview-panel">
-            <div className="panel-header">
-              <h3 className="panel-title">Lehrer ({details.teachers.length})</h3>
-            </div>
-            <div className="panel-content">
-              <div className="compact-teacher-list">
-                {details.teachers.length > 0 ? (
-                  details.teachers.map((teacher) => (
-                    <div className="compact-teacher-item" key={teacher.id}>
-                      <div className="teacher-name">{teacher.name}</div>
-                      <div className="teacher-meta">
-                        <span>{teacher.sessionCount} Lektionen</span>
-                        <span>{teacher.hours.toFixed(1)}h</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="empty-message">Keine Lehrer in diesem Monat.</div>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="overview-panel">
-            <div className="panel-header">
-              <h3 className="panel-title">Kurse ({details.courses.length})</h3>
-            </div>
-            <div className="panel-content">
-              <div className="compact-course-list">
-                {details.courses.length > 0 ? (
-                  details.courses.map((course) => (
-                    <div
-                      className="compact-course-item clickable"
-                      key={course.id}
-                      onClick={() => handleCourseClick(course)}
-                    >
-                      <div className="course-name-wrapper">
-                        <div className="course-name">{course.name || 'Unbenannter Kurs'}</div>
-                        <div className="course-level">{course.level || 'N/A'}</div>
-                      </div>
-                      <div className="course-meta">
-                        <span>{sessions.filter(s => s.courseId === course.id && s.monthId === currentMonthId).length} Lektionen</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="empty-message">Keine Kurse in diesem Monat.</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   const renderAllMonthsDetails = () => {
@@ -528,7 +440,6 @@ const MonatContent = () => {
         ref={tabsContainerRef}
       >
         {activeTab === 'overview' && renderOverviewTab()}
-        {activeTab === 'current' && renderCurrentMonthDetails()}
         {activeTab === 'all' && renderAllMonthsDetails()}
       </TabComponent>
     </div>
