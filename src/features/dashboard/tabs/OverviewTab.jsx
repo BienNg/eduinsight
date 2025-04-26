@@ -275,25 +275,33 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                                             overallProgress = Math.min(overallProgress, 100);
 
                                             return (
-                                                <div className="group-progress-item" key={groupName}>
-                                                    <div className="group-header">
-                                                        <div className="group-name">{groupName}</div>
-                                                        <div className="progress-percentage">
-                                                            {isGroupComplete ? 'Complete' : `${Math.round(overallProgress)}%`}
+                                                <div className="progress-card" key={groupName}>
+                                                    <div className="progress-card-header">
+                                                        <div className="progress-title">{groupName}</div>
+                                                        <div className="progress-stats">
+                                                            <span>{Math.round(overallProgress)}%</span>
+                                                            {currentCourse && !isGroupComplete && (
+                                                                <>
+                                                                    <span className="progress-divider"></span>
+                                                                    <span className="current-level">{currentCourse.level}</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
 
                                                     <div className="progress-bar-container">
                                                         <div
                                                             className="progress-bar"
-                                                            style={{ width: `${Math.max(0, overallProgress)}%` }}
+                                                            style={{
+                                                                '--target-width': `${Math.max(0, overallProgress)}%`
+                                                            }}
                                                         ></div>
                                                     </div>
 
                                                     {currentCourse && !isGroupComplete && (
-                                                        <div className="current-course">
-                                                            <span className="course-level">{currentCourse.level}</span>
-                                                            <span className="course-progress">{Math.round(currentProgress)}% complete</span>
+                                                        <div className="current-course-info">
+                                                            <span>Current course progress:</span>
+                                                            <span>{Math.round(currentProgress)}%</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -304,6 +312,7 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                             ) : (
                                 <div className="empty-message">Keine Kurse in diesem Monat.</div>
                             )}
+
                         </div>
                     </div>
                 </div>

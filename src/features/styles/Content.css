@@ -919,3 +919,103 @@
   transition: width 0.5s ease-in-out;
   min-width: 2px;
 }
+
+/* New Group Progress Card Styles */
+.progress-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 6px;
+  transition: all 0.2s ease;
+}
+
+.progress-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+/* New Header Styles */
+.progress-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.progress-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+}
+
+.progress-stats {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #333;
+}
+
+.progress-divider {
+  height: 12px;
+  width: 1px;
+  background-color: #ddd;
+  margin: 0 8px;
+}
+
+/* Modified Progress Bar */
+.progress-bar-container {
+  height: 20px;
+  background-color: #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100% !important;
+  background-color: #4285f4 !important;
+  border-radius: 12px !important;
+  transition: width 0.5s ease-in-out;
+  min-width: 2px;
+  position: relative;
+  animation: progressFill 1s ease-out forwards;
+  background-image: linear-gradient(
+    90deg, 
+    #4285f4 0%, 
+    #5a95f5 45%, 
+    #4285f4 90%
+  );
+  background-size: 200% 100%;
+  animation: 
+    progressFill 1s ease-out forwards,
+    shimmer 2s infinite linear;
+}
+
+/* Course Info */
+.current-course-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #333;
+  margin-top: 5px;
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+    opacity: 0.7;
+  }
+  to {
+    width: var(--target-width);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
