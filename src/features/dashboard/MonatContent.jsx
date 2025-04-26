@@ -12,7 +12,7 @@ import CourseDetail from './CourseDetail';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Area } from 'recharts';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
+import MonthHeader from './MonthHeader';
 
 const MonatContent = () => {
   const navigate = useNavigate();
@@ -259,25 +259,6 @@ const MonatContent = () => {
   const toggleMonthExpansion = (monthId) => {
     setExpandedMonth(expandedMonth === monthId ? null : monthId);
   };
-
-  const renderMonthHeader = (month, details) => (
-    <div className="notion-block month-header" onClick={() => toggleMonthExpansion(month.id)}>
-      <div className="notion-block-content">
-        <div className="notion-block-toggle">
-          <div className="notion-block-toggle-icon">
-            {expandedMonth === month.id ? "▾" : "▸"}
-          </div>
-          <div className="notion-block-text">{month.name}</div>
-        </div>
-      </div>
-      <div className="notion-metadata">
-        <div className="notion-metadata-item">{details.teacherCount} Lehrer</div>
-        <div className="notion-metadata-item">{details.studentCount} Schüler</div>
-        <div className="notion-metadata-item">{details.hours.toFixed(1)}h</div>
-        <div className="notion-metadata-item">{details.sessionCount} Lektionen</div>
-      </div>
-    </div>
-  );
 
   const renderMonthSummary = (details) => (
     <div className="notion-callout">
@@ -540,7 +521,12 @@ const MonatContent = () => {
 
             return (
               <div className="notion-block-group" key={month.id}>
-                {renderMonthHeader(month, details)}
+                <MonthHeader
+                  month={month}
+                  details={details}
+                  expandedMonth={expandedMonth}
+                  onToggle={toggleMonthExpansion}
+                />
 
                 {expandedMonth === month.id && (
                   <div className="notion-block-children">
