@@ -25,6 +25,8 @@
   margin: 10px;
   box-shadow: none;
   height: calc(100vh - 20px);
+  position: relative; /* Add this */
+  z-index: 1000; /* Add this */
 }
 
 .sidebar.collapsed {

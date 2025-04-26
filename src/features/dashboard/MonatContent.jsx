@@ -52,8 +52,8 @@ const MonatContent = () => {
   const prepareChartData = () => {
     // Get current month and previous 3 months
     const currentDate = new Date();
-    const last4Months = Array.from({length: 4}, (_, i) => {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (3-i), 1);
+    const last4Months = Array.from({ length: 4 }, (_, i) => {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (3 - i), 1);
       return {
         year: date.getFullYear(),
         month: date.getMonth() + 1
@@ -65,7 +65,7 @@ const MonatContent = () => {
       'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'
     ];
 
-    return last4Months.map(({year, month}) => {
+    return last4Months.map(({ year, month }) => {
       const monthId = `${year}-${month.toString().padStart(2, '0')}`;
       const details = monthDetails[monthId];
       return {
@@ -601,6 +601,8 @@ const MonatContent = () => {
     return (
       <div className="overview-tab-content">
 
+        <p className="overview-description">Alle wichtigen Daten auf einem Blick</p>
+        <h1 className="overview-heading">Übersicht über diesen Monat</h1>
         {/* Three-column Overview Grid */}
         <div className="three-column-overview-grid">
           {/* Sessions Panel - First Column */}
@@ -653,7 +655,7 @@ const MonatContent = () => {
                         cx="50%"
                         cy="50%"
                         innerRadius={40}
-                        outerRadius={80}
+                        outerRadius={70}
                         paddingAngle={5}
                         dataKey="value"
                         nameKey="name"
@@ -675,7 +677,7 @@ const MonatContent = () => {
                           </Cell>
                         ))}
                       </Pie>
-                      <Tooltip 
+                      <Tooltip
                         animationDuration={200}
                         animationEasing="ease-in-out"
                       />
@@ -698,12 +700,12 @@ const MonatContent = () => {
                 <h3>Anzahl Kurse pro Monat</h3>
                 <div style={{ width: '100%', height: '200px' }}>
                   <ResponsiveContainer>
-                    <LineChart 
+                    <LineChart
                       data={chartData}
                       margin={{ top: 5, right: 20, bottom: 5, left: 20 }}
                     >
-                      <XAxis 
-                        dataKey="month" 
+                      <XAxis
+                        dataKey="month"
                         interval={0}
                         tickMargin={5}
                         height={40}
@@ -719,7 +721,7 @@ const MonatContent = () => {
                         />
                       </XAxis>
                       <YAxis hide={true} />
-                      <Tooltip 
+                      <Tooltip
                         animationDuration={200}
                         animationEasing="ease-in-out"
                       />

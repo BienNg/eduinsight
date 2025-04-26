@@ -1,56 +1,74 @@
 @keyframes cardFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animate-card {
-  animation: cardFadeIn 0.6s ease-out forwards;
-  opacity: 0;
+    animation: cardFadeIn 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.analytics-card {
+    padding-top: 15px;
 }
 
 /* Stagger the animations for different cards */
 .analytics-card:nth-child(1) {
-  animation-delay: 0.1s;
+    animation-delay: 0.1s;
 }
 
 .analytics-card:nth-child(2) {
-  animation-delay: 0.2s;
+    animation-delay: 0.2s;
 }
 
 .overview-panel {
-  animation: cardFadeIn 0.6s ease-out forwards;
-  opacity: 0;
+    animation: cardFadeIn 0.6s ease-out forwards;
+    opacity: 0;
 }
 
 .overview-panel:nth-child(1) {
-  animation-delay: 0.3s;
+    animation-delay: 0.3s;
 }
 
 .overview-panel:nth-child(2) {
-  animation-delay: 0.4s;
+    animation-delay: 0.4s;
 }
 
 .overview-panel:nth-child(3) {
-  animation-delay: 0.5s;
+    animation-delay: 0.5s;
 }
 
 /* Add animation to compact list items */
 .compact-session-item,
 .compact-course-item,
 .compact-teacher-item {
-  animation: cardFadeIn 0.5s ease-out forwards;
-  opacity: 0;
+    animation: cardFadeIn 0.5s ease-out forwards;
+    opacity: 0;
 }
 
 /* Stagger the list item animations */
 .compact-session-item:nth-child(n),
 .compact-course-item:nth-child(n),
 .compact-teacher-item:nth-child(n) {
-  animation-delay: calc(0.05s * var(--item-index, 0));
+    animation-delay: calc(0.05s * var(--item-index, 0));
+}
+
+.overview-heading {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #1a1a1a;
+}
+
+.overview-description {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 0rem;
 }
