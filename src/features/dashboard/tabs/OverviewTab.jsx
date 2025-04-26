@@ -256,19 +256,37 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                                             // Calculate overall group progress
                                             let overallProgress = 0;
 
-                                            // Calculate how many courses are complete before the current one
-                                            const courseIndices = groupCourses.map(c => courseOrder.indexOf(c.level));
-                                            const earlierCourseCount = latestActiveIndex; // Courses before current are complete
+                                            const courseLevels = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
+                                            const sessionsPerLevel = {
+                                                'A1.1': 18,
+                                                'A1.2': 18,
+                                                'A2.1': 20,
+                                                'A2.2': 20,
+                                                'B1.1': 20,
+                                                'B1.2': 20
+                                            };
 
-                                            if (earlierCourseCount > 0) {
-                                                // Each earlier course contributes its portion to overall progress
-                                                overallProgress += (earlierCourseCount / 6) * 100;
-                                            }
+                                            const totalExpectedSessions = Object.values(sessionsPerLevel).reduce((sum, sessions) => sum + sessions, 0);
 
-                                            // Add current course contribution to overall progress
-                                            if (currentCourse) {
-                                                const courseWeight = 1 / 6; // Each course is 1/6 of total
-                                                overallProgress += (currentProgress / 100) * courseWeight * 100;
+                                            const latestLevel = currentCourse ? currentCourse.level : null;
+                                            const latestLevelIndex = latestLevel ? courseLevels.indexOf(latestLevel) : -1;
+
+                                            if (latestLevelIndex >= 0) {
+                                                // Calculate completed sessions for the current level
+                                                const currentLevelSessions = sessions.filter(s => s.courseId === currentCourse.id);
+                                                const completedCurrentSessions = currentLevelSessions.filter(s => s.status === 'completed').length;
+
+                                                // Calculate sessions for completed previous levels
+                                                let completedPreviousSessions = 0;
+                                                for (let i = 0; i < latestLevelIndex; i++) {
+                                                    completedPreviousSessions += sessionsPerLevel[courseLevels[i]];
+                                                }
+
+                                                // Total completed sessions (previous levels + current level progress)
+                                                const totalCompletedSessions = completedPreviousSessions + completedCurrentSessions;
+
+                                                // Calculate overall progress
+                                                overallProgress = (totalCompletedSessions / totalExpectedSessions) * 100;
                                             }
 
                                             // Cap at 100%
