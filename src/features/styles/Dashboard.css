@@ -1,10 +1,8 @@
-/* src/components/Dashboard/Dashboard.css */
+/* src/components/Dashboard/Dashboard.css - Cleaned Version */
 :root {
   --primary-blue: #1e88e5;
   --dark-blue: #1565c0;
   --light-blue: #64b5f6;
-  --sidebar-width: 170px;
-  --sidebar-collapsed-width: 50px;
   --header-height: 60px;
 }
 
@@ -15,7 +13,7 @@
 }
 
 .sidebar {
-  width: 70px; /* Fixed width for icon-only sidebar */
+  width: 70px;
   background-color: transparent;
   padding: 40px 10px;
   display: flex;
@@ -25,62 +23,8 @@
   margin: 10px;
   box-shadow: none;
   height: calc(100vh - 20px);
-  position: relative; /* Add this */
-  z-index: 1000; /* Add this */
-}
-
-.sidebar.collapsed {
-  width: 70px;
-}
-
-.sidebar-header {
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  background-color: white;
-  /* Changed from var(--primary-blue) to white */
-  justify-content: space-between;
-  border-bottom: 1px solid #F3F4F6;
-  /* Optional: subtle separator */
-  border-radius: 12px 12px 0 0;
-  /* Rounded top corners */
-}
-
-.sidebar-header h2 {
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 18px;
-  color: #374151;
-  /* Darker text for contrast */
-}
-
-.sidebar .icon {
-  font-size: 1.1rem; /* or any size you prefer */
-}
-
-.toggle-btn {
-  background: none;
-  border: none;
-  color: #9CA3AF;
-  /* Light grey to match sidebar text */
-  cursor: pointer;
-  font-size: 16px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-section {
-  padding: 0;
-}
-
-.nav-title {
-  display: none;
+  position: relative;
+  z-index: 1000;
 }
 
 .nav-items {
@@ -104,7 +48,7 @@
   border-radius: 50%;
   background-color: white;
   margin: 0 auto;
-  position: relative; /* For tooltip positioning */
+  position: relative;
 }
 
 .nav-items li:hover {
@@ -117,8 +61,7 @@
   color: #1E40AF;
 }
 
-
-/* Add tooltip styles */
+/* Tooltip styles */
 .nav-items li:hover::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -134,14 +77,6 @@
 
 .icon {
   font-size: 20px;
-}
-
-.sidebar.collapsed .icon {
-  margin-right: 0;
-}
-
-.nav-items li span {
-  white-space: nowrap;
 }
 
 .content-area {
