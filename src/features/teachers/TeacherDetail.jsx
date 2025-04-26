@@ -2,12 +2,12 @@
 import '../styles/CourseDetail.css';
 import '../common/Tabs.css';
 import "../common/SlidingPane.css";
+import "react-sliding-pane/dist/react-sliding-pane.css";
 import { getRecordById, getAllRecords, updateRecord } from '../firebase/database'
 import CourseDetail from '../dashboard/CourseDetail';
 import SessionDetailModal from '../sessions/SessionDetailModal';
 import DetailLayout from '../common/DetailLayout';
 import { isLongSession, countLongSessions } from '../utils/sessionUtils';
-import "react-sliding-pane/dist/react-sliding-pane.css";
 import { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SlidingPane from 'react-sliding-pane';
