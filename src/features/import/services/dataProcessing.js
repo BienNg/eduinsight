@@ -14,6 +14,94 @@ import { database } from "../../firebase/config";
 
 import { validateExcelFile as validateExcelFileFunction } from './excelUtils';
 
+const COURSE_COLORS = [
+    '#911DD2', // Purple Base
+    '#A94FE0', // Purple Light
+    '#C283ED', // Purple Lighter
+    '#D8B1F5', // Purple Pastel
+    '#7310A8', // Purple Dark
+    '#FF5F68', // Coral Red Base
+    '#FF8389', // Coral Light
+    '#FFA9AD', // Coral Lighter
+    '#FFCBCD', // Coral Pastel
+    '#D94D54', // Coral Dark
+    '#4DBEFF', // Sky Blue Base
+    '#80D2FF', // Sky Light
+    '#B3E6FF', // Sky Lighter
+    '#D6F2FF', // Sky Pastel
+    '#3A9BD4', // Sky Dark
+    '#18BF69', // Emerald Green Base
+    '#46D28B', // Emerald Light
+    '#7FE7B1', // Emerald Lighter
+    '#B1F3D2', // Emerald Pastel
+    '#139954', // Emerald Dark
+    '#FBC14E', // Golden Yellow Base
+    '#FDD278', // Golden Light
+    '#FEE6A8', // Golden Lighter
+    '#FFF4CE', // Golden Pastel
+    '#D9A53F', // Golden Dark
+    '#D21D91', // Purple Complement
+    '#5FFFC8', // Coral Complement
+    '#FF944D', // Sky Complement
+    '#BF181D', // Emerald Complement
+    '#4E9CFB'  // Golden Complement
+];
+
+
+const getNextCourseColor = async () => {
+    try {
+        // Get all existing courses
+        const coursesRef = ref(database, 'courses');
+        const coursesSnapshot = await get(coursesRef);
+        const courses = [];
+
+        if (coursesSnapshot.exists()) {
+            const coursesData = coursesSnapshot.val();
+            Object.keys(coursesData).forEach(key => {
+                courses.push({
+                    id: key,
+                    ...coursesData[key]
+                });
+            });
+        }
+
+        // Count color usage
+        const colorUsage = {};
+        COURSE_COLORS.forEach(color => {
+            colorUsage[color] = 0;
+        });
+
+        // Count how many times each color is used
+        courses.forEach(course => {
+            if (course.color && colorUsage[course.color] !== undefined) {
+                colorUsage[course.color]++;
+            }
+        });
+
+        // Find the minimum usage count
+        let minUsage = Number.MAX_SAFE_INTEGER;
+        Object.values(colorUsage).forEach(count => {
+            if (count < minUsage) {
+                minUsage = count;
+            }
+        });
+
+        // Get all colors with minimum usage
+        const candidateColors = COURSE_COLORS.filter(color =>
+            colorUsage[color] === minUsage
+        );
+
+        // Select a random color from candidates
+        const randomIndex = Math.floor(Math.random() * candidateColors.length);
+        return candidateColors[randomIndex];
+
+    } catch (error) {
+        console.error("Error selecting course color:", error);
+        // Fallback to a random color if there's an error
+        const randomIndex = Math.floor(Math.random() * COURSE_COLORS.length);
+        return COURSE_COLORS[randomIndex];
+    }
+};
 export const validateExcelFile = validateExcelFileFunction;
 
 export const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => {
@@ -109,19 +197,21 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         throw new Error(errorMessage);
     }
 
+    const courseColor = await getNextCourseColor();
 
     // Create the course record first
     const courseRecord = await createRecord('courses', {
         name: courseName,
         level: level,
         group: group,
-        courseType: courseType, // Add the new field
-        startDate: '', // Will be updated with the first session date
-        endDate: '', // Will be updated with the last session date
+        courseType: courseType,
+        startDate: '',
+        endDate: '',
         sessionIds: [],
-        studentIds: [], // We'll update this after creating/getting students
-        teacherIds: [], // <-- Use only teacherIds array
-        status: 'ongoing' // Default status is ongoing
+        studentIds: [],
+        teacherIds: [],
+        status: 'ongoing',
+        color: courseColor
     });
 
     console.log(`Created course record: ${courseRecord.id}`);
