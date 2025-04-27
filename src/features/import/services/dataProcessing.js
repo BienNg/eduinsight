@@ -211,8 +211,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         sessionIds: [],
         studentIds: [],
         teacherIds: [],
-        status: 'ongoing',
-        color: courseColor
+        status: 'ongoing'
     });
 
     const updatedGroupCourseIds = [...(groupRecord.courseIds || []), courseRecord.id];
