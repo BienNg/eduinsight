@@ -36,8 +36,6 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
-    min-height: 600px;
-    max-height: 800px;
 }
 
 .overview-panel:nth-child(1) {
@@ -392,3 +390,4 @@
         grid-template-columns: 1fr;
     }
 }
+

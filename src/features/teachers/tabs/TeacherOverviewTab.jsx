@@ -16,6 +16,8 @@ const TeacherOverview = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [coursesData, setCoursesData] = useState([]);
+  const [activeCoursesIds, setActiveCoursesIds] = useState(new Set());
 
   useEffect(() => {
     fetchOverviewData();
@@ -73,7 +75,10 @@ const TeacherOverview = () => {
         })
         .sort((a, b) => b.sessionCount - a.sessionCount);
 
+      setCoursesData(coursesData);
+      setActiveCoursesIds(activeCoursesIds);
       setTeachers(teachersWithSessionCounts);
+      
       setStats({
         activeTeachers: activeTeacherIds.size,
         activeGroups: activeGroupIds.size,
@@ -158,45 +163,40 @@ const TeacherOverview = () => {
 
             <div className="overview-panel">
               <div className="panel-header">
-                <h2 className="panel-title">Country Distribution</h2>
+                <h2 className="panel-title">Groups Per Teacher</h2>
               </div>
               <div className="panel-content">
                 {teachers.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={
-                          Object.entries(
-                            teachers.reduce((acc, teacher) => {
-                              acc[teacher.country] = (acc[teacher.country] || 0) + 1;
-                              return acc;
-                            }, {})
-                          ).map(([country, count]) => ({
-                            name: country || 'Unknown',
-                            value: count
-                          }))
-                        }
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {teachers.length > 0 &&
-                          Object.keys(
-                            teachers.reduce((acc, teacher) => {
-                              acc[teacher.country] = true;
-                              return acc;
-                            }, {})
-                          ).map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))
-                        }
-                      </Pie>
+                    <BarChart
+                      data={teachers.slice(0, 5).map(teacher => {
+                        // Calculate unique groups this teacher teaches
+                        const teacherGroups = new Set(
+                          coursesData
+                            .filter(course =>
+                              course.teacherIds &&
+                              course.teacherIds.includes(teacher.id) &&
+                              activeCoursesIds.has(course.id)
+                            )
+                            .map(course => course.groupId)
+                        );
+
+                        return {
+                          name: teacher.name,
+                          groups: teacherGroups.size
+                        };
+                      })}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <XAxis dataKey="name" />
+                      <YAxis />
                       <Tooltip />
-                    </PieChart>
+                      <Bar dataKey="groups" fill="#00C49F">
+                        {teachers.slice(0, 5).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="empty-message">No teacher data available</div>
