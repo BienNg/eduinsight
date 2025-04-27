@@ -1,11 +1,11 @@
 // src/features/dashboard/MonatContent.jsx
-import './MonatContent.css';
+import '../styles/MonatContent.css';
 import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
 import OverviewTab from './tabs/OverviewTab';
 import AllMonthsTab from './tabs/AllMonthsTab';
-import useMonthData from './hooks/useMonthData';
+import useMonthData from '../dashboard/hooks/useMonthData';
 
 import TabComponent from '../common/TabComponent';
 

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import '../styles/Dashboard.css';
 import DashboardContent from './DashboardContent';
-import MonatContent from './MonatContent';
+import MonatContent from '../months/MonatContent';
 import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
 import LehrerContent from './LehrerContent'; // Add this import

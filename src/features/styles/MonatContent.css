@@ -1,0 +1,50 @@
+/* src/features/dashboard/MonatContent.css */
+/* Keep only the specific styles related to MonatContent layout, not cards */
+
+.month-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.month-title-section {
+  flex: 1;
+}
+
+.month-tabs-section {
+  flex-shrink: 0;
+  padding-top: 20px;
+}
+
+.month-content-area {
+  width: 100%;
+}
+
+.overview-heading {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #1a1a1a;
+}
+
+.overview-description {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 0rem;
+}
+
+/* Modify the tab component to be more compact for header placement */
+.month-tabs-section .tab-component {
+  width: auto;
+}
+
+.month-tabs-section .app-tab-panel {
+  display: none; /* Hide the panel within the header section */
+}
+
+/* Make sure your OverviewTab no longer includes the title */
+.overview-tab-content .overview-description,
+.overview-tab-content .overview-heading {
+  display: none; /* Hide duplicate titles in the tab content */
+}

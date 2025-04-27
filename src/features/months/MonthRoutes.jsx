@@ -1,7 +1,8 @@
 // src/features/months/MonthRoutes.jsx
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import MonatContent from '../dashboard/MonatContent';
+import MonatContent from '../months/MonatContent';
+
 
 const MonthRoutes = () => {
   return (

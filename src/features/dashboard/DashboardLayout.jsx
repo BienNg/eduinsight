@@ -6,7 +6,7 @@ import '../styles/Dashboard.css';
 // Content components
 import DashboardContent from './DashboardContent';
 import ImportContent from './ImportContent';
-import MonatContent from './MonatContent';
+import MonatContent from '../months/MonatContent';
 import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
 import LehrerContent from './LehrerContent';

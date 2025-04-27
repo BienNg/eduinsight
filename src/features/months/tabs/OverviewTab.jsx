@@ -1,5 +1,6 @@
 // src/features/dashboard/tabs/OverviewTab.jsx
 
+import '../../styles/cards/Cards.css';
 import '../../styles/Content.css';
 
 import React from 'react';
