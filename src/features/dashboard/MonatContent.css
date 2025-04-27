@@ -53,13 +53,6 @@
     opacity: 0;
 }
 
-/* Stagger the list item animations */
-.compact-session-item:nth-child(n),
-.compact-course-item:nth-child(n),
-.compact-teacher-item:nth-child(n) {
-    animation-delay: calc(0.05s * var(--item-index, 0));
-}
-
 .overview-heading {
     font-size: 2rem;
     font-weight: 700;

@@ -25,11 +25,7 @@
   .month-tab:hover {
     color: var(--primary-blue);
   }
-  
-  .month-tab[aria-selected="true"] {
-    color: var(--primary-blue);
-    border-bottom: 2px solid var(--primary-blue);
-  }
+
   
   .month-tab-panel {
     padding: 8px 0;
@@ -54,32 +50,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-  }
-  
-  .search-container {
-    position: relative;
-  }
-  
-  .month-search-input {
-    padding: 10px 16px;
-    font-size: 0.95rem;
-    border: none;
-    border-bottom: 1px solid #eaeaea;
-    width: 240px;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-  }
-  
-  .month-search-input:focus {
-    outline: none;
-    background-color: white;
-    border-bottom: 1px solid var(--primary-blue);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  
-  .month-search-input::placeholder {
-    color: #aaa;
   }
   
   /* Add responsive design */
