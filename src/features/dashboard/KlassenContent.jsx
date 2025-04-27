@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { getAllRecords } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
+import SearchBar from '../common/SearchBar';
 import '../styles/Content.css';
-import '../styles/KlassenContent.css'; // We'll create this file for specific styles
+import '../styles/KlassenContent.css';
 import { useNavigate } from 'react-router-dom';
 
 const KlassenContent = () => {
@@ -13,6 +14,7 @@ const KlassenContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -21,7 +23,7 @@ const KlassenContent = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch all data
       const groupsData = await getAllRecords('groups');
       const coursesData = await getAllRecords('courses');
@@ -39,12 +41,12 @@ const KlassenContent = () => {
         // Find group for this course
         let groupName = course.group || 'Ungrouped';
         let groupColor = '#0088FE'; // Default color
-        
+
         // Find group by ID or name
-        const group = groupsData.find(g => 
+        const group = groupsData.find(g =>
           g.id === course.groupId || g.name === groupName
         );
-        
+
         if (group) {
           groupName = group.name;
           groupColor = group.color || '#0088FE';
@@ -81,6 +83,7 @@ const KlassenContent = () => {
           studentCount,
           sessionCount,
           teacherSessions,
+          teacherNames: teacherSessions.map(ts => ts.name)
         };
       });
 
@@ -133,7 +136,7 @@ const KlassenContent = () => {
       groupedCourses[groupName].totalStudents += course.studentCount || 0;
       groupedCourses[groupName].totalSessions += course.sessionCount || 0;
       groupedCourses[groupName].levels.add(course.level);
-      
+
       // Add teachers from this course
       if (course.teacherSessions) {
         course.teacherSessions.forEach(ts => {
@@ -153,70 +156,114 @@ const KlassenContent = () => {
   // Calculate progress for a group based on course levels
   const calculateGroupProgress = (groupCourses) => {
     if (!groupCourses || groupCourses.length === 0) return 0;
-    
+
     // Define the course structure with expected levels
     const courseLevels = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
-    
+
     // Find the highest level course in this group
     let highestLevelIndex = -1;
-    
+
     groupCourses.forEach(course => {
       const levelIndex = courseLevels.indexOf(course.level);
       if (levelIndex > highestLevelIndex) {
         highestLevelIndex = levelIndex;
       }
     });
-    
+
     // Calculate progress percentage
     if (highestLevelIndex === -1) return 0;
-    
+
     return ((highestLevelIndex + 1) / courseLevels.length) * 100;
   };
-  
+
   // Get initials from group name for the avatar
   const getInitials = (name) => {
     if (!name) return '?';
-    
+
     const words = name.split(' ');
     if (words.length === 1) {
       return name.substring(0, 2).toUpperCase();
     }
-    
+
     return (words[0][0] + words[1][0]).toUpperCase();
   };
 
+  // Filter groups based on search query
+  const filterGroups = (groups) => {
+    if (!searchQuery) return groups;
+
+    const filteredGroups = {};
+    const lowerQuery = searchQuery.toLowerCase();
+
+    Object.entries(groups).forEach(([key, group]) => {
+      // Check if group name matches
+      const groupNameMatches = group.name.toLowerCase().includes(lowerQuery);
+
+      // Check if any teacher name matches
+      const teacherMatches = Array.from(group.teachers).some(
+        teacherName => teacherName.toLowerCase().includes(lowerQuery)
+      );
+
+      if (groupNameMatches || teacherMatches) {
+        filteredGroups[key] = group;
+      }
+    });
+
+    return filteredGroups;
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   const courseGroups = groupCourses();
-  
+  const filteredCourseGroups = filterGroups(courseGroups);
+
   return (
     <div className="klassen-content">
+      {/* Fixed Search Bar */}
+      <div className="klassen-header">
+        <h2>Kursgruppen</h2>
+        <SearchBar
+          placeholder="Suche nach Gruppe oder Lehrer..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+      </div>
+
       {loading && <div className="loading-indicator">Daten werden geladen...</div>}
 
       {error && <div className="error-message">{error}</div>}
 
-      {!loading && !error && Object.keys(courseGroups).length === 0 && (
+      {!loading && !error && Object.keys(filteredCourseGroups).length === 0 && (
         <div className="empty-state">
-          <p>Keine Klassen gefunden. Importieren Sie Klassendaten über den Excel Import.</p>
+          {searchQuery ? (
+            <p>Keine Ergebnisse für "{searchQuery}" gefunden.</p>
+          ) : (
+            <p>Keine Klassen gefunden. Importieren Sie Klassendaten über den Excel Import.</p>
+          )}
         </div>
       )}
 
-      {!loading && !error && Object.keys(courseGroups).length > 0 && (
+      {!loading && !error && Object.keys(filteredCourseGroups).length > 0 && (
         <div className="groups-dashboard">
-          {Object.values(courseGroups).map((group) => {
+          {Object.values(filteredCourseGroups).map((group) => {
             const groupInitials = getInitials(group.name);
             const lighterColor = adjustColor(group.color, 40); // Create lighter version for progress bar
-            
+
             return (
               <div className="group-dashboard-card" key={group.name}>
                 <div className="group-avatar-container">
-                  <div 
-                    className="group-avatar" 
+                  <div
+                    className="group-avatar"
                     style={{ backgroundColor: group.color }}
                     onClick={() => handleViewGroupDetails(group.name)}
                   >
                     {groupInitials}
                   </div>
                 </div>
-                
+
                 <div className="group-details-card">
                   <div className="group-details-header">
                     <h3>{group.name}</h3>
@@ -226,7 +273,7 @@ const KlassenContent = () => {
                       <span>{group.totalSessions} Lektionen</span>
                     </div>
                   </div>
-                  
+
                   <div className="group-levels-container">
                     {sortLanguageLevels(Array.from(group.levels)).map(level => (
                       <div
@@ -238,7 +285,7 @@ const KlassenContent = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="group-teachers-container">
                     <h4>Lehrkräfte</h4>
                     <div className="teacher-badges-container">
@@ -253,15 +300,15 @@ const KlassenContent = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="group-progress-section">
                     <div className="progress-header">
                       <h4>Lernfortschritt</h4>
                       <span>{Math.round(group.progress)}%</span>
                     </div>
                     <div className="progress-bar-container">
-                      <div 
-                        className="progress-bar" 
+                      <div
+                        className="progress-bar"
                         style={{
                           width: `${group.progress}%`,
                           backgroundColor: lighterColor,
@@ -270,7 +317,7 @@ const KlassenContent = () => {
                       ></div>
                     </div>
                   </div>
-                  
+
                   <div className="group-actions">
                     <button
                       className="btn-details"
@@ -292,21 +339,21 @@ const KlassenContent = () => {
 // Helper function to create a lighter version of a color
 function adjustColor(color, percent) {
   if (!color || typeof color !== 'string') return '#0088FE';
-  
+
   // If it's not a hex color, return as is
   if (!color.startsWith('#')) return color;
-  
-  let R = parseInt(color.substring(1,3), 16);
-  let G = parseInt(color.substring(3,5), 16);
-  let B = parseInt(color.substring(5,7), 16);
+
+  let R = parseInt(color.substring(1, 3), 16);
+  let G = parseInt(color.substring(3, 5), 16);
+  let B = parseInt(color.substring(5, 7), 16);
 
   R = Math.floor(R + (255 - R) * (percent / 100));
   G = Math.floor(G + (255 - G) * (percent / 100));
   B = Math.floor(B + (255 - B) * (percent / 100));
 
-  R = (R < 255) ? R : 255;  
-  G = (G < 255) ? G : 255;  
-  B = (B < 255) ? B : 255;  
+  R = (R < 255) ? R : 255;
+  G = (G < 255) ? G : 255;
+  B = (B < 255) ? B : 255;
 
   const RR = ((R.toString(16).length === 1) ? "0" + R.toString(16) : R.toString(16));
   const GG = ((G.toString(16).length === 1) ? "0" + G.toString(16) : G.toString(16));

@@ -196,3 +196,22 @@
       gap: 8px;
     }
   }
+
+  .klassen-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 12px;
+  }
+  
+  .klassen-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+  }
+  
+  /* Search bar will use the styles from SearchBar.css, but we can add specific adjustments here */
+  .klassen-header .search-bar-pillar {
+    width: 280px;
+  }
