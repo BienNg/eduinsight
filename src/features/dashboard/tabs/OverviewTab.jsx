@@ -95,8 +95,6 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
 
     return (
         <div className="overview-tab-content">
-            <p className="overview-description">Alle wichtigen Daten auf einem Blick</p>
-            <h1 className="overview-heading">Übersicht über diesen Monat</h1>
             <div className="three-column-overview-grid">
                 <div className="overview-panel">
                     <div className="panel-header">

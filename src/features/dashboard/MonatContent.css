@@ -425,6 +425,7 @@
     grid-template-columns: 1fr 1.5fr 1fr; /* Middle column larger */
     gap: 12px; /* Reduced gap to bring cards closer */
     margin: 0 -38px; /* Negative margin to extend toward edges */
+    padding: 10px 30px;
   }
   
   /* Make it responsive */
@@ -521,3 +522,40 @@
       height: 250px;
     }
   }
+
+  /* Add to src/features/dashboard/MonatContent.css */
+
+.month-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.month-title-section {
+  flex: 1;
+}
+
+.month-tabs-section {
+  flex-shrink: 0;
+  padding-top: 20px;
+}
+
+.month-content-area {
+  width: 100%;
+}
+
+/* Modify the tab component to be more compact for header placement */
+.month-tabs-section .tab-component {
+  width: auto;
+}
+
+.month-tabs-section .app-tab-panel {
+  display: none; /* Hide the panel within the header section */
+}
+
+/* Make sure your OverviewTab no longer includes the title */
+.overview-tab-content .overview-description,
+.overview-tab-content .overview-heading {
+  display: none; /* Hide duplicate titles in the tab content */
+}
