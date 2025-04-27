@@ -3,7 +3,7 @@ import '../styles/MonatContent.css';
 import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
-import OverviewTab from './tabs/OverviewTab';
+import OverviewTab from './tabs/MonthOverviewTab';
 import AllMonthsTab from './tabs/AllMonthsTab';
 import useMonthData from '../dashboard/hooks/useMonthData';
 

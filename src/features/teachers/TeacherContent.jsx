@@ -3,8 +3,8 @@ import { useState } from 'react';
 import '../styles/Content.css';
 import { useNavigate } from 'react-router-dom';
 import TabComponent from '../common/TabComponent';
-import TeacherOverview from './tabs/TeacherOverview';
-import TeacherList from './tabs/TeacherList';
+import TeacherOverview from './tabs/TeacherOverviewTab';
+import TeacherList from './tabs/TeacherListTab';
 
 const LehrerContent = () => {
   const navigate = useNavigate();
