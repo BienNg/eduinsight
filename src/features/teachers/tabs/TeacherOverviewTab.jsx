@@ -1,7 +1,18 @@
-// src/features/teachers/tabs/TeacherOverview.jsx
+// src/features/teachers/tabs/TeacherOverviewTab.jsx - Import section update
 import { useState, useEffect } from 'react';
 import { getAllRecords } from '../../firebase/database';
-import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  Cell
+} from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserTie, faLayerGroup, faCalendarDay, faUserGraduate, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
 
@@ -18,6 +29,7 @@ const TeacherOverview = () => {
   const [error, setError] = useState(null);
   const [coursesData, setCoursesData] = useState([]);
   const [activeCoursesIds, setActiveCoursesIds] = useState(new Set());
+  const [monthlySessions, setMonthlySessions] = useState([]);
 
   useEffect(() => {
     fetchOverviewData();
@@ -39,6 +51,10 @@ const TeacherOverview = () => {
         getAllRecords('courses'),
         getAllRecords('students')
       ]);
+
+      // Get the last 12 months data for line chart
+      const last12Months = getLastTwelveMonths();
+      const monthlySessionCounts = calculateMonthlySessionCounts(sessionsData, last12Months);
 
       // Filter sessions from last month
       const lastMonthSessions = sessionsData.filter(session =>
@@ -78,7 +94,8 @@ const TeacherOverview = () => {
       setCoursesData(coursesData);
       setActiveCoursesIds(activeCoursesIds);
       setTeachers(teachersWithSessionCounts);
-      
+      setMonthlySessions(monthlySessionCounts);
+
       setStats({
         activeTeachers: activeTeacherIds.size,
         activeGroups: activeGroupIds.size,
@@ -93,6 +110,36 @@ const TeacherOverview = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getLastTwelveMonths = () => {
+    const months = [];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+
+    for (let i = 11; i >= 0; i--) {
+      const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+      // Just use the month name without the year
+      const label = monthNames[month.getMonth()];
+      months.push({ monthKey, label });
+    }
+
+    return months;
+  };
+
+  // Helper function to calculate session counts per month
+  const calculateMonthlySessionCounts = (sessionsData, months) => {
+    return months.map(({ monthKey, label }) => {
+      const count = sessionsData.filter(session =>
+        session.monthId && session.monthId.startsWith(monthKey)
+      ).length;
+
+      return {
+        month: label,
+        sessions: count
+      };
+    });
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -138,25 +185,46 @@ const TeacherOverview = () => {
 
           {/* Second Row: Two cards (2/3 and 1/3 split) */}
           <div className="three-column-overview-grid animate-card">
-            <div className="overview-panel" style={{ gridColumn: "span 2" }}>
+            <div className="overview-panel" style={{ gridColumn: "span 2", overflow: "hidden" }}>
               <div className="panel-header">
-                <h2 className="panel-title">Teacher Performance</h2>
+                <h2 className="panel-title">Monthly Sessions</h2>
               </div>
-              <div className="panel-content">
+              <div className="panel-content" style={{ overflow: "hidden" }}>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={teachers.slice(0, 7)} // Top 7 teachers
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  <LineChart
+                    data={monthlySessions}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
                   >
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="sessionCount" fill="#8884d8">
-                      {teachers.slice(0, 7).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 12 }}
+                      tickMargin={10}
+                      axisLine={{ stroke: '#E0E0E0' }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`${value} sessions`, 'Sessions']}
+                      labelStyle={{ fontSize: 14 }}
+                      contentStyle={{
+                        borderRadius: '4px',
+                        padding: '8px',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="sessions"
+                      stroke="#0088FE"
+                      strokeWidth={2}
+                      dot={{ r: 4, strokeWidth: 2 }}
+                      activeDot={{ r: 6, strokeWidth: 0, fill: '#0088FE' }}
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -186,16 +254,26 @@ const TeacherOverview = () => {
                           groups: teacherGroups.size
                         };
                       })}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                      barSize={12} // Thin bars
+                      barGap={2} // Reduced gap between bars (default is 4)
                     >
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="groups" fill="#00C49F">
-                        {teachers.slice(0, 5).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10 }} // Smaller font for names
+                      />
+                      <Tooltip cursor={{ fill: 'transparent' }} />
+                      <Bar
+                        dataKey="groups"
+                        fill="#0088FE"
+                        radius={[6, 6, 6, 6]}
+                        activeBar={{ fill: "#0088FE" }}
+                        animationBegin={300}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
