@@ -1,4 +1,4 @@
-// src/components/Dashboard/tabs/OverviewTab.jsx
+// src/features/dashboard/tabs/OverviewTab.jsx
 
 import '../../styles/Content.css';
 
@@ -7,11 +7,17 @@ import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { calculateTotalHours } from '../../utils/timeUtils';
 
-const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers }) => {
+const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers, groups }) => {
     const navigate = useNavigate();
 
     const handleCourseClick = (course) => {
         navigate(`/courses/${course.id}`);
+    };
+
+    // Helper function to get group name by groupId
+    const getGroupName = (groupId) => {
+        const group = groups.find(g => g.id === groupId);
+        return group ? group.name : 'Ungrouped';
     };
 
     const prepareLevelData = (courses) => {
@@ -76,6 +82,16 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
         currentMonthSessions.some(session => session.teacherId === teacher.id)
     );
     const chartData = prepareChartData();
+
+    // Group courses by groupId and create mapping
+    const courseGroups = {};
+    currentMonthCourses.forEach(course => {
+        const groupName = getGroupName(course.groupId);
+        if (!courseGroups[groupName]) {
+            courseGroups[groupName] = [];
+        }
+        courseGroups[groupName].push(course);
+    });
 
     return (
         <div className="overview-tab-content">
@@ -199,24 +215,11 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                             {currentMonthCourses.length > 0 ? (
                                 <div className="group-progress-list">
                                     {(() => {
-                                        // Group courses by group name
-                                        const groups = {};
-                                        currentMonthCourses.forEach(course => {
-                                            const groupName = course.group || 'Ungrouped';
-                                            if (!groups[groupName]) {
-                                                groups[groupName] = [];
-                                            }
-                                            groups[groupName].push(course);
-                                        });
-
                                         // Order of courses for progression
                                         const courseOrder = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
 
                                         // Return group progress components
-                                        // Find the section where you return the group progress components
-                                        // Replace or modify the Object.entries(groups).map() section with this:
-
-                                        return Object.entries(groups)
+                                        return Object.entries(courseGroups)
                                             .map(([groupName, groupCourses]) => {
                                                 // Sort courses by level following the specified order
                                                 groupCourses.sort((a, b) => {
@@ -343,7 +346,6 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                             ) : (
                                 <div className="empty-message">Keine Kurse in diesem Monat.</div>
                             )}
-
                         </div>
                     </div>
                 </div>

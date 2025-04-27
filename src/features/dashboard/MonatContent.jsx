@@ -18,6 +18,7 @@ const MonatContent = () => {
     courses,
     sessions,
     students,
+    groups,
     loading,
     error,
     expandedMonth,
@@ -94,6 +95,7 @@ const MonatContent = () => {
             sessions={sessions}
             courses={courses}
             teachers={teachers}
+            groups={groups} // Add this line
           />
         )}
         {activeTab === 'all' && (

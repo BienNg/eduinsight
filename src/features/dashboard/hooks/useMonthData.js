@@ -15,6 +15,7 @@ const useMonthData = () => {
   const [expandedMonth, setExpandedMonth] = useState(null);
   const [monthDetails, setMonthDetails] = useState({});
   const [currentMonthId, setCurrentMonthId] = useState(null);
+  const [groups, setGroups] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,12 +26,14 @@ const useMonthData = () => {
         const coursesData = await getAllRecords('courses');
         const sessionsData = await getAllRecords('sessions');
         const studentsData = await getAllRecords('students');
+        const groupsData = await getAllRecords('groups');
         
         setMonths(monthsData);
         setTeachers(teachersData);
         setCourses(coursesData);
         setSessions(sessionsData);
         setStudents(studentsData);
+        setGroups(groupsData);
         
         const details = {};
         monthsData.forEach((month) => {
@@ -137,6 +140,7 @@ const useMonthData = () => {
     courses,
     sessions,
     students,
+    groups,
     loading,
     error,
     expandedMonth,
