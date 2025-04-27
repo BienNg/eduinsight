@@ -1,0 +1,32 @@
+/* src/styles/GroupBadge.css */
+.group-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+  }
+  
+  .group-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .group-badge:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+  
+  /* For keyboard navigation accessibility */
+  .group-badge:focus {
+    outline: 2px solid #0088FE;
+    outline-offset: 2px;
+  }

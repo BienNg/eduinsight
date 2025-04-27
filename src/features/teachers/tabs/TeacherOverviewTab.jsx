@@ -1,4 +1,6 @@
 // src/features/teachers/tabs/TeacherOverviewTab.jsx - Import section update
+import GroupBadge from '../../common/GroupBadge';
+
 import { useState, useEffect } from 'react';
 import { getAllRecords } from '../../firebase/database';
 import {
@@ -291,19 +293,65 @@ const TeacherOverview = () => {
             <div className="panel-content">
               {teachers.length > 0 ? (
                 <div className="compact-teacher-list">
-                  {teachers.map((teacher, index) => (
-                    <div
-                      className="compact-teacher-item"
-                      key={teacher.id}
-                      style={{ animationDelay: `${0.1 * index}s` }}
-                    >
-                      <div className="teacher-name">{teacher.name}</div>
-                      <div className="teacher-meta">
-                        <span>{teacher.country || 'Unknown'}</span>
-                        <span>{teacher.sessionCount} sessions</span>
+                  {teachers.map((teacher, index) => {
+                    // Get courses this teacher teaches that are active
+                    const teacherActiveCourses = coursesData.filter(course =>
+                      course.teacherIds &&
+                      course.teacherIds.includes(teacher.id) &&
+                      activeCoursesIds.has(course.id)
+                    );
+
+                    // Get unique group IDs
+                    const teacherGroupIds = new Set(
+                      teacherActiveCourses.map(course => course.groupId)
+                    );
+
+                    // Get group objects
+                    const teacherGroups = Array.from(teacherGroupIds)
+                      .map(groupId => {
+                        // Find a representative course for this group
+                        const representativeCourse = teacherActiveCourses.find(
+                          course => course.groupId === groupId
+                        );
+
+                        // If we found a course, return an object with group info
+                        if (representativeCourse) {
+                          return {
+                            id: groupId,
+                            name: representativeCourse.group || 'Unknown Group',
+                            color: representativeCourse.color || '#e0e0e0',
+                            courseId: representativeCourse.id // Include a courseId for navigation
+                          };
+                        }
+                        return null;
+                      })
+                      .filter(Boolean); // Remove any null entries
+
+                    return (
+                      <div
+                        className="compact-teacher-item"
+                        key={teacher.id}
+                        style={{ animationDelay: `${0.1 * index}s` }}
+                      >
+                        <div className="teacher-profile">
+                          <FontAwesomeIcon icon={faUserTie} className="teacher-icon" />
+                          <div className="teacher-info">
+                            <div className="teacher-name"><strong>{teacher.name}</strong></div>
+                            <div className="teacher-subtitle">{teacherGroups.length} groups last month</div>
+                          </div>
+                        </div>
+                        <div className="teacher-meta">
+                          <span>{teacher.country || 'Unknown'}</span>
+                          <span>{teacher.sessionCount} sessions</span>
+                        </div>
+                        <div className="teacher-group-badges">
+                          {teacherGroups.map(group => (
+                            <GroupBadge key={group.id} group={group} />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="empty-message">No active teachers last month</div>
