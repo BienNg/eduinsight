@@ -3,14 +3,15 @@ import { useState, useEffect } from 'react';
 import { getAllRecords } from '../../firebase/database';
 import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserTie, faLayerGroup, faCalendarDay, faUserGraduate } from '@fortawesome/free-solid-svg-icons';
+import { faUserTie, faLayerGroup, faCalendarDay, faUserGraduate, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
 
 const TeacherOverview = () => {
   const [stats, setStats] = useState({
     activeTeachers: 0,
     activeGroups: 0,
     totalSessions: 0,
-    enrolledStudents: 0
+    enrolledStudents: 0,
+    avgSessionsPerTeacher: 0
   });
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,12 +24,12 @@ const TeacherOverview = () => {
   const fetchOverviewData = async () => {
     try {
       setLoading(true);
-      
+
       // Get current date for calculating "last month"
       const now = new Date();
       const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
-      
+
       // Fetch all necessary data
       const [teachersData, sessionsData, coursesData, studentsData] = await Promise.all([
         getAllRecords('teachers'),
@@ -36,20 +37,20 @@ const TeacherOverview = () => {
         getAllRecords('courses'),
         getAllRecords('students')
       ]);
-      
+
       // Filter sessions from last month
-      const lastMonthSessions = sessionsData.filter(session => 
+      const lastMonthSessions = sessionsData.filter(session =>
         session.monthId && session.monthId.startsWith(lastMonthStr)
       );
-      
+
       // Calculate active teachers (teachers who had sessions last month)
       const activeTeacherIds = new Set(lastMonthSessions.map(session => session.teacherId));
-      
+
       // Calculate active groups (courses that had sessions last month)
       const activeCoursesIds = new Set(lastMonthSessions.map(session => session.courseId));
       const activeCourses = coursesData.filter(course => activeCoursesIds.has(course.id));
       const activeGroupIds = new Set(activeCourses.map(course => course.groupId));
-      
+
       // Calculate enrolled students
       const enrolledStudentIds = new Set();
       activeCourses.forEach(course => {
@@ -57,7 +58,7 @@ const TeacherOverview = () => {
           course.studentIds.forEach(id => enrolledStudentIds.add(id));
         }
       });
-      
+
       // Get active teachers with their session counts
       const teachersWithSessionCounts = teachersData
         .filter(teacher => activeTeacherIds.has(teacher.id))
@@ -71,13 +72,15 @@ const TeacherOverview = () => {
           };
         })
         .sort((a, b) => b.sessionCount - a.sessionCount);
-      
+
       setTeachers(teachersWithSessionCounts);
       setStats({
         activeTeachers: activeTeacherIds.size,
         activeGroups: activeGroupIds.size,
         totalSessions: lastMonthSessions.length,
-        enrolledStudents: enrolledStudentIds.size
+        enrolledStudents: enrolledStudentIds.size,
+        avgSessionsPerTeacher: activeTeacherIds.size ?
+          Math.round((lastMonthSessions.length / activeTeacherIds.size) * 10) / 10 : 0
       });
     } catch (err) {
       console.error("Error fetching overview data:", err);
@@ -92,9 +95,9 @@ const TeacherOverview = () => {
   return (
     <div className="teacher-overview-content">
       {loading && <div className="loading-indicator">Loading overview data...</div>}
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       {!loading && !error && (
         <>
           {/* First Row: Stat Cards */}
@@ -104,26 +107,30 @@ const TeacherOverview = () => {
               <div className="stat-value">{stats.activeTeachers}</div>
               <div className="stat-label">Active Teachers</div>
             </div>
-            
+
             <div className="stat-card compact">
               <FontAwesomeIcon icon={faLayerGroup} size="lg" color="#00C49F" />
               <div className="stat-value">{stats.activeGroups}</div>
               <div className="stat-label">Active Groups</div>
             </div>
-            
+
             <div className="stat-card compact">
               <FontAwesomeIcon icon={faCalendarDay} size="lg" color="#FFBB28" />
               <div className="stat-value">{stats.totalSessions}</div>
               <div className="stat-label">Total Sessions</div>
             </div>
-            
+            <div className="stat-card compact">
+              <FontAwesomeIcon icon={faChalkboardTeacher} size="lg" color="#8884d8" />
+              <div className="stat-value">{stats.avgSessionsPerTeacher}</div>
+              <div className="stat-label">Avg Sessions/Teacher</div>
+            </div>
             <div className="stat-card compact">
               <FontAwesomeIcon icon={faUserGraduate} size="lg" color="#FF8042" />
               <div className="stat-value">{stats.enrolledStudents}</div>
               <div className="stat-label">Enrolled Students</div>
             </div>
           </div>
-          
+
           {/* Second Row: Two cards (2/3 and 1/3 split) */}
           <div className="three-column-overview-grid animate-card">
             <div className="overview-panel" style={{ gridColumn: "span 2" }}>
@@ -148,7 +155,7 @@ const TeacherOverview = () => {
                 </ResponsiveContainer>
               </div>
             </div>
-            
+
             <div className="overview-panel">
               <div className="panel-header">
                 <h2 className="panel-title">Country Distribution</h2>
@@ -197,7 +204,7 @@ const TeacherOverview = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Third Row: Teacher List */}
           <div className="overview-panel animate-card">
             <div className="panel-header">
@@ -207,8 +214,8 @@ const TeacherOverview = () => {
               {teachers.length > 0 ? (
                 <div className="compact-teacher-list">
                   {teachers.map((teacher, index) => (
-                    <div 
-                      className="compact-teacher-item" 
+                    <div
+                      className="compact-teacher-item"
                       key={teacher.id}
                       style={{ animationDelay: `${0.1 * index}s` }}
                     >
