@@ -14,6 +14,16 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
         navigate(`/courses/${course.id}`);
     };
 
+    const getMonthName = (monthId) => {
+        const [year, month] = monthId.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const monthNames = [
+            'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+        ];
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    };
+
     // Helper function to get group name by groupId
     const getGroupName = (groupId) => {
         const group = groups.find(g => g.id === groupId);
