@@ -9,7 +9,7 @@ import ImportContent from './ImportContent';
 import MonatContent from '../months/MonatContent';
 import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
-import LehrerContent from './LehrerContent';
+import LehrerContent from '../teachers/TeacherContent';
 
 // Route components for detail views
 import TeacherDetail from '../teachers/TeacherDetail';

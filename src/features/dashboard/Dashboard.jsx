@@ -6,7 +6,7 @@ import DashboardContent from './DashboardContent';
 import MonatContent from '../months/MonatContent';
 import KlassenContent from './KlassenContent';
 import SchulerContent from './SchulerContent';
-import LehrerContent from './LehrerContent'; // Add this import
+import LehrerContent from '../teachers/TeacherContent'; // Add this import
 import ImportContent from './ImportContent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
