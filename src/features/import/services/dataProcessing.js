@@ -6,12 +6,12 @@ import {
     isGreenColor, isRedColor, parseDate
 } from './excelUtils';
 import {
-    createTeacherRecord, createOrUpdateStudentRecord, getOrCreateMonthRecord, findExistingCourse
+    createTeacherRecord, createOrUpdateStudentRecord, getOrCreateMonthRecord, findExistingCourse,
+    getOrCreateGroupRecord
 } from './firebaseService';
 import { createRecord, updateRecord, getRecordById } from '../../firebase/database';
 import { ref, get, update } from "firebase/database";
 import { database } from "../../firebase/config";
-
 import { validateExcelFile as validateExcelFileFunction } from './excelUtils';
 
 const COURSE_COLORS = [
@@ -120,9 +120,8 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const levelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
     const level = levelMatch ? levelMatch[0] : 'unknown';
     const groupMatch = filename.match(/G(\d+)/i);
-    const group = groupMatch ? `G${groupMatch[1]}` : '';
-    const courseName = `${group} ${level}`;
-
+    const groupName = groupMatch ? `G${groupMatch[1]}` : '';
+    const courseName = `${groupName} ${level}`;
     // Extract online/offline status
     const onlineMatch = filename.match(/_online/i);
     const offlineMatch = filename.match(/_offline/i);
@@ -182,9 +181,11 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
             });
         }
     }
+    // Create or get the group record
+    const groupRecord = await getOrCreateGroupRecord(groupName);
 
     // Create the course record first
-    const existingCourse = await findExistingCourse(group, level);
+    const existingCourse = await findExistingCourse(groupName, level);
 
     if (existingCourse) {
         const latestSessionInfo = existingCourse.latestSessionDate
@@ -203,7 +204,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const courseRecord = await createRecord('courses', {
         name: courseName,
         level: level,
-        group: group,
+        groupId: groupRecord.id,
         courseType: courseType,
         startDate: '',
         endDate: '',
@@ -214,12 +215,15 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         color: courseColor
     });
 
-    console.log(`Created course record: ${courseRecord.id}`);
+    const updatedGroupCourseIds = [...(groupRecord.courseIds || []), courseRecord.id];
+    await updateRecord('groups', groupRecord.id, {
+        courseIds: updatedGroupCourseIds
+    });
 
     // Now create/update student records with the course ID available
     for (const studentInfo of studentNames) {
-        // Create student record in Firebase now that we have courseRecord.id
-        const studentRecord = await createOrUpdateStudentRecord(studentInfo.name, '', courseRecord.id);
+        // Create student record in Firebase now that we have courseRecord.id and groupId
+        const studentRecord = await createOrUpdateStudentRecord(studentInfo.name, '', courseRecord.id, groupRecord.id);
         students.push({
             id: studentRecord.id,
             name: studentRecord.name,
