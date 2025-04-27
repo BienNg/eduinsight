@@ -109,35 +109,27 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
             <div className="three-column-overview-grid">
                 <div className="overview-panel">
                     <div className="panel-header">
-                        <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
+                        <h3 className="panel-title">Lehrer ({currentMonthTeachers.length})</h3>
                     </div>
                     <div className="panel-content">
-                        {currentMonthSessions.length > 0 ? (
-                            <div className="compact-session-list">
-                                {currentMonthSessions.slice(0, 10).map(session => {
-                                    const course = courses.find(c => c.id === session.courseId) || {};
-                                    const teacher = teachers.find(t => t.id === session.teacherId) || {};
+                        {currentMonthTeachers.length > 0 ? (
+                            <div className="compact-teacher-list">
+                                {currentMonthTeachers.map(teacher => {
+                                    const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
+                                    const teacherHours = calculateTotalHours(teacherSessions);
                                     return (
-                                        <div className="compact-session-item" key={session.id}>
-                                            <div className="session-main-info">
-                                                <div className="session-date">{session.date}</div>
-                                                <div className="session-title">{session.title}</div>
-                                            </div>
-                                            <div className="session-meta">
-                                                <span className="meta-course">{course.name || 'Unbekannter Kurs'}</span>
-                                                <span className="meta-teacher">{teacher.name || 'Unbekannter Lehrer'}</span>
+                                        <div className="compact-teacher-item" key={teacher.id}>
+                                            <div className="teacher-name">{teacher.name}</div>
+                                            <div className="teacher-meta">
+                                                <span>{teacherSessions.length} Lektionen</span>
+                                                <span>{teacherHours.toFixed(1)}h</span>
                                             </div>
                                         </div>
                                     );
                                 })}
-                                {currentMonthSessions.length > 10 && (
-                                    <div className="more-items-hint">
-                                        +{currentMonthSessions.length - 10} weitere Lektionen
-                                    </div>
-                                )}
                             </div>
                         ) : (
-                            <div className="empty-message">Keine Lektionen in diesem Monat.</div>
+                            <div className="empty-message">Keine Lehrer in diesem Monat.</div>
                         )}
                     </div>
                 </div>
@@ -360,27 +352,35 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                 </div>
                 <div className="overview-panel">
                     <div className="panel-header">
-                        <h3 className="panel-title">Lehrer ({currentMonthTeachers.length})</h3>
+                        <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
                     </div>
                     <div className="panel-content">
-                        {currentMonthTeachers.length > 0 ? (
-                            <div className="compact-teacher-list">
-                                {currentMonthTeachers.map(teacher => {
-                                    const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
-                                    const teacherHours = calculateTotalHours(teacherSessions);
+                        {currentMonthSessions.length > 0 ? (
+                            <div className="compact-session-list">
+                                {currentMonthSessions.slice(0, 10).map(session => {
+                                    const course = courses.find(c => c.id === session.courseId) || {};
+                                    const teacher = teachers.find(t => t.id === session.teacherId) || {};
                                     return (
-                                        <div className="compact-teacher-item" key={teacher.id}>
-                                            <div className="teacher-name">{teacher.name}</div>
-                                            <div className="teacher-meta">
-                                                <span>{teacherSessions.length} Lektionen</span>
-                                                <span>{teacherHours.toFixed(1)}h</span>
+                                        <div className="compact-session-item" key={session.id}>
+                                            <div className="session-main-info">
+                                                <div className="session-date">{session.date}</div>
+                                                <div className="session-title">{session.title}</div>
+                                            </div>
+                                            <div className="session-meta">
+                                                <span className="meta-course">{course.name || 'Unbekannter Kurs'}</span>
+                                                <span className="meta-teacher">{teacher.name || 'Unbekannter Lehrer'}</span>
                                             </div>
                                         </div>
                                     );
                                 })}
+                                {currentMonthSessions.length > 10 && (
+                                    <div className="more-items-hint">
+                                        +{currentMonthSessions.length - 10} weitere Lektionen
+                                    </div>
+                                )}
                             </div>
                         ) : (
-                            <div className="empty-message">Keine Lehrer in diesem Monat.</div>
+                            <div className="empty-message">Keine Lektionen in diesem Monat.</div>
                         )}
                     </div>
                 </div>

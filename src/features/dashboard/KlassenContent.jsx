@@ -1,58 +1,53 @@
-// src/components/Dashboard/KlassenContent.jsx
+// src/features/dashboard/KlassenContent.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords, deleteRecord, getRecordById, updateRecord } from '../firebase/database';
+import { getAllRecords } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
-import CourseDetail from './CourseDetail';
-import GroupDetail from './GroupDetail'; // We'll create this component
 import '../styles/Content.css';
+import '../styles/KlassenContent.css'; // We'll create this file for specific styles
 import { useNavigate } from 'react-router-dom';
-
 
 const KlassenContent = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedGroupName, setSelectedGroupName] = useState(null);
-  const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
 
   useEffect(() => {
-    fetchCourses();
+    fetchData();
   }, []);
 
-  // Add a function to handle level badge clicks
-  const handleLevelBadgeClick = (groupName, level) => {
-    // Find the first course that matches both group and level
-    const matchingCourse = courses.find(
-      course => course.group === groupName && course.level === level
-    );
-
-    if (matchingCourse) {
-      navigate(`/courses/${matchingCourse.id}`, { state: { groupName } });
-    } else {
-      // Handle case where no matching course is found
-      alert(`No course found for ${level} in group ${groupName}`);
-    }
-  };
-
-  const fetchCourses = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
+      
+      // Fetch all data
+      const groupsData = await getAllRecords('groups');
       const coursesData = await getAllRecords('courses');
       const allSessions = await getAllRecords('sessions');
       const allTeachers = await getAllRecords('teachers');
+
+      setGroups(groupsData);
 
       // Helper: get teacher name by id
       const teacherNameById = {};
       allTeachers.forEach(t => { teacherNameById[t.id] = t.name; });
 
       // Enrich course data
-      const enrichedCourses = await Promise.all(coursesData.map(async (course) => {
-        // Get teacher if available
-        let teacher = null;
-        if (course.teacherId) {
-          teacher = allTeachers.find(t => t.id === course.teacherId);
+      const enrichedCourses = coursesData.map(course => {
+        // Find group for this course
+        let groupName = course.group || 'Ungrouped';
+        let groupColor = '#0088FE'; // Default color
+        
+        // Find group by ID or name
+        const group = groupsData.find(g => 
+          g.id === course.groupId || g.name === groupName
+        );
+        
+        if (group) {
+          groupName = group.name;
+          groupColor = group.color || '#0088FE';
         }
 
         // Get students count
@@ -81,205 +76,117 @@ const KlassenContent = () => {
 
         return {
           ...course,
-          teacherName: teacher ? teacher.name : 'Not assigned',
+          group: groupName,
+          groupColor,
           studentCount,
           sessionCount,
-          teacherSessions, // <-- add this
+          teacherSessions,
         };
-      }));
+      });
 
       setCourses(enrichedCourses);
     } catch (err) {
-      console.error("Error fetching courses:", err);
-      setError("Failed to load courses. Please try again later.");
+      console.error("Error fetching data:", err);
+      setError("Failed to load data. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleViewGroupDetails = (groupName) => {
-    setSelectedGroupName(groupName);
+    navigate(`/courses/group/${groupName}`);
   };
 
-  const handleCloseGroupDetails = () => {
-    setSelectedGroupName(null);
-    // Refresh course list when returning from details
-    fetchCourses();
-  };
+  const handleLevelBadgeClick = (groupName, level) => {
+    // Find the first course that matches both group and level
+    const matchingCourse = courses.find(
+      course => course.group === groupName && course.level === level
+    );
 
-  const handleViewCourseDetails = (courseId, groupName = null) => {
-    // Pass groupName as state to maintain the breadcrumb hierarchy
-    navigate(`/courses/${courseId}`, { 
-        state: { groupName } 
-    });
-};
-
-  const handleCloseCourseDetails = () => {
-    setSelectedCourseId(null);
-    // Keep the group view open but refresh data
-    fetchCourses();
-  };
-
-  const handleDeleteCourse = async (courseId, courseName, event) => {
-    // Prevent click from propagating to parent elements
-    event.stopPropagation();
-
-    // Confirm deletion with the user
-    const confirmDelete = window.confirm(`Sind Sie sicher, dass Sie "${courseName}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`);
-
-    // If user confirms, proceed with deletion
-    if (confirmDelete) {
-      try {
-        setDeletingCourseId(courseId);
-
-        // Get course data to clean up related records
-        const course = await getRecordById('courses', courseId);
-
-        if (course) {
-          // Track entities that need to be checked for cleanup
-          const affectedStudentIds = [...(course.studentIds || [])];
-          const affectedTeacherIds = course.teacherId ? [course.teacherId] : [];
-          const affectedMonthIds = new Set();
-
-          // Delete related sessions and collect affected months
-          if (course.sessionIds && course.sessionIds.length > 0) {
-            for (const sessionId of course.sessionIds) {
-              const session = await getRecordById('sessions', sessionId);
-              if (session && session.monthId) {
-                affectedMonthIds.add(session.monthId);
-              }
-              await deleteRecord('sessions', sessionId);
-            }
-          }
-
-          // Remove course from student records and check for cleanup
-          if (affectedStudentIds.length > 0) {
-            for (const studentId of affectedStudentIds) {
-              const student = await getRecordById('students', studentId);
-              if (student && student.courseIds) {
-                const updatedCourseIds = student.courseIds.filter(id => id !== courseId);
-
-                if (updatedCourseIds.length === 0) {
-                  // Student is no longer associated with any courses, delete it
-                  await deleteRecord('students', studentId);
-                  console.log(`Deleted orphaned student: ${studentId}`);
-                } else {
-                  // Update student with remaining courses
-                  await updateRecord('students', studentId, { courseIds: updatedCourseIds });
-                }
-              }
-            }
-          }
-
-          // Remove course from teacher record and check for cleanup
-          if (affectedTeacherIds.length > 0) {
-            for (const teacherId of affectedTeacherIds) {
-              const teacher = await getRecordById('teachers', teacherId);
-              if (teacher && teacher.courseIds) {
-                const updatedCourseIds = teacher.courseIds.filter(id => id !== courseId);
-
-                if (updatedCourseIds.length === 0) {
-                  // Teacher is no longer associated with any courses, delete it
-                  await deleteRecord('teachers', teacherId);
-                  console.log(`Deleted orphaned teacher: ${teacherId}`);
-                } else {
-                  // Update teacher with remaining courses
-                  await updateRecord('teachers', teacherId, { courseIds: updatedCourseIds });
-                }
-              }
-            }
-          }
-
-          // Clean up affected months
-          if (affectedMonthIds.size > 0) {
-            for (const monthId of affectedMonthIds) {
-              const month = await getRecordById('months', monthId);
-              if (month) {
-                // Remove this course from the month's courseIds
-                const updatedCourseIds = month.courseIds
-                  ? month.courseIds.filter(id => id !== courseId)
-                  : [];
-
-                // Recalculate sessionCount by querying remaining sessions for this month
-                const remainingSessions = await getAllRecords('sessions');
-                const remainingSessionCount = remainingSessions.filter(
-                  session => session.monthId === monthId
-                ).length;
-
-                if (updatedCourseIds.length === 0 && remainingSessionCount === 0) {
-                  // Month has no more courses or sessions, delete it
-                  await deleteRecord('months', monthId);
-                  console.log(`Deleted orphaned month: ${monthId}`);
-                } else {
-                  // Update month's course list and session count
-                  const updatedMonth = {
-                    courseIds: updatedCourseIds,
-                    sessionCount: remainingSessionCount,
-                  };
-
-                  await updateRecord('months', monthId, updatedMonth);
-                }
-              }
-            }
-          }
-
-          // Delete the course itself
-          await deleteRecord('courses', courseId);
-
-          // Update the courses list
-          setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
-        }
-      } catch (err) {
-        console.error("Error deleting course:", err);
-        setError(`Failed to delete course: ${err.message}`);
-      } finally {
-        setDeletingCourseId(null);
-      }
+    if (matchingCourse) {
+      navigate(`/courses/${matchingCourse.id}`, { state: { groupName } });
+    } else {
+      // Handle case where no matching course is found
+      alert(`No course found for ${level} in group ${groupName}`);
     }
   };
 
-  if (selectedCourseId) {
-    // Find the course to get its group
-    const selectedCourse = courses.find(course => course.id === selectedCourseId);
-    const groupName = selectedCourse ? selectedCourse.group : null;
-
-    return <CourseDetail
-      courseId={selectedCourseId}
-      onClose={handleCloseCourseDetails}
-      groupName={groupName}
-    />;
-  }
-
-  // If a group is selected, show the GroupDetail component
-  if (selectedGroupName) {
-    return (
-      <GroupDetail
-        groupName={selectedGroupName}
-        courses={courses.filter(course => course.group === selectedGroupName)}
-        onClose={handleCloseGroupDetails}
-        onViewCourse={handleViewCourseDetails}
-        onDeleteCourse={handleDeleteCourse}
-        deletingCourseId={deletingCourseId}
-      />
-    );
-  }
-
   // Group courses by group name
   const groupCourses = () => {
-    const groups = {};
+    const groupedCourses = {};
 
     courses.forEach(course => {
       const groupName = course.group || 'Ungrouped';
-      if (!groups[groupName]) {
-        groups[groupName] = [];
+      if (!groupedCourses[groupName]) {
+        groupedCourses[groupName] = {
+          name: groupName,
+          courses: [],
+          color: course.groupColor || '#0088FE',
+          teachers: new Set(),
+          levels: new Set(),
+          totalStudents: 0,
+          totalSessions: 0,
+          progress: 0, // Will calculate after collecting all courses
+        };
       }
-      groups[groupName].push(course);
+      groupedCourses[groupName].courses.push(course);
+      groupedCourses[groupName].totalStudents += course.studentCount || 0;
+      groupedCourses[groupName].totalSessions += course.sessionCount || 0;
+      groupedCourses[groupName].levels.add(course.level);
+      
+      // Add teachers from this course
+      if (course.teacherSessions) {
+        course.teacherSessions.forEach(ts => {
+          groupedCourses[groupName].teachers.add(ts.name);
+        });
+      }
     });
 
-    return groups;
+    // Calculate progress for each group
+    Object.values(groupedCourses).forEach(group => {
+      group.progress = calculateGroupProgress(group.courses);
+    });
+
+    return groupedCourses;
+  };
+
+  // Calculate progress for a group based on course levels
+  const calculateGroupProgress = (groupCourses) => {
+    if (!groupCourses || groupCourses.length === 0) return 0;
+    
+    // Define the course structure with expected levels
+    const courseLevels = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
+    
+    // Find the highest level course in this group
+    let highestLevelIndex = -1;
+    
+    groupCourses.forEach(course => {
+      const levelIndex = courseLevels.indexOf(course.level);
+      if (levelIndex > highestLevelIndex) {
+        highestLevelIndex = levelIndex;
+      }
+    });
+    
+    // Calculate progress percentage
+    if (highestLevelIndex === -1) return 0;
+    
+    return ((highestLevelIndex + 1) / courseLevels.length) * 100;
+  };
+  
+  // Get initials from group name for the avatar
+  const getInitials = (name) => {
+    if (!name) return '?';
+    
+    const words = name.split(' ');
+    if (words.length === 1) {
+      return name.substring(0, 2).toUpperCase();
+    }
+    
+    return (words[0][0] + words[1][0]).toUpperCase();
   };
 
   const courseGroups = groupCourses();
+  
   return (
     <div className="klassen-content">
       {loading && <div className="loading-indicator">Daten werden geladen...</div>}
@@ -293,99 +200,119 @@ const KlassenContent = () => {
       )}
 
       {!loading && !error && Object.keys(courseGroups).length > 0 && (
-        <div className="course-groups-grid">
-          {Object.entries(courseGroups).map(([groupName, groupCourses]) => (
-            <div className="group-card" key={groupName}>
-              <div className="group-header">
-                <h3>{groupName}</h3>
-                <div className="type-badges-container">
-                  {(() => {
-                    // Get unique course types in this group
-                    const courseTypes = Array.from(new Set(groupCourses.map(course => course.courseType)));
-                    return courseTypes.map(type => (
-                      <span
-                        key={type}
-                        className={`type-badge ${type.toLowerCase()}`}
-                      >
-                        {type || 'Unknown'}
-                      </span>
-                    ));
-                  })()}
+        <div className="groups-dashboard">
+          {Object.values(courseGroups).map((group) => {
+            const groupInitials = getInitials(group.name);
+            const lighterColor = adjustColor(group.color, 40); // Create lighter version for progress bar
+            
+            return (
+              <div className="group-dashboard-card" key={group.name}>
+                <div className="group-avatar-container">
+                  <div 
+                    className="group-avatar" 
+                    style={{ backgroundColor: group.color }}
+                    onClick={() => handleViewGroupDetails(group.name)}
+                  >
+                    {groupInitials}
+                  </div>
                 </div>
-              </div>
-              <div className="group-info">
-                <div className="info-item">
-                  <span className="label">Kursstufen</span>
-                  <div className="level-badges-container">
-                    {sortLanguageLevels(Array.from(new Set(groupCourses.map(course => course.level)))).map(level => (
+                
+                <div className="group-details-card">
+                  <div className="group-details-header">
+                    <h3>{group.name}</h3>
+                    <div className="group-stats">
+                      <span>{group.courses.length} Kurse</span>
+                      <span>{group.totalStudents} Schüler</span>
+                      <span>{group.totalSessions} Lektionen</span>
+                    </div>
+                  </div>
+                  
+                  <div className="group-levels-container">
+                    {sortLanguageLevels(Array.from(group.levels)).map(level => (
                       <div
                         className="level-badge clickable"
                         key={level}
-                        onClick={() => handleLevelBadgeClick(groupName, level)}
+                        onClick={() => handleLevelBadgeClick(group.name, level)}
                       >
                         {level}
                       </div>
                     ))}
                   </div>
-                </div>
-                <div className="info-item">
-                  <span className="label">Lehrkräfte</span>
-                  <div className="teacher-badges-container">
-                    {(() => {
-                      // Collect all teacher sessions from all courses in the group
-                      const allTeacherSessions = groupCourses.flatMap(course => course.teacherSessions || []);
-
-                      if (allTeacherSessions.length === 0) {
-                        return <span className="no-teachers-hint">Keine Lehrkräfte gefunden</span>;
-                      }
-
-                      // Aggregate session counts by teacher
-                      const teacherTotals = allTeacherSessions.reduce((totals, ts) => {
-                        if (!totals[ts.teacherId]) {
-                          totals[ts.teacherId] = { name: ts.name, count: 0 };
-                        }
-                        totals[ts.teacherId].count += ts.count;
-                        return totals;
-                      }, {});
-
-                      // Convert back to array for rendering
-                      return Object.values(teacherTotals).map(teacher => (
-                        <span key={teacher.name} className="teacher-badge">
-                          {teacher.name}
-                          <span className="session-count-badge">{teacher.count}</span>
-                        </span>
-                      ));
-                    })()}
+                  
+                  <div className="group-teachers-container">
+                    <h4>Lehrkräfte</h4>
+                    <div className="teacher-badges-container">
+                      {Array.from(group.teachers).length > 0 ? (
+                        Array.from(group.teachers).map(teacher => (
+                          <span key={teacher} className="teacher-badge">
+                            {teacher}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="no-teachers-hint">Keine Lehrkräfte gefunden</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="group-progress-section">
+                    <div className="progress-header">
+                      <h4>Lernfortschritt</h4>
+                      <span>{Math.round(group.progress)}%</span>
+                    </div>
+                    <div className="progress-bar-container">
+                      <div 
+                        className="progress-bar" 
+                        style={{
+                          width: `${group.progress}%`,
+                          backgroundColor: lighterColor,
+                          '--target-width': `${group.progress}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="group-actions">
+                    <button
+                      className="btn-details"
+                      onClick={() => handleViewGroupDetails(group.name)}
+                    >
+                      Details ansehen
+                    </button>
                   </div>
                 </div>
-                <div className="info-item">
-                  <span className="label">Schüler insgesamt</span>
-                  <span className="value">
-                    {groupCourses.reduce((total, course) => total + course.studentCount, 0)}
-                  </span>
-                </div>
-                <div className="info-item">
-                  <span className="label">Lektionen insgesamt</span>
-                  <span className="value">
-                    {groupCourses.reduce((total, course) => total + course.sessionCount, 0)}
-                  </span>
-                </div>
               </div>
-
-              <div className="group-actions">
-                <button
-                  className="btn-details"
-                  onClick={() => handleViewGroupDetails(groupName)}
-                >
-                  Details ansehen
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 };
+
+// Helper function to create a lighter version of a color
+function adjustColor(color, percent) {
+  if (!color || typeof color !== 'string') return '#0088FE';
+  
+  // If it's not a hex color, return as is
+  if (!color.startsWith('#')) return color;
+  
+  let R = parseInt(color.substring(1,3), 16);
+  let G = parseInt(color.substring(3,5), 16);
+  let B = parseInt(color.substring(5,7), 16);
+
+  R = Math.floor(R + (255 - R) * (percent / 100));
+  G = Math.floor(G + (255 - G) * (percent / 100));
+  B = Math.floor(B + (255 - B) * (percent / 100));
+
+  R = (R < 255) ? R : 255;  
+  G = (G < 255) ? G : 255;  
+  B = (B < 255) ? B : 255;  
+
+  const RR = ((R.toString(16).length === 1) ? "0" + R.toString(16) : R.toString(16));
+  const GG = ((G.toString(16).length === 1) ? "0" + G.toString(16) : G.toString(16));
+  const BB = ((B.toString(16).length === 1) ? "0" + B.toString(16) : B.toString(16));
+
+  return "#" + RR + GG + BB;
+}
 
 export default KlassenContent;
