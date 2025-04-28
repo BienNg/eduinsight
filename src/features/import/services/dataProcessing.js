@@ -398,34 +398,50 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
 
                 // Create new session object
                 currentSessionTitle = folienTitle;
+                let isFutureDate = false;
+
+                if (dateValue) {
+                    // Format date normally first
+                    if (typeof dateValue === 'string' && dateValue.includes('.')) {
+                        // Handle string dates in DD.MM.YYYY format
+                        formattedDate = dateValue;
+                    } else if (typeof dateValue === 'number') {
+                        // Handle Excel serial date
+                        const jsDate = excelDateToJSDate(dateValue);
+                        if (jsDate) {
+                            const day = jsDate.getDate().toString().padStart(2, '0');
+                            const month = (jsDate.getMonth() + 1).toString().padStart(2, '0');
+                            const year = jsDate.getFullYear();
+                            formattedDate = `${day}.${month}.${year}`;
+                        }
+                    }
+
+                    // Check if date is in the future
+                    if (formattedDate) {
+                        const [day, month, year] = formattedDate.split('.').map(Number);
+                        const sessionDate = new Date(year, month - 1, day);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        isFutureDate = sessionDate > today;
+                    }
+                }
+
+
                 currentSession = {
                     courseId: courseRecord.id,
                     title: folienTitle,
                     content: contentValue || '',
                     notes: notesValue || '',
-                    date: formattedDate || '', // Remove lastKnownDate fallback
-                    // Allow empty time values if columns are missing
-                    startTime: columnIndices.startTime !== -1 ? formatTime(startTimeValue) : '',
-                    endTime: columnIndices.endTime !== -1 ? formatTime(endTimeValue) : '',
+                    date: isFutureDate ? '' : (formattedDate || ''), // Leave date empty if future date
+                    startTime: columnIndices.startTime !== -1 ? (isFutureDate ? '' : formatTime(startTimeValue)) : '',
+                    endTime: columnIndices.endTime !== -1 ? (isFutureDate ? '' : formatTime(endTimeValue)) : '',
                     teacherId: teacherId || '',
                     contentItems: [],
                     attendance: {},
-                    monthId: monthId,
+                    monthId: isFutureDate ? null : monthId, // Don't associate with a month if future date
                     sessionOrder: sessionOrderCounter++,
-                    // Set status to 'ongoing' if date is empty or in current/future month
-                    status: (() => {
-                        if (!formattedDate) return 'ongoing';
-                        
-                        const [day, month, year] = formattedDate.split('.').map(Number);
-                        // Create date objects at midnight for reliable comparison
-                        const sessionDate = new Date(Date.UTC(year, month - 1, day));
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        
-                        console.log('Session date:', sessionDate, 'Today:', today, 'Comparison:', sessionDate >= today);
-                        
-                        return sessionDate >= today ? 'ongoing' : 'completed';
-                    })()
+                    status: 'ongoing' // All future sessions are ongoing
                 };
 
                 // Update lastKnownDate if we have a valid date
@@ -546,7 +562,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         courseRecord.sessionIds.push(sessionRecord.id);
 
         // After creating a session record, update the month's statistics
-        if (currentSession.monthId) {
+        if (currentSession.monthId) { // This will be null for future dates
             const monthRef = ref(database, `months/${currentSession.monthId}`);
             const monthSnapshot = await get(monthRef);
 

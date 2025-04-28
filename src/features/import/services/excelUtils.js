@@ -392,36 +392,26 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
           const dateValue = row[dateIndex];
 
           if (dateValue) {
-            // Store as last known date if valid
+            // First check if it's a future date - if so, skip validation
+            let isDateInFuture = false;
+            let formattedDate = '';
+
+            // Parse and check if date is in future
             if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-              lastKnownDate = dateValue;
-
-              // Check if this session is in the current month
+              formattedDate = dateValue;
               const [day, month, year] = dateValue.split('.').map(Number);
-              const isCurrentMonth = month === currentMonth && year === currentYear;
-
-              // Skip validation of incomplete data for current month sessions
-              if (isCurrentMonth) {
-                continue;
-              }
-            }
-            // Handle Excel numeric dates
-            else if (typeof dateValue === 'number') {
-              // This is an Excel numeric date, it's valid but needs conversion
-              // We'll handle the conversion during processing, for validation we just accept it
+              const sessionDate = new Date(year, month - 1, day);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              isDateInFuture = sessionDate > today;
+            } else if (typeof dateValue === 'number') {
+              // Handle Excel numeric dates
               try {
                 const jsDate = excelDateToJSDate(dateValue);
-                const formattedDate = formatDate(jsDate);
-                lastKnownDate = formattedDate;
-
                 if (jsDate) {
-                  const month = jsDate.getMonth() + 1;
-                  const year = jsDate.getFullYear();
-                  const isCurrentMonth = month === currentMonth && year === currentYear;
-
-                  if (isCurrentMonth) {
-                    continue;
-                  }
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  isDateInFuture = jsDate > today;
                 }
               } catch (e) {
                 errors.push(`Row ${i + 1}: Session "${folienValue}" has an invalid numeric date value "${dateValue}".`);
@@ -461,8 +451,30 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
             }
           }
 
-          if (!isCurrentMonth) {
-            // Leave the rest of your validation code for times and teacher unchanged
+          // Check if date is in the future
+          let isFutureDate = false;
+          if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+            const [day, month, year] = dateValue.split('.').map(Number);
+            const sessionDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            isFutureDate = sessionDate > today;
+          } else if (typeof dateValue === 'number') {
+            try {
+              const jsDate = excelDateToJSDate(dateValue);
+              if (jsDate) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                isFutureDate = jsDate > today;
+              }
+            } catch (e) {
+              // Already handled above
+            }
+          }
+
+          // Skip validation for future dates completely
+          if (!isFutureDate && !isCurrentMonth) {
+            // Only validate non-future dates that aren't in current month
             if (startTimeIndex !== -1) {
               const startTimeValue = row[startTimeIndex];
               if (!startTimeValue) {
