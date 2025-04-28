@@ -275,6 +275,7 @@ const TeacherDetail = () => {
                                                                     height="6px"
                                                                     showLabel={true}
                                                                     labelPosition="right"
+                                                                    customLabel={`${completedSessionCount}/${totalSessionCount}`}
                                                                 />
                                                             </div>
                                                         </div>
@@ -341,7 +342,7 @@ const TeacherDetail = () => {
                                                                 </div>
 
                                                                 <div className="course-meta">
-                                                                    <span>{data.sessions.length} Lektionen</span>
+                                                                    <span>{data.sessions.length} Lektionen </span>
                                                                     <span>{data.totalHours.toFixed(1)}h</span>
                                                                     {data.longSessionsCount > 0 && (
                                                                         <span className="long-session-count">
@@ -359,6 +360,7 @@ const TeacherDetail = () => {
                                                                     height="6px"
                                                                     showLabel={true}
                                                                     labelPosition="right"
+                                                                    customLabel={`${completedSessionCount}/${totalSessionCount}`}
                                                                 />
                                                             </div>
                                                         </div>
