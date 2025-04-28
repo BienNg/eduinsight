@@ -1,4 +1,6 @@
 // src/features/teachers/TeacherDetail.jsx
+import ProgressBar from '../common/ProgressBar';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -6,6 +8,7 @@ import { faClock, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getRecordById } from '../firebase/database';
 import { isLongSession } from '../utils/sessionUtils';
+
 import '../styles/Content.css';
 import '../styles/cards/Cards.css';
 import '../styles/TeacherDetail.css';
@@ -215,28 +218,52 @@ const TeacherDetail = () => {
                         {currentMonthData.length > 0 ? (
                             <>
                                 <div className="compact-course-list">
-                                    {currentMonthData.map(data => (
-                                        <div
-                                            key={data.course.id}
-                                            className="compact-course-item clickable"
-                                            onClick={() => navigate(`/courses/${data.course.id}`)}
-                                        >
-                                            <div className="course-name-wrapper">
-                                                <span className="course-name">{data.course.name}</span>
-                                                <span className="course-level">{data.course.level}</span>
+                                    {currentMonthData.map(data => {
+                                        // Calculate progress based on completed sessions
+                                        const totalSessionCount = data.course.sessionIds?.length || 0;
+                                        const completedSessionCount = data.sessions.filter(session =>
+                                            session.status === 'completed'
+                                        ).length;
+
+                                        // Calculate progress percentage
+                                        const progress = totalSessionCount > 0
+                                            ? (completedSessionCount / totalSessionCount) * 100
+                                            : 0;
+
+                                        return (
+                                            <div
+                                                key={data.course.id}
+                                                className="compact-course-item clickable"
+                                                onClick={() => navigate(`/courses/${data.course.id}`)}
+                                            >
+                                                <div className="course-name-wrapper">
+                                                    <span className="course-name">{data.course.name}</span>
+                                                </div>
+
+                                                <div className="course-meta">
+                                                    <span>{data.sessions.length} Lektionen</span>
+                                                    <span>{data.totalHours.toFixed(1)}h</span>
+                                                    {data.longSessionsCount > 0 && (
+                                                        <span className="long-session-count">
+                                                            <FontAwesomeIcon icon={faClock} />
+                                                            {data.longSessionsCount}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Progress bar moved to bottom, full width */}
+                                                <div style={{ marginTop: '8px', width: '100%' }}>
+                                                    <ProgressBar
+                                                        progress={progress}
+                                                        color={data.course.color || '#0088FE'}
+                                                        height="6px"
+                                                        showLabel={true}
+                                                        labelPosition="right"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="course-meta">
-                                                <span>{data.sessions.length} Lektionen</span>
-                                                <span>{data.totalHours.toFixed(1)}h</span>
-                                                {data.longSessionsCount > 0 && (
-                                                    <span className="long-session-count">
-                                                        <FontAwesomeIcon icon={faClock} />
-                                                        {data.longSessionsCount}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                                 <div className="month-summary">
                                     <div className="summary-item">
