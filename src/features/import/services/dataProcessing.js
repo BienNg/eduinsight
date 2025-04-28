@@ -413,15 +413,18 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
                     monthId: monthId,
                     sessionOrder: sessionOrderCounter++,
                     // Set status to 'ongoing' if date is empty or in current/future month
-                    status: !formattedDate ? 'ongoing' : (() => {
-                        if (formattedDate) {
-                            const [day, month, year] = formattedDate.split('.').map(Number);
-                            const sessionDate = new Date(year, month - 1, day);
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            return sessionDate >= today ? 'ongoing' : 'completed';
-                        }
-                        return 'ongoing';
+                    status: (() => {
+                        if (!formattedDate) return 'ongoing';
+                        
+                        const [day, month, year] = formattedDate.split('.').map(Number);
+                        // Create date objects at midnight for reliable comparison
+                        const sessionDate = new Date(Date.UTC(year, month - 1, day));
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        console.log('Session date:', sessionDate, 'Today:', today, 'Comparison:', sessionDate >= today);
+                        
+                        return sessionDate >= today ? 'ongoing' : 'completed';
                     })()
                 };
 
