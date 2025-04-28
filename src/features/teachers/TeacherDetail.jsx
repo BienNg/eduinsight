@@ -43,6 +43,43 @@ const TeacherDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
+    // First, create a new state for the hover tooltip
+    const [hoverTooltip, setHoverTooltip] = useState({
+        visible: false,
+        courseId: null,
+        position: { x: 0, y: 0 },
+        sessions: []
+    });
+
+    // Add this function to handle hovering over a course item
+    const handleCourseHover = (e, courseId, monthData) => {
+        // Find the course data in the month data
+        const courseData = monthData.find(data => data.course.id === courseId);
+
+        if (courseData) {
+            // Filter completed sessions only
+            const completedSessions = courseData.sessions.filter(session =>
+                session.status === 'completed'
+            );
+
+            // Set tooltip data
+            setHoverTooltip({
+                visible: true,
+                courseId,
+                position: {
+                    x: e.currentTarget.getBoundingClientRect().right + 10,
+                    y: e.currentTarget.getBoundingClientRect().top
+                },
+                sessions: completedSessions
+            });
+        }
+    };
+
+    // Add this function to handle mouse leave
+    const handleCourseLeave = () => {
+        setHoverTooltip(prev => ({ ...prev, visible: false }));
+    };
+
     const handleBack = () => {
         navigate('/teachers');
     };
@@ -273,6 +310,8 @@ const TeacherDetail = () => {
                                                             key={data.course.id}
                                                             className="compact-course-item clickable"
                                                             onClick={() => navigate(`/courses/${data.course.id}`)}
+                                                            onMouseEnter={(e) => handleCourseHover(e, data.course.id, currentMonthData)} // or previousMonthData
+                                                            onMouseLeave={handleCourseLeave}
                                                         >
                                                             <div className="course-info-container">
                                                                 <div className="course-name-wrapper">
@@ -357,6 +396,8 @@ const TeacherDetail = () => {
                                                             key={data.course.id}
                                                             className="compact-course-item clickable"
                                                             onClick={() => navigate(`/courses/${data.course.id}`)}
+                                                            onMouseEnter={(e) => handleCourseHover(e, data.course.id, previousMonthData)}
+                                                            onMouseLeave={handleCourseLeave}
                                                         >
                                                             <div className="course-info-container">
                                                                 <div className="course-name-wrapper">
@@ -585,6 +626,34 @@ const TeacherDetail = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+            {/* Sessions tooltip */}
+            <div
+                className={`sessions-tooltip ${hoverTooltip.visible ? 'visible' : ''}`}
+                style={{
+                    left: hoverTooltip.position.x + 'px',
+                    top: hoverTooltip.position.y + 'px',
+                    display: hoverTooltip.visible ? 'block' : 'none'
+                }}
+            >
+                {hoverTooltip.visible && (
+                    <>
+                        <div className="tooltip-header">Completed Sessions</div>
+                        {hoverTooltip.sessions.length > 0 ? (
+                            hoverTooltip.sessions.map(session => (
+                                <div key={session.id} className="tooltip-session-item">
+                                    <div className="tooltip-session-title">{session.title}</div>
+                                    <div className="tooltip-session-meta">
+                                        <span>{session.date}</span>
+                                        <span>{session.startTime} - {session.endTime}</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div>No completed sessions for this course</div>
+                        )}
+                    </>
+                )}
             </div>
         </div>
     );

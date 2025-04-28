@@ -195,3 +195,44 @@
     margin-right: 8px;
     flex-shrink: 0;
 }
+
+.sessions-tooltip {
+position: fixed;
+z-index: 1000;
+background-color: white;
+border-radius: 8px;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+padding: 12px;
+min-width: 280px;
+max-width: 400px;
+max-height: 300px;
+overflow-y: auto;
+opacity: 0;
+transition: opacity 0.2s ease;
+}
+.sessions-tooltip.visible {
+opacity: 1;
+}
+.tooltip-header {
+font-weight: 600;
+margin-bottom: 8px;
+padding-bottom: 8px;
+border-bottom: 1px solid #eee;
+ }
+.tooltip-session-item {
+padding: 6px 0;
+border-bottom: 1px solid #f5f5f5;
+ }
+.tooltip-session-item:last-child {
+border-bottom: none;
+}
+.tooltip-session-title {
+font-weight: 500;
+}
+.tooltip-session-meta {
+font-size: 0.85em;
+color: #666;
+display: flex;
+justify-content: space-between;
+margin-top: 3px;
+}
