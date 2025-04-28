@@ -1,4 +1,9 @@
 /* src/components/Dashboard/Content.css */
+:root {
+  --primary-blue: var(--color-primary-main);
+  --dark-blue: var(--color-primary-dark);
+}
+
 .dashboard-content,
 .monat-content,
 .klassen-content,
@@ -8,57 +13,55 @@
 
 .stats-container {
   display: flex;
-  gap: 24px;
-  margin-top: 24px;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
 }
 
 .stat-card {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-background-paper);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  box-shadow: var(--shadow-card);
   flex: 1;
 }
 
 .stat-card h3 {
-  margin: 0 0 12px;
-  color: #555;
-  font-size: 16px;
+  margin: 0 0 var(--spacing-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
 }
 
 .stat-value {
-  font-size: 36px;
-  font-weight: bold;
-  color: var(--primary-blue);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-main);
 }
-
-/* Add to src/components/Dashboard/Content.css */
 
 /* Klassen Content Styles */
 .courses-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
 }
 
 .course-card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-background-paper);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: var(--transitions-default);
 }
 
 .course-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-cardHover);
 }
 
 .course-header {
-  padding: 16px;
-  background-color: var(--primary-blue);
-  color: white;
+  padding: var(--spacing-md);
+  background-color: var(--color-primary-main);
+  color: var(--color-primary-contrastText);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -66,25 +69,25 @@
 
 .course-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-size-lg);
 }
 
 .course-level {
   background-color: rgba(255, 255, 255, 0.2);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: var(--spacing-xxs) var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
 }
 
 .course-info {
-  padding: 16px;
+  padding: var(--spacing-md);
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .info-item:last-child {
@@ -92,71 +95,71 @@
 }
 
 .info-item .label {
-  color: #666;
-  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
 }
 
 .info-item .value {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .course-actions {
-  padding: 16px;
+  padding: var(--spacing-md);
   display: flex;
   justify-content: flex-end;
 }
 
 .btn-details {
-  background-color: var(--primary-blue);
-  color: white;
+  background-color: var(--color-primary-main);
+  color: var(--color-primary-contrastText);
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   transition: background-color 0.2s;
 }
 
 .btn-details:hover {
-  background-color: var(--dark-blue);
+  background-color: var(--color-primary-dark);
 }
 
 /* Loading, Error and Empty states */
 .loading-indicator,
 .error-message,
 .empty-state {
-  margin-top: 24px;
-  padding: 24px;
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
   text-align: center;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-background-paper);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-card);
 }
 
 .error-message {
-  color: #d32f2f;
+  color: var(--color-error-main);
   background-color: #ffebee;
 }
 
 .empty-state {
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
-/*Delete Klassenübersicht*/
+/* Delete Klassenübersicht */
 .btn-delete {
-  background-color: #e53935;
+  background-color: var(--color-error-main);
   color: white;
   border: none;
-  padding: 4px 12px;
-  margin-right: 4px;
-  border-radius: 4px;
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  margin-right: var(--spacing-xxs);
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   transition: background-color 0.2s;
 }
 
 .btn-delete:hover {
-  background-color: #c62828;
+  background-color: var(--color-error-dark);
 }
 
 .btn-delete:disabled {
@@ -165,19 +168,19 @@
 }
 
 .course-actions {
-  padding: 16px;
+  padding: var(--spacing-md);
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--spacing-xs);
 }
 
 /* Lehrer View */
 .filter-bar {
-  background-color: white;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-background-paper);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-card);
   display: flex;
   align-items: center;
 }
@@ -185,19 +188,19 @@
 .filter-group {
   display: flex;
   align-items: center;
-  margin-right: 24px;
+  margin-right: var(--spacing-lg);
 }
 
 .filter-group label {
-  margin-right: 12px;
-  font-weight: 500;
-  color: #555;
+  margin-right: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
 }
 
 .country-filter {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-sm);
   min-width: 160px;
 }
 
@@ -397,6 +400,7 @@
 .level-badge.clickable:active {
   transform: scale(0.98);
 }
+
 /* END Kursstufen Badge */
 
 /* Modern minimalist breadcrumb */
@@ -522,7 +526,7 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
   z-index: 100;
   min-width: 170px;
   padding: 6px 0;
@@ -530,8 +534,15 @@
 }
 
 @keyframes fadeInMenu {
-  from { opacity: 0; transform: translateY(-8px);}
-  to { opacity: 1; transform: translateY(0);}
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .more-options-menu .option-item {
@@ -556,6 +567,7 @@
 .more-options-menu .option-item:hover:not(:disabled) {
   background: #fef2f2;
 }
+
 /*END Modern minimalist Options button */
 
 /* Teacher Badge */
@@ -605,6 +617,7 @@
   padding: 1px 0;
   letter-spacing: 0.01em;
 }
+
 /* END Teacher Badge */
 
 .type-badges-container {
@@ -841,7 +854,8 @@
 
 .long-sessions .stat-value,
 .long-sessions .stat-label {
-  align-self: flex-start; /* Align with left edge like the label */
+  align-self: flex-start;
+  /* Align with left edge like the label */
 }
 
 .group-progress-list {
@@ -860,7 +874,7 @@
 .group-progress-item:hover {
   background-color: #f0f0f0;
   transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .group-header {
@@ -893,8 +907,10 @@
   background-color: #4285f4;
   border-radius: 4px;
   transition: width 0.5s ease-in-out;
-  min-width: 2px; /* Ensure it's visible even with very small progress */
-  position: relative; /* Add this */
+  min-width: 2px;
+  /* Ensure it's visible even with very small progress */
+  position: relative;
+  /* Add this */
 }
 
 .current-course {
@@ -912,6 +928,7 @@
 .course-progress {
   color: #4285f4;
 }
+
 .group-progress-item .progress-bar {
   height: 100%;
   background-color: #4285f4;
@@ -930,7 +947,7 @@
 
 .progress-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* New Header Styles */
@@ -979,14 +996,12 @@
   min-width: 2px;
   position: relative;
   animation: progressFill 1s ease-out forwards;
-  background-image: linear-gradient(
-    90deg, 
-    #4285f4 0%, 
-    #5a95f5 45%, 
-    #4285f4 90%
-  );
+  background-image: linear-gradient(90deg,
+      #4285f4 0%,
+      #5a95f5 45%,
+      #4285f4 90%);
   background-size: 200% 100%;
-  animation: 
+  animation:
     progressFill 1s ease-out forwards,
     shimmer 2s infinite linear;
 }
@@ -1005,6 +1020,7 @@
     width: 0%;
     opacity: 0.7;
   }
+
   to {
     width: var(--target-width);
     opacity: 1;
@@ -1015,6 +1031,7 @@
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
