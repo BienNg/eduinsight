@@ -18,29 +18,14 @@ import { isLongSession } from '../../utils/sessionUtils';
 
 const COURSE_COLORS = [
     '#911DD2', // Purple Base
-    '#A94FE0', // Purple Light
-    '#C283ED', // Purple Lighter
-    '#D8B1F5', // Purple Pastel
     '#7310A8', // Purple Dark
     '#FF5F68', // Coral Red Base
-    '#FF8389', // Coral Light
-    '#FFA9AD', // Coral Lighter
-    '#FFCBCD', // Coral Pastel
     '#D94D54', // Coral Dark
     '#4DBEFF', // Sky Blue Base
-    '#80D2FF', // Sky Light
-    '#B3E6FF', // Sky Lighter
-    '#D6F2FF', // Sky Pastel
     '#3A9BD4', // Sky Dark
     '#18BF69', // Emerald Green Base
-    '#46D28B', // Emerald Light
-    '#7FE7B1', // Emerald Lighter
-    '#B1F3D2', // Emerald Pastel
     '#139954', // Emerald Dark
     '#FBC14E', // Golden Yellow Base
-    '#FDD278', // Golden Light
-    '#FEE6A8', // Golden Lighter
-    '#FFF4CE', // Golden Pastel
     '#D9A53F', // Golden Dark
     '#D21D91', // Purple Complement
     '#5FFFC8', // Coral Complement

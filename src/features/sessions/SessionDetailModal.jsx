@@ -38,6 +38,8 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
     };
 
     useEffect(() => {
+        console.log("Session data:", session);
+
         const detectNewStudents = async () => {
             if (!students || students.length === 0) {
                 setLoadingNewStudents(false);
