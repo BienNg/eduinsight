@@ -3,7 +3,6 @@ import ProgressBar from '../common/ProgressBar';
 import TabCard from '../common/TabCard'
 
 import { getRecordById, getAllRecords } from '../firebase/database';
-import { isLongSession } from '../utils/sessionUtils';
 import {
     getCurrentMonthSessions,
     getPreviousMonthSessions,
@@ -112,7 +111,8 @@ const TeacherDetail = () => {
                     const monthKey = `${dateParts[1]}.${fullYear}`;
                     const displayMonth = `${monthNames[monthNum]} ${shortYear}`;
 
-                    const sessionHours = isLongSession(session.startTime, session.endTime) ? 2 : 1.5;
+                    const sessionHours = session.isLongSession === true ? 2 : 1.5;
+
 
                     if (!monthlyHours[monthKey]) {
                         monthlyHours[monthKey] = {
@@ -440,7 +440,7 @@ const TeacherDetail = () => {
                                                     );
                                                 })}
                                             </div>
-                                            
+
                                             <div className="month-summary horizontal-with-vertical-items">
                                                 <div className="summary-item">
                                                     <FontAwesomeIcon icon={faCalendarAlt} className="summary-icon" />
@@ -610,7 +610,7 @@ const TeacherDetail = () => {
                                                     <span>{course.name || 'Unknown Course'}</span>
                                                     <span>
                                                         {session.startTime} - {session.endTime}
-                                                        {isLongSession(session.startTime, session.endTime) && (
+                                                        {session.isLongSession === true && (
                                                             <FontAwesomeIcon
                                                                 icon={faClock}
                                                                 style={{ marginLeft: '5px' }}

@@ -1,7 +1,6 @@
 // src/components/Dashboard/hooks/useMonthData.js
 import { useState, useEffect } from 'react';
 import { getAllRecords } from '../../firebase/database';
-import { countLongSessions } from '../../utils/sessionUtils';
 import { calculateTotalHours } from '../../utils/timeUtils';
 
 const useMonthData = () => {
@@ -16,6 +15,10 @@ const useMonthData = () => {
   const [monthDetails, setMonthDetails] = useState({});
   const [currentMonthId, setCurrentMonthId] = useState(null);
   const [groups, setGroups] = useState([]);
+
+  const countLongSessionsFromDB = (sessions) => {
+    return sessions.filter(session => session.isLongSession).length;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,7 +75,7 @@ const useMonthData = () => {
               sessionCount: teacherSessions.length,
               studentCount: teacherStudentIds.size,
               hours: teacherHours,
-              longSessions: countLongSessions(teacherSessions),
+              longSessions: countLongSessionsFromDB(teacherSessions),
               courses: teacherCourses
             };
           }).filter((t) => t !== null);
@@ -83,7 +86,7 @@ const useMonthData = () => {
             sessionCount: monthSessions.length,
             hours: totalHours,
             teachers: teacherDetails,
-            longSessions: countLongSessions(monthSessions),
+            longSessions: countLongSessionsFromDB(monthSessions),
             courses: monthCourses
           };
         });

@@ -2,12 +2,11 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { getRecordById, updateRecord, getAllRecords } from '../firebase/database';
-import TeacherSelect from '../../features/common/TeacherSelect'; //
+import TeacherSelect from '../../features/common/TeacherSelect';
 import '../styles/SessionDetailModal.css';
 import StudentDetailModal from '../students/StudentDetailModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock } from '@fortawesome/free-solid-svg-icons';
-import { isLongSession } from '../utils/sessionUtils';
 
 const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) => {
 
@@ -234,7 +233,7 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                 <div className="modal-header">
                     <div>
                         <h2>{groupName && `${groupName} | `}{session.title || 'Session Details'}</h2>
-                        {isLongSession(session.startTime, session.endTime) && (
+                        {session.isLongSession && (
                             <div className="session-duration-badge long">
                                 <FontAwesomeIcon icon={faClock} />
                                 <span>2-Stunden Lektion</span>
@@ -276,7 +275,7 @@ const SessionDetailModal = ({ session, students, teacher, onClose, groupName }) 
                             <div className="info-item">
                                 <span className="label">Dauer:</span>
                                 <span className="value">
-                                    {isLongSession(session.startTime, session.endTime) ? (
+                                    {session.isLongSession ? (
                                         <span className="long-session-indicator">
                                             <FontAwesomeIcon icon={faClock} className="long-session-icon" />
                                             <span>Ungefähr 2 Stunden</span>

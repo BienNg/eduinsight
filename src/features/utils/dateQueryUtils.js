@@ -46,15 +46,15 @@ export const getSessionsByMonth = async (monthId) => {
     // This is a placeholder - implement according to your database structure
     // You might need to fetch all sessions and filter by date, or
     // have a query mechanism in your database to get sessions by month
-    
+
     // Example implementation:
     const allSessions = await getAllSessions();
     return allSessions.filter(session => {
       if (!session.date) return false;
-      
+
       const dateParts = session.date.split('.');
       if (dateParts.length !== 3) return false;
-      
+
       const sessionMonthId = `${dateParts[1]}.${dateParts[2]}`;
       return sessionMonthId === monthId;
     });
@@ -93,10 +93,10 @@ export const getTeacherCurrentMonthData = async (teacherId) => {
     const { firstDay } = getCurrentMonthRange();
     const monthId = formatMonthId(firstDay);
     const monthSessions = await getSessionsByMonth(monthId);
-    
+
     // Filter for this teacher
     const teacherSessions = monthSessions.filter(session => session.teacherId === teacherId);
-    
+
     // Get courses for these sessions
     return processTeacherSessions(teacherSessions);
   } catch (error) {
@@ -116,10 +116,10 @@ export const getTeacherPreviousMonthData = async (teacherId) => {
     const { firstDay } = getPreviousMonthRange();
     const monthId = formatMonthId(firstDay);
     const monthSessions = await getSessionsByMonth(monthId);
-    
+
     // Filter for this teacher
     const teacherSessions = monthSessions.filter(session => session.teacherId === teacherId);
-    
+
     // Get courses for these sessions
     return processTeacherSessions(teacherSessions);
   } catch (error) {
@@ -136,22 +136,22 @@ export const getTeacherPreviousMonthData = async (teacherId) => {
 const processTeacherSessions = async (teacherSessions) => {
   // Get all unique course IDs from the sessions
   const courseIds = [...new Set(teacherSessions.map(session => session.courseId))];
-  
+
   // Fetch course data for each course ID
-  const coursePromises = courseIds.map(courseId => 
+  const coursePromises = courseIds.map(courseId =>
     getRecordById('courses', courseId)
   );
   const coursesData = await Promise.all(coursePromises);
   const validCourses = coursesData.filter(course => course !== null);
-  
+
   // Group sessions by course and calculate stats
   const courseSessionMap = {};
-  
+
   teacherSessions.forEach(session => {
     if (!courseSessionMap[session.courseId]) {
       const course = validCourses.find(c => c.id === session.courseId);
       if (!course) return; // Skip if course not found
-      
+
       courseSessionMap[session.courseId] = {
         course,
         sessions: [],
@@ -159,15 +159,15 @@ const processTeacherSessions = async (teacherSessions) => {
         longSessionsCount: 0
       };
     }
-    
+
     courseSessionMap[session.courseId].sessions.push(session);
-    const isLong = isLongSession(session.startTime, session.endTime);
+    const isLong = session.isLongSession === true;
     courseSessionMap[session.courseId].totalHours += isLong ? 2 : 1.5;
     if (isLong) {
       courseSessionMap[session.courseId].longSessionsCount++;
     }
   });
-  
+
   return Object.values(courseSessionMap);
 };
 
