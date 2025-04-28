@@ -6,7 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getRecordById } from '../firebase/database';
+import { getRecordById, getAllRecords } from '../firebase/database';
 import { isLongSession } from '../utils/sessionUtils';
 
 import '../styles/Content.css';
@@ -20,6 +20,7 @@ const TeacherDetail = () => {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [groupsData, setGroupsData] = useState([]);
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -131,6 +132,9 @@ const TeacherDetail = () => {
                 );
                 setCourses(coursesData.filter(c => c !== null));
 
+                const groupsData = await getAllRecords('groups');
+                setGroupsData(groupsData);
+
                 const allSessionIds = [];
                 coursesData.forEach(course => {
                     if (course && course.sessionIds) {
@@ -238,6 +242,13 @@ const TeacherDetail = () => {
                                             >
                                                 <div className="course-info-container">
                                                     <div className="course-name-wrapper">
+                                                        <span
+                                                            className="course-color-circle"
+                                                            style={{
+                                                                backgroundColor: data.course.groupId &&
+                                                                    groupsData.find(g => g.id === data.course.groupId)?.color || '#cccccc'
+                                                            }}
+                                                        ></span>
                                                         <span className="course-name">{data.course.name}</span>
                                                     </div>
 
