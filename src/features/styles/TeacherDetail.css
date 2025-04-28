@@ -124,3 +124,22 @@
     font-weight: 600;
     text-align: left;
   }
+
+  .course-info-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.course-progress-container {
+    width: 100%;
+    margin-top: 8px;
+    clear: both;
+}
+
+/* Ensure the course item uses flex column layout */
+.compact-course-item {
+    display: flex;
+    flex-direction: column;
+}

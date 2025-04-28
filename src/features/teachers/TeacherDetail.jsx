@@ -236,23 +236,25 @@ const TeacherDetail = () => {
                                                 className="compact-course-item clickable"
                                                 onClick={() => navigate(`/courses/${data.course.id}`)}
                                             >
-                                                <div className="course-name-wrapper">
-                                                    <span className="course-name">{data.course.name}</span>
+                                                <div className="course-info-container">
+                                                    <div className="course-name-wrapper">
+                                                        <span className="course-name">{data.course.name}</span>
+                                                    </div>
+
+                                                    <div className="course-meta">
+                                                        <span>{data.sessions.length} Lektionen</span>
+                                                        <span>{data.totalHours.toFixed(1)}h</span>
+                                                        {data.longSessionsCount > 0 && (
+                                                            <span className="long-session-count">
+                                                                <FontAwesomeIcon icon={faClock} />
+                                                                {data.longSessionsCount}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
 
-                                                <div className="course-meta">
-                                                    <span>{data.sessions.length} Lektionen</span>
-                                                    <span>{data.totalHours.toFixed(1)}h</span>
-                                                    {data.longSessionsCount > 0 && (
-                                                        <span className="long-session-count">
-                                                            <FontAwesomeIcon icon={faClock} />
-                                                            {data.longSessionsCount}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Progress bar moved to bottom, full width */}
-                                                <div style={{ marginTop: '8px', width: '100%' }}>
+                                                {/* Progress bar in its own container with clear styling */}
+                                                <div className="course-progress-container">
                                                     <ProgressBar
                                                         progress={progress}
                                                         color={data.course.color || '#0088FE'}
