@@ -1,14 +1,16 @@
-// src/features/dashboard/MonatContent.jsx
+// Css Imports
 import '../styles/MonatContent.css';
 import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
+
+// JSX Imports
 import OverviewTab from './tabs/MonthOverviewTab';
 import AllMonthsTab from './tabs/AllMonthsTab';
 import useMonthData from '../dashboard/hooks/useMonthData';
-
 import TabComponent from '../common/TabComponent';
 
+// Library Imports
 import React, { useState } from 'react';
 
 const getPreviousMonthId = () => {

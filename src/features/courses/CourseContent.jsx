@@ -2,6 +2,7 @@
 import SearchBar from '../common/SearchBar';
 import { getAllRecords } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
+import ProgressBar from '../common/ProgressBar';
 
 //Css imports
 import '../styles/Content.css';
@@ -306,20 +307,13 @@ const KlassenContent = () => {
                   </div>
 
                   <div className="group-progress-section">
-                    <div className="progress-header">
-                      <h4>Lernfortschritt</h4>
-                      <span>{Math.round(group.progress)}%</span>
-                    </div>
-                    <div className="progress-bar-container">
-                      <div
-                        className="progress-bar"
-                        style={{
-                          width: `${group.progress}%`,
-                          backgroundColor: lighterColor,
-                          '--target-width': `${group.progress}%`
-                        }}
-                      ></div>
-                    </div>
+                    <h4>Lernfortschritt</h4>
+                    <ProgressBar
+                      progress={group.progress}
+                      color={group.color}
+                      showLabel={true}
+                      labelPosition="right"
+                    />
                   </div>
 
                   <div className="group-actions">
