@@ -7,13 +7,13 @@ import '../styles/Dashboard.css';
 import DashboardContent from './DashboardContent';
 import ImportContent from './ImportContent';
 import MonatContent from '../months/MonatContent';
-import KlassenContent from './KlassenContent';
+import KlassenContent from '../courses/CourseContent';
 import SchulerContent from './SchulerContent';
 import LehrerContent from '../teachers/TeacherContent';
 
 // Route components for detail views
 import TeacherDetail from '../teachers/TeacherDetail';
-import CourseDetail from './CourseDetail';
+import CourseDetail from '../courses/CourseDetail';
 import StudentDetail from '../students/StudentDetail';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

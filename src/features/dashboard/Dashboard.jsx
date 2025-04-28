@@ -4,7 +4,7 @@ import { useState } from 'react';
 import '../styles/Dashboard.css';
 import DashboardContent from './DashboardContent';
 import MonatContent from '../months/MonatContent';
-import KlassenContent from './KlassenContent';
+import KlassenContent from '../courses/CourseContent';
 import SchulerContent from './SchulerContent';
 import LehrerContent from '../teachers/TeacherContent'; // Add this import
 import ImportContent from './ImportContent';

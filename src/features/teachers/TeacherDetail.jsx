@@ -4,7 +4,7 @@ import '../common/Tabs.css';
 import "../common/SlidingPane.css";
 import "react-sliding-pane/dist/react-sliding-pane.css";
 import { getRecordById, getAllRecords, updateRecord } from '../firebase/database'
-import CourseDetail from '../dashboard/CourseDetail';
+import CourseDetail from '../courses/CourseDetail';
 import SessionDetailModal from '../sessions/SessionDetailModal';
 import DetailLayout from '../common/DetailLayout';
 import { isLongSession, countLongSessions } from '../utils/sessionUtils';

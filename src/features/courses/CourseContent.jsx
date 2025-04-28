@@ -1,11 +1,15 @@
-// src/features/dashboard/KlassenContent.jsx
-import { useState, useEffect } from 'react';
+//JSX Imports
+import SearchBar from '../common/SearchBar';
 import { getAllRecords } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
-import SearchBar from '../common/SearchBar';
+
+//Css imports
 import '../styles/Content.css';
 import '../styles/KlassenContent.css';
+
+// Library imports
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const KlassenContent = () => {
   const navigate = useNavigate();
