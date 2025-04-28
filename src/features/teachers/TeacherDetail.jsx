@@ -121,6 +121,49 @@ const TeacherDetail = () => {
         return Object.values(courseSessionMap);
     };
 
+    const getPreviousMonthData = () => {
+        const now = new Date();
+        // Get previous month (subtract 1 from current month)
+        let previousMonth = now.getMonth() - 1;
+        let previousYear = now.getFullYear();
+
+        // Handle January case (previous month would be December of previous year)
+        if (previousMonth < 0) {
+            previousMonth = 11; // December
+            previousYear -= 1;
+        }
+
+        const monthSessions = sessions.filter(session => {
+            if (!session.date) return false;
+            const dateParts = session.date.split('.');
+            if (dateParts.length !== 3) return false;
+            const sessionMonth = parseInt(dateParts[1]) - 1; // Convert to 0-indexed
+            const sessionYear = parseInt(dateParts[2]);
+            return sessionMonth === previousMonth && sessionYear === previousYear;
+        });
+
+        const courseSessionMap = {};
+        monthSessions.forEach(session => {
+            if (!courseSessionMap[session.courseId]) {
+                const course = courses.find(c => c.id === session.courseId);
+                courseSessionMap[session.courseId] = {
+                    course,
+                    sessions: [],
+                    totalHours: 0,
+                    longSessionsCount: 0
+                };
+            }
+            courseSessionMap[session.courseId].sessions.push(session);
+            const isLong = isLongSession(session.startTime, session.endTime);
+            courseSessionMap[session.courseId].totalHours += isLong ? 2 : 1.5;
+            if (isLong) {
+                courseSessionMap[session.courseId].longSessionsCount++;
+            }
+        });
+
+        return Object.values(courseSessionMap);
+    };
+
     useEffect(() => {
         const fetchTeacherDetails = async () => {
             try {
@@ -192,6 +235,16 @@ const TeacherDetail = () => {
 
     const monthNow = new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' });
 
+    const previousMonthData = getPreviousMonthData();
+    const totalPrevMonthHours = previousMonthData.reduce((sum, data) => sum + data.totalHours, 0);
+    const totalPrevMonthSessions = previousMonthData.reduce((sum, data) => sum + data.sessions.length, 0);
+    const totalPrevLongSessions = previousMonthData.reduce((sum, data) => sum + data.longSessionsCount, 0);
+
+    // Get previous month name
+    const prevMonthDate = new Date();
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    const prevMonthName = prevMonthDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' });
+
     return (
         <div className="teacher-detail-page">
             {/* Teacher Header */}
@@ -233,6 +286,7 @@ const TeacherDetail = () => {
                                     {currentMonthData.length > 0 ? (
                                         <>
                                             <div className="compact-course-list">
+                                                {/* Current month content - same as before */}
                                                 {currentMonthData.map(data => {
                                                     // Calculate progress based on completed sessions
                                                     const totalSessionCount = data.course.sessionIds?.length || 0;
@@ -275,7 +329,6 @@ const TeacherDetail = () => {
                                                                 </div>
                                                             </div>
 
-                                                            {/* Progress bar in its own container with clear styling */}
                                                             <div className="course-progress-container">
                                                                 <ProgressBar
                                                                     progress={progress}
@@ -311,10 +364,95 @@ const TeacherDetail = () => {
                             )
                         },
                         {
+                            id: 'previousMonth',
+                            label: 'Vormonat',
+                            content: (
+                                <>
+                                    {previousMonthData.length > 0 ? (
+                                        <>
+                                            <div className="compact-course-list">
+                                                {previousMonthData.map(data => {
+                                                    // Calculate progress based on completed sessions
+                                                    const totalSessionCount = data.course.sessionIds?.length || 0;
+                                                    const completedSessionCount = data.sessions.filter(session =>
+                                                        session.status === 'completed'
+                                                    ).length;
+
+                                                    // Calculate progress percentage
+                                                    const progress = totalSessionCount > 0
+                                                        ? (completedSessionCount / totalSessionCount) * 100
+                                                        : 0;
+
+                                                    return (
+                                                        <div
+                                                            key={data.course.id}
+                                                            className="compact-course-item clickable"
+                                                            onClick={() => navigate(`/courses/${data.course.id}`)}
+                                                        >
+                                                            <div className="course-info-container">
+                                                                <div className="course-name-wrapper">
+                                                                    <span
+                                                                        className="course-color-circle"
+                                                                        style={{
+                                                                            backgroundColor: data.course.groupId &&
+                                                                                groupsData.find(g => g.id === data.course.groupId)?.color || '#cccccc'
+                                                                        }}
+                                                                    ></span>
+                                                                    <span className="course-name">{data.course.name}</span>
+                                                                </div>
+
+                                                                <div className="course-meta">
+                                                                    <span>{data.sessions.length} Lektionen</span>
+                                                                    <span>{data.totalHours.toFixed(1)}h</span>
+                                                                    {data.longSessionsCount > 0 && (
+                                                                        <span className="long-session-count">
+                                                                            <FontAwesomeIcon icon={faClock} />
+                                                                            {data.longSessionsCount}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="course-progress-container">
+                                                                <ProgressBar
+                                                                    progress={progress}
+                                                                    color={data.course.color || '#0088FE'}
+                                                                    height="6px"
+                                                                    showLabel={true}
+                                                                    labelPosition="right"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="month-summary">
+                                                <div className="summary-item">
+                                                    <span className="summary-label">Gesamt Lektionen:</span>
+                                                    <span className="summary-value">{totalPrevMonthSessions}</span>
+                                                </div>
+                                                <div className="summary-item">
+                                                    <span className="summary-label">Gesamt Stunden:</span>
+                                                    <span className="summary-value">{totalPrevMonthHours.toFixed(1)}h</span>
+                                                </div>
+                                                <div className="summary-item">
+                                                    <span className="summary-label">2h-Lektionen:</span>
+                                                    <span className="summary-value">{totalPrevLongSessions}</span>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="empty-message">Keine Kurse im vorherigen Monat ({prevMonthName}).</div>
+                                    )}
+                                </>
+                            )
+                        },
+                        {
                             id: 'allCourses',
                             label: 'Alle Kurse',
                             content: (
                                 <div className="compact-course-list">
+                                    {/* All courses content - same as before */}
                                     {courses.length > 0 ? (
                                         courses.map(course => (
                                             <div
