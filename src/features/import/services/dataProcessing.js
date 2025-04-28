@@ -13,6 +13,8 @@ import { createRecord, updateRecord, getRecordById } from '../../firebase/databa
 import { ref, get, update } from "firebase/database";
 import { database } from "../../firebase/config";
 import { validateExcelFile as validateExcelFileFunction } from './excelUtils';
+import { isLongSession } from '../../utils/sessionUtils';
+
 
 const COURSE_COLORS = [
     '#911DD2', // Purple Base
@@ -126,6 +128,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const onlineMatch = filename.match(/_online/i);
     const offlineMatch = filename.match(/_offline/i);
     const courseType = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
+    let isFirstSession = true;
 
 
 
@@ -279,6 +282,11 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
             if (folienTitle !== currentSessionTitle) {
                 // Save previous session if we have one
                 if (currentSession) {
+                    if (isFirstSession && currentSession.startTime && currentSession.endTime) {
+                        // Check if it's a long session using the utility function
+                        currentSession.isLongSession = isLongSession(currentSession.startTime, currentSession.endTime);
+                        isFirstSession = false;
+                    }
                     const sessionRecord = await createRecord('sessions', currentSession);
 
                     // Add to course's sessionIds
