@@ -1,8 +1,9 @@
 // src/features/teachers/tabs/TeacherOverviewTab.jsx - Import section update
+// JSX imports
 import GroupBadge from '../../common/GroupBadge';
-
-import { useState, useEffect } from 'react';
 import { getAllRecords } from '../../firebase/database';
+
+// Library imports
 import {
   LineChart,
   Line,
@@ -17,6 +18,7 @@ import {
 } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserTie, faLayerGroup, faCalendarDay, faUserGraduate, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
+import { useState, useEffect } from 'react';
 
 const TeacherOverview = () => {
   const [stats, setStats] = useState({
@@ -32,6 +34,7 @@ const TeacherOverview = () => {
   const [coursesData, setCoursesData] = useState([]);
   const [activeCoursesIds, setActiveCoursesIds] = useState(new Set());
   const [monthlySessions, setMonthlySessions] = useState([]);
+  const [groupsData, setGroupsData] = useState([]);
 
   useEffect(() => {
     fetchOverviewData();
@@ -47,11 +50,12 @@ const TeacherOverview = () => {
       const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
 
       // Fetch all necessary data
-      const [teachersData, sessionsData, coursesData, studentsData] = await Promise.all([
+      const [teachersData, sessionsData, coursesData, studentsData, groupsData] = await Promise.all([
         getAllRecords('teachers'),
         getAllRecords('sessions'),
         getAllRecords('courses'),
-        getAllRecords('students')
+        getAllRecords('students'),
+        getAllRecords('groups')
       ]);
 
       // Get the last 12 months data for line chart
@@ -97,6 +101,8 @@ const TeacherOverview = () => {
       setActiveCoursesIds(activeCoursesIds);
       setTeachers(teachersWithSessionCounts);
       setMonthlySessions(monthlySessionCounts);
+      setGroupsData(groupsData);
+
 
       setStats({
         activeTeachers: activeTeacherIds.size,
@@ -309,23 +315,34 @@ const TeacherOverview = () => {
                     // Get group objects
                     const teacherGroups = Array.from(teacherGroupIds)
                       .map(groupId => {
-                        // Find a representative course for this group
+                        // Find the actual group from the groups collection
+                        const group = groupsData.find(g => g.id === groupId);
+
+                        // If we found the group, use its data
+                        if (group) {
+                          return {
+                            id: groupId,
+                            name: group.name || 'Unknown Group',
+                            color: group.color || '#e0e0e0'
+                          };
+                        }
+
+                        // Fallback to using course data if group not found
                         const representativeCourse = teacherActiveCourses.find(
                           course => course.groupId === groupId
                         );
 
-                        // If we found a course, return an object with group info
                         if (representativeCourse) {
                           return {
                             id: groupId,
-                            name: representativeCourse.group || 'Unknown Group',
-                            color: representativeCourse.color || '#e0e0e0',
-                            courseId: representativeCourse.id // Include a courseId for navigation
+                            name: `Group ${groupId.substring(0, 5)}...` || 'Unknown Group',
+                            color: representativeCourse.color || '#e0e0e0'
                           };
                         }
+
                         return null;
                       })
-                      .filter(Boolean); // Remove any null entries
+                      .filter(Boolean);
 
                     return (
                       <div
@@ -341,7 +358,7 @@ const TeacherOverview = () => {
                           </div>
                         </div>
                         <div className="teacher-meta">
-                          <span>{teacher.country || 'Unknown'}</span>
+                          <span>{teacher.country || 'No Location'}</span>
                           <span>{teacher.sessionCount} sessions</span>
                         </div>
                         <div className="teacher-group-badges">
