@@ -4,6 +4,15 @@ import TabCard from '../common/TabCard'
 
 import { getRecordById, getAllRecords } from '../firebase/database';
 import { isLongSession } from '../utils/sessionUtils';
+import {
+    getCurrentMonthSessions,
+    getPreviousMonthSessions,
+    formatMonthId,
+    getCurrentMonthRange,
+    getPreviousMonthRange,
+    getTeacherCurrentMonthData,
+    getTeacherPreviousMonthData
+} from '../utils/dateQueryUtils';
 
 // CSS imports
 import '../styles/Content.css';
@@ -26,12 +35,17 @@ const TeacherDetail = () => {
     const [error, setError] = useState(null);
     const [groupsData, setGroupsData] = useState([]);
     const [activeCoursesTab, setActiveCoursesTab] = useState('currentMonth');
+    const [currentMonthData, setCurrentMonthData] = useState([]);
+    const [previousMonthData, setPreviousMonthData] = useState([]);
+    const [monthNow, setMonthNow] = useState('');
+    const [prevMonthName, setPrevMonthName] = useState('');
     const { id } = useParams();
     const navigate = useNavigate();
 
     const handleBack = () => {
         navigate('/teachers');
     };
+
 
     // Prepare chart data for monthly hours
     const prepareChartData = (sessions) => {
@@ -84,86 +98,6 @@ const TeacherDetail = () => {
 
     const chartData = useMemo(() => prepareChartData(sessions), [sessions]);
 
-    // Get current month sessions and courses
-    const getCurrentMonthData = () => {
-        const now = new Date();
-        const currentMonth = now.getMonth(); // 0-indexed
-        const currentYear = now.getFullYear();
-
-        const monthSessions = sessions.filter(session => {
-            if (!session.date) return false;
-            const dateParts = session.date.split('.');
-            if (dateParts.length !== 3) return false;
-            const sessionMonth = parseInt(dateParts[1]) - 1; // Convert to 0-indexed
-            const sessionYear = parseInt(dateParts[2]);
-            return sessionMonth === currentMonth && sessionYear === currentYear;
-        });
-
-        const courseSessionMap = {};
-        monthSessions.forEach(session => {
-            if (!courseSessionMap[session.courseId]) {
-                const course = courses.find(c => c.id === session.courseId);
-                courseSessionMap[session.courseId] = {
-                    course,
-                    sessions: [],
-                    totalHours: 0,
-                    longSessionsCount: 0
-                };
-            }
-            courseSessionMap[session.courseId].sessions.push(session);
-            const isLong = isLongSession(session.startTime, session.endTime);
-            courseSessionMap[session.courseId].totalHours += isLong ? 2 : 1.5;
-            if (isLong) {
-                courseSessionMap[session.courseId].longSessionsCount++;
-            }
-        });
-
-        return Object.values(courseSessionMap);
-    };
-
-    const getPreviousMonthData = () => {
-        const now = new Date();
-        // Get previous month (subtract 1 from current month)
-        let previousMonth = now.getMonth() - 1;
-        let previousYear = now.getFullYear();
-
-        // Handle January case (previous month would be December of previous year)
-        if (previousMonth < 0) {
-            previousMonth = 11; // December
-            previousYear -= 1;
-        }
-
-        const monthSessions = sessions.filter(session => {
-            if (!session.date) return false;
-            const dateParts = session.date.split('.');
-            if (dateParts.length !== 3) return false;
-            const sessionMonth = parseInt(dateParts[1]) - 1; // Convert to 0-indexed
-            const sessionYear = parseInt(dateParts[2]);
-            return sessionMonth === previousMonth && sessionYear === previousYear;
-        });
-
-        const courseSessionMap = {};
-        monthSessions.forEach(session => {
-            if (!courseSessionMap[session.courseId]) {
-                const course = courses.find(c => c.id === session.courseId);
-                courseSessionMap[session.courseId] = {
-                    course,
-                    sessions: [],
-                    totalHours: 0,
-                    longSessionsCount: 0
-                };
-            }
-            courseSessionMap[session.courseId].sessions.push(session);
-            const isLong = isLongSession(session.startTime, session.endTime);
-            courseSessionMap[session.courseId].totalHours += isLong ? 2 : 1.5;
-            if (isLong) {
-                courseSessionMap[session.courseId].longSessionsCount++;
-            }
-        });
-
-        return Object.values(courseSessionMap);
-    };
-
     useEffect(() => {
         const fetchTeacherDetails = async () => {
             try {
@@ -183,6 +117,7 @@ const TeacherDetail = () => {
                 const groupsData = await getAllRecords('groups');
                 setGroupsData(groupsData);
 
+                // Fetch all sessions related to this teacher's courses
                 const allSessionIds = [];
                 coursesData.forEach(course => {
                     if (course && course.sessionIds) {
@@ -211,6 +146,19 @@ const TeacherDetail = () => {
                 });
 
                 setSessions(sortedSessions);
+
+                const { firstDay: currentFirst } = getCurrentMonthRange();
+                const { firstDay: prevFirst } = getPreviousMonthRange();
+                setMonthNow(currentFirst.toLocaleString('de-DE', { month: 'long', year: 'numeric' }));
+                setPrevMonthName(prevFirst.toLocaleString('de-DE', { month: 'long', year: 'numeric' }));
+
+                // Use the utility functions to get the current and previous month data
+                const currentData = await getTeacherCurrentMonthData(id);
+                setCurrentMonthData(currentData);
+
+                const prevData = await getTeacherPreviousMonthData(id);
+                setPreviousMonthData(prevData);
+
             } catch (err) {
                 console.error("Error fetching teacher details:", err);
                 setError("Failed to load teacher details.");
@@ -223,27 +171,18 @@ const TeacherDetail = () => {
             fetchTeacherDetails();
         }
     }, [id]);
-
     if (loading) return <div className="loading-indicator">Loading teacher details...</div>;
     if (error) return <div className="error-message">{error}</div>;
     if (!teacher) return <div className="error-message">Teacher not found</div>;
 
-    const currentMonthData = getCurrentMonthData();
     const totalMonthHours = currentMonthData.reduce((sum, data) => sum + data.totalHours, 0);
     const totalMonthSessions = currentMonthData.reduce((sum, data) => sum + data.sessions.length, 0);
     const totalLongSessions = currentMonthData.reduce((sum, data) => sum + data.longSessionsCount, 0);
 
-    const monthNow = new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' });
-
-    const previousMonthData = getPreviousMonthData();
     const totalPrevMonthHours = previousMonthData.reduce((sum, data) => sum + data.totalHours, 0);
     const totalPrevMonthSessions = previousMonthData.reduce((sum, data) => sum + data.sessions.length, 0);
     const totalPrevLongSessions = previousMonthData.reduce((sum, data) => sum + data.longSessionsCount, 0);
 
-    // Get previous month name
-    const prevMonthDate = new Date();
-    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-    const prevMonthName = prevMonthDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' });
 
     return (
         <div className="teacher-detail-page">
