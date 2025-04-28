@@ -1,8 +1,8 @@
 //JSX Imports
 import SearchBar from '../common/SearchBar';
+import ProgressBar from '../common/ProgressBar';
 import { getAllRecords } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
-import ProgressBar from '../common/ProgressBar';
 
 //Css imports
 import '../styles/Content.css';
@@ -181,18 +181,6 @@ const KlassenContent = () => {
     return ((highestLevelIndex + 1) / courseLevels.length) * 100;
   };
 
-  // Get initials from group name for the avatar
-  const getInitials = (name) => {
-    if (!name) return '?';
-
-    const words = name.split(' ');
-    if (words.length === 1) {
-      return name.substring(0, 2).toUpperCase();
-    }
-
-    return (words[0][0] + words[1][0]).toUpperCase();
-  };
-
   // Filter groups based on search query
   const filterGroups = (groups) => {
     if (!searchQuery) return groups;
@@ -254,7 +242,6 @@ const KlassenContent = () => {
       {!loading && !error && Object.keys(filteredCourseGroups).length > 0 && (
         <div className="groups-dashboard">
           {Object.values(filteredCourseGroups).map((group) => {
-            const groupInitials = getInitials(group.name);
             const lighterColor = adjustColor(group.color, 40); // Create lighter version for progress bar
 
             return (
@@ -265,13 +252,23 @@ const KlassenContent = () => {
                     style={{ backgroundColor: group.color }}
                     onClick={() => handleViewGroupDetails(group.name)}
                   >
-                    {groupInitials}
+                    {group.name}
                   </div>
                 </div>
 
                 <div className="group-details-card">
                   <div className="group-details-header">
-                    <h3>{group.name}</h3>
+                    <div className="group-levels-container">
+                      {sortLanguageLevels(Array.from(group.levels)).map(level => (
+                        <div
+                          className="level-badge clickable"
+                          key={level}
+                          onClick={() => handleLevelBadgeClick(group.name, level)}
+                        >
+                          {level}
+                        </div>
+                      ))}
+                    </div>
                     <div className="group-stats">
                       <span>{group.courses.length} Kurse</span>
                       <span>{group.totalStudents} Schüler</span>
@@ -279,17 +276,6 @@ const KlassenContent = () => {
                     </div>
                   </div>
 
-                  <div className="group-levels-container">
-                    {sortLanguageLevels(Array.from(group.levels)).map(level => (
-                      <div
-                        className="level-badge clickable"
-                        key={level}
-                        onClick={() => handleLevelBadgeClick(group.name, level)}
-                      >
-                        {level}
-                      </div>
-                    ))}
-                  </div>
 
                   <div className="group-teachers-container">
                     <h4>Lehrkräfte</h4>
