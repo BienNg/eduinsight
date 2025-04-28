@@ -1,4 +1,5 @@
 // src/features/dashboard/tabs/OverviewTab.jsx
+import ProgressBar from '../../common/ProgressBar';
 
 import '../../styles/cards/Cards.css';
 import '../../styles/Content.css';
@@ -319,14 +320,12 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                                                                 </div>
                                                             </div>
 
-                                                            <div className="progress-bar-container">
-                                                                <div
-                                                                    className="progress-bar"
-                                                                    style={{
-                                                                        '--target-width': `${Math.max(0, overallProgress)}%`
-                                                                    }}
-                                                                ></div>
-                                                            </div>
+                                                            <ProgressBar
+                                                                progress={Math.max(0, overallProgress)}
+                                                                color="#4285f4"
+                                                                showLabel={false}
+                                                                height="10px"
+                                                            />
 
                                                             {currentCourse && !isGroupComplete && (
                                                                 <div className="current-course-info">
