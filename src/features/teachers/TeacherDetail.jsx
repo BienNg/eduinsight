@@ -351,18 +351,21 @@ const TeacherDetail = () => {
                                                     );
                                                 })}
                                             </div>
-                                            <div className="month-summary">
+                                            <div className="month-summary horizontal-with-vertical-items">
                                                 <div className="summary-item">
-                                                    <span className="summary-label">Gesamt Lektionen:</span>
+                                                    <FontAwesomeIcon icon={faCalendarAlt} className="summary-icon" />
                                                     <span className="summary-value">{totalMonthSessions}</span>
+                                                    <span className="summary-label">Gesamt Lektionen</span>
                                                 </div>
                                                 <div className="summary-item">
-                                                    <span className="summary-label">Gesamt Stunden:</span>
+                                                    <FontAwesomeIcon icon={faHourglassHalf} className="summary-icon" />
                                                     <span className="summary-value">{totalMonthHours.toFixed(1)}h</span>
+                                                    <span className="summary-label">Gesamt Stunden</span>
                                                 </div>
                                                 <div className="summary-item">
-                                                    <span className="summary-label">2h-Lektionen:</span>
+                                                    <FontAwesomeIcon icon={faClock} className="summary-icon" />
                                                     <span className="summary-value">{totalLongSessions}</span>
+                                                    <span className="summary-label">2h-Lektionen</span>
                                                 </div>
                                             </div>
                                         </>
@@ -437,18 +440,22 @@ const TeacherDetail = () => {
                                                     );
                                                 })}
                                             </div>
-                                            <div className="month-summary">
+                                            
+                                            <div className="month-summary horizontal-with-vertical-items">
                                                 <div className="summary-item">
-                                                    <span className="summary-label">Gesamt Lektionen:</span>
+                                                    <FontAwesomeIcon icon={faCalendarAlt} className="summary-icon" />
                                                     <span className="summary-value">{totalPrevMonthSessions}</span>
+                                                    <span className="summary-label">Gesamt Lektionen</span>
                                                 </div>
                                                 <div className="summary-item">
-                                                    <span className="summary-label">Gesamt Stunden:</span>
+                                                    <FontAwesomeIcon icon={faHourglassHalf} className="summary-icon" />
                                                     <span className="summary-value">{totalPrevMonthHours.toFixed(1)}h</span>
+                                                    <span className="summary-label">Gesamt Stunden</span>
                                                 </div>
                                                 <div className="summary-item">
-                                                    <span className="summary-label">2h-Lektionen:</span>
+                                                    <FontAwesomeIcon icon={faClock} className="summary-icon" />
                                                     <span className="summary-value">{totalPrevLongSessions}</span>
+                                                    <span className="summary-label">2h-Lektionen</span>
                                                 </div>
                                             </div>
                                         </>
