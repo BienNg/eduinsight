@@ -4,14 +4,17 @@ import ProgressBar from '../common/ProgressBar';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getRecordById, getAllRecords } from '../firebase/database';
 import { isLongSession } from '../utils/sessionUtils';
 
+// CSS imports
 import '../styles/Content.css';
 import '../styles/cards/Cards.css';
 import '../styles/TeacherDetail.css';
+
+// Library imports
+import { faClock, faArrowLeft, faCalendarAlt, faHourglassHalf, faStar } from '@fortawesome/free-solid-svg-icons';
 
 
 const TeacherDetail = () => {
@@ -221,6 +224,29 @@ const TeacherDetail = () => {
                     <div className="panel-content">
                         {currentMonthData.length > 0 ? (
                             <>
+                                <div className="month-summary">
+                                    <div className="summary-item">
+                                        <span className="summary-label">
+                                            <FontAwesomeIcon icon={faCalendarAlt} className="summary-icon" />
+                                            Gesamt Lektionen:
+                                        </span>
+                                        <span className="summary-value">{totalMonthSessions}</span>
+                                    </div>
+                                    <div className="summary-item">
+                                        <span className="summary-label">
+                                            <FontAwesomeIcon icon={faHourglassHalf} className="summary-icon" />
+                                            Gesamt Stunden:
+                                        </span>
+                                        <span className="summary-value">{totalMonthHours.toFixed(1)}h</span>
+                                    </div>
+                                    <div className="summary-item">
+                                        <span className="summary-label">
+                                            <FontAwesomeIcon icon={faStar} className="summary-icon" />
+                                            2h-Lektionen:
+                                        </span>
+                                        <span className="summary-value highlight">{totalLongSessions}</span>
+                                    </div>
+                                </div>
                                 <div className="compact-course-list">
                                     {currentMonthData.map(data => {
                                         // Calculate progress based on completed sessions
@@ -253,7 +279,7 @@ const TeacherDetail = () => {
                                                     </div>
 
                                                     <div className="course-meta">
-                                                        <span>{data.sessions.length} Lektionen</span>
+                                                        <span>{data.sessions.length} Lektionen | </span>
                                                         <span>{data.totalHours.toFixed(1)}h</span>
                                                         {data.longSessionsCount > 0 && (
                                                             <span className="long-session-count">
@@ -277,20 +303,6 @@ const TeacherDetail = () => {
                                             </div>
                                         );
                                     })}
-                                </div>
-                                <div className="month-summary">
-                                    <div className="summary-item">
-                                        <span className="summary-label">Gesamt Lektionen:</span>
-                                        <span className="summary-value">{totalMonthSessions}</span>
-                                    </div>
-                                    <div className="summary-item">
-                                        <span className="summary-label">Gesamt Stunden:</span>
-                                        <span className="summary-value">{totalMonthHours.toFixed(1)}h</span>
-                                    </div>
-                                    <div className="summary-item">
-                                        <span className="summary-label">2h-Lektionen:</span>
-                                        <span className="summary-value">{totalLongSessions}</span>
-                                    </div>
                                 </div>
                             </>
                         ) : (

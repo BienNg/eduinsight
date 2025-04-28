@@ -12,7 +12,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-  }
+}
 
 .teacher-title-section {
     margin-bottom: 20px;
@@ -40,30 +40,73 @@
 }
 
 .month-summary {
-    margin-top: 16px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
+    margin-top: 0px;
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+    border-radius: 12px;
     padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border-left: 4px solid #0088FE;
+    margin-bottom: 8px;
 }
 
 .summary-item {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .summary-item:last-child {
     margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 .summary-label {
     font-weight: 500;
     color: #555;
+    display: flex;
+    align-items: center;
+}
+
+.summary-icon {
+    margin-right: 10px;
+    color: #0088FE;
+    font-size: 14px;
+    width: 16px;
 }
 
 .summary-value {
     font-weight: 600;
-    color: var(--primary-blue);
+    background-color: #f1f5f9;
+    padding: 4px 12px;
+    border-radius: 12px;
+    color: #0088FE;
+    min-width: 50px;
+    text-align: center;
+}
+
+.summary-value.highlight {
+    background-color: #FFF8E6;
+    color: #FF8042;
+}
+
+/* Ensure icon sizes are consistent */
+.summary-item:nth-child(1) .summary-icon {
+    color: #0088FE;
+    /* Blue for lessons */
+}
+
+.summary-item:nth-child(2) .summary-icon {
+    color: #00C49F;
+    /* Green for hours */
+}
+
+.summary-item:nth-child(3) .summary-icon {
+    color: #FF8042;
+    /* Orange for long sessions */
 }
 
 .long-session-count {
@@ -100,32 +143,32 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px 24px;
-  }
-  
-  /* Ensure consistent spacing and alignment */
-  .info-grid .info-item {
+}
+
+/* Ensure consistent spacing and alignment */
+.info-grid .info-item {
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
     border-bottom: 1px solid #eee;
-  }
-  
-  .info-grid .info-item:last-child,
-  .info-grid .info-item:nth-last-child(2) {
+}
+
+.info-grid .info-item:last-child,
+.info-grid .info-item:nth-last-child(2) {
     border-bottom: none;
-  }
-  
-  .info-grid .info-item .label {
+}
+
+.info-grid .info-item .label {
     color: #666;
     font-weight: 500;
-  }
-  
-  .info-grid .info-item .value {
+}
+
+.info-grid .info-item .value {
     font-weight: 600;
     text-align: left;
-  }
+}
 
-  .course-info-container {
+.course-info-container {
     display: flex;
     justify-content: space-between;
     width: 100%;
