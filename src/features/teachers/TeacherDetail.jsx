@@ -1,10 +1,7 @@
 // src/features/teachers/TeacherDetail.jsx
 import ProgressBar from '../common/ProgressBar';
+import TabCard from '../common/TabCard'
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getRecordById, getAllRecords } from '../firebase/database';
 import { isLongSession } from '../utils/sessionUtils';
 
@@ -15,6 +12,10 @@ import '../styles/TeacherDetail.css';
 
 // Library imports
 import { faClock, faArrowLeft, faCalendarAlt, faHourglassHalf, faStar } from '@fortawesome/free-solid-svg-icons';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 
 const TeacherDetail = () => {
@@ -24,6 +25,7 @@ const TeacherDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [groupsData, setGroupsData] = useState([]);
+    const [activeCoursesTab, setActiveCoursesTab] = useState('currentMonth');
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -217,99 +219,135 @@ const TeacherDetail = () => {
             {/* Three Column Layout */}
             <div className="three-column-overview-grid">
                 {/* First Column: Courses from current month */}
-                <div className="overview-panel animate-card">
-                    <div className="panel-header">
-                        <h3 className="panel-title">Kurse ({monthNow})</h3>
-                    </div>
-                    <div className="panel-content">
-                        {currentMonthData.length > 0 ? (
-                            <>
-                                <div className="month-summary">
-                                    <div className="summary-item">
-                                        <span className="summary-label">
-                                            <FontAwesomeIcon icon={faCalendarAlt} className="summary-icon" />
-                                            Gesamt Lektionen:
-                                        </span>
-                                        <span className="summary-value">{totalMonthSessions}</span>
-                                    </div>
-                                    <div className="summary-item">
-                                        <span className="summary-label">
-                                            <FontAwesomeIcon icon={faHourglassHalf} className="summary-icon" />
-                                            Gesamt Stunden:
-                                        </span>
-                                        <span className="summary-value">{totalMonthHours.toFixed(1)}h</span>
-                                    </div>
-                                    <div className="summary-item">
-                                        <span className="summary-label">
-                                            <FontAwesomeIcon icon={faStar} className="summary-icon" />
-                                            2h-Lektionen:
-                                        </span>
-                                        <span className="summary-value highlight">{totalLongSessions}</span>
-                                    </div>
-                                </div>
+                <TabCard
+                    className="animate-card"
+                    title={`Kurse (${monthNow})`}
+                    activeTab={activeCoursesTab}
+                    setActiveTab={setActiveCoursesTab}
+                    tabs={[
+                        {
+                            id: 'currentMonth',
+                            label: 'Aktueller Monat',
+                            content: (
+                                <>
+                                    {currentMonthData.length > 0 ? (
+                                        <>
+                                            <div className="compact-course-list">
+                                                {currentMonthData.map(data => {
+                                                    // Calculate progress based on completed sessions
+                                                    const totalSessionCount = data.course.sessionIds?.length || 0;
+                                                    const completedSessionCount = data.sessions.filter(session =>
+                                                        session.status === 'completed'
+                                                    ).length;
+
+                                                    // Calculate progress percentage
+                                                    const progress = totalSessionCount > 0
+                                                        ? (completedSessionCount / totalSessionCount) * 100
+                                                        : 0;
+
+                                                    return (
+                                                        <div
+                                                            key={data.course.id}
+                                                            className="compact-course-item clickable"
+                                                            onClick={() => navigate(`/courses/${data.course.id}`)}
+                                                        >
+                                                            <div className="course-info-container">
+                                                                <div className="course-name-wrapper">
+                                                                    <span
+                                                                        className="course-color-circle"
+                                                                        style={{
+                                                                            backgroundColor: data.course.groupId &&
+                                                                                groupsData.find(g => g.id === data.course.groupId)?.color || '#cccccc'
+                                                                        }}
+                                                                    ></span>
+                                                                    <span className="course-name">{data.course.name}</span>
+                                                                </div>
+
+                                                                <div className="course-meta">
+                                                                    <span>{data.sessions.length} Lektionen</span>
+                                                                    <span>{data.totalHours.toFixed(1)}h</span>
+                                                                    {data.longSessionsCount > 0 && (
+                                                                        <span className="long-session-count">
+                                                                            <FontAwesomeIcon icon={faClock} />
+                                                                            {data.longSessionsCount}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Progress bar in its own container with clear styling */}
+                                                            <div className="course-progress-container">
+                                                                <ProgressBar
+                                                                    progress={progress}
+                                                                    color={data.course.color || '#0088FE'}
+                                                                    height="6px"
+                                                                    showLabel={true}
+                                                                    labelPosition="right"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="month-summary">
+                                                <div className="summary-item">
+                                                    <span className="summary-label">Gesamt Lektionen:</span>
+                                                    <span className="summary-value">{totalMonthSessions}</span>
+                                                </div>
+                                                <div className="summary-item">
+                                                    <span className="summary-label">Gesamt Stunden:</span>
+                                                    <span className="summary-value">{totalMonthHours.toFixed(1)}h</span>
+                                                </div>
+                                                <div className="summary-item">
+                                                    <span className="summary-label">2h-Lektionen:</span>
+                                                    <span className="summary-value">{totalLongSessions}</span>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="empty-message">Keine Kurse in diesem Monat.</div>
+                                    )}
+                                </>
+                            )
+                        },
+                        {
+                            id: 'allCourses',
+                            label: 'Alle Kurse',
+                            content: (
                                 <div className="compact-course-list">
-                                    {currentMonthData.map(data => {
-                                        // Calculate progress based on completed sessions
-                                        const totalSessionCount = data.course.sessionIds?.length || 0;
-                                        const completedSessionCount = data.sessions.filter(session =>
-                                            session.status === 'completed'
-                                        ).length;
-
-                                        // Calculate progress percentage
-                                        const progress = totalSessionCount > 0
-                                            ? (completedSessionCount / totalSessionCount) * 100
-                                            : 0;
-
-                                        return (
+                                    {courses.length > 0 ? (
+                                        courses.map(course => (
                                             <div
-                                                key={data.course.id}
+                                                key={course.id}
                                                 className="compact-course-item clickable"
-                                                onClick={() => navigate(`/courses/${data.course.id}`)}
+                                                onClick={() => navigate(`/courses/${course.id}`)}
                                             >
                                                 <div className="course-info-container">
                                                     <div className="course-name-wrapper">
                                                         <span
                                                             className="course-color-circle"
                                                             style={{
-                                                                backgroundColor: data.course.groupId &&
-                                                                    groupsData.find(g => g.id === data.course.groupId)?.color || '#cccccc'
+                                                                backgroundColor: course.groupId &&
+                                                                    groupsData.find(g => g.id === course.groupId)?.color || '#cccccc'
                                                             }}
                                                         ></span>
-                                                        <span className="course-name">{data.course.name}</span>
+                                                        <span className="course-name">{course.name}</span>
                                                     </div>
-
                                                     <div className="course-meta">
-                                                        <span>{data.sessions.length} Lektionen | </span>
-                                                        <span>{data.totalHours.toFixed(1)}h</span>
-                                                        {data.longSessionsCount > 0 && (
-                                                            <span className="long-session-count">
-                                                                <FontAwesomeIcon icon={faClock} />
-                                                                {data.longSessionsCount}
-                                                            </span>
-                                                        )}
+                                                        <span>{course.level || 'Kein Level'}</span>
+                                                        <span>{course.sessionIds?.length || 0} Lektionen</span>
                                                     </div>
-                                                </div>
-
-                                                {/* Progress bar in its own container with clear styling */}
-                                                <div className="course-progress-container">
-                                                    <ProgressBar
-                                                        progress={progress}
-                                                        color={data.course.color || '#0088FE'}
-                                                        height="6px"
-                                                        showLabel={true}
-                                                        labelPosition="right"
-                                                    />
                                                 </div>
                                             </div>
-                                        );
-                                    })}
+                                        ))
+                                    ) : (
+                                        <div className="empty-message">Keine Kurse vorhanden.</div>
+                                    )}
                                 </div>
-                            </>
-                        ) : (
-                            <div className="empty-message">Keine Kurse in diesem Monat.</div>
-                        )}
-                    </div>
-                </div>
+                            )
+                        }
+                    ]}
+                />
 
                 {/* Second Column: Monthly hours chart */}
                 <div className="overview-panel animate-card">
