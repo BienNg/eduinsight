@@ -39,11 +39,24 @@ const TeacherDetail = () => {
     const [previousMonthData, setPreviousMonthData] = useState([]);
     const [monthNow, setMonthNow] = useState('');
     const [prevMonthName, setPrevMonthName] = useState('');
+    const [courseCompletionMap, setCourseCompletionMap] = useState({});
     const { id } = useParams();
     const navigate = useNavigate();
 
     const handleBack = () => {
         navigate('/teachers');
+    };
+
+    const getTotalSessionsByLevel = (level) => {
+        switch (level) {
+            case 'A1.1': return 18;
+            case 'A1.2': return 20;
+            case 'A2.1': return 20;
+            case 'A2.2': return 20;
+            case 'B1.1': return 20;
+            case 'B1.2': return 20;
+            default: return 0; // Default to 0 if level not recognized
+        }
     };
 
 
@@ -132,6 +145,24 @@ const TeacherDetail = () => {
                 const validSessions = sessionsData
                     .filter(s => s !== null)
                     .filter(s => s.teacherId === id);
+
+                // New code to calculate course completion
+                const completionMap = {};
+                validSessions.forEach(session => {
+                    if (!completionMap[session.courseId]) {
+                        completionMap[session.courseId] = {
+                            total: 0,
+                            completed: 0
+                        };
+                    }
+
+                    completionMap[session.courseId].total++;
+                    if (session.status === 'completed') {
+                        completionMap[session.courseId].completed++;
+                    }
+                });
+
+                setCourseCompletionMap(completionMap);
 
                 const sortedSessions = validSessions.sort((a, b) => {
                     if (!a.date || !b.date) return 0;
@@ -227,11 +258,10 @@ const TeacherDetail = () => {
                                             <div className="compact-course-list">
                                                 {/* Current month content - same as before */}
                                                 {currentMonthData.map(data => {
-                                                    // Calculate progress based on completed sessions
-                                                    const totalSessionCount = data.course.sessionIds?.length || 0;
-                                                    const completedSessionCount = data.sessions.filter(session =>
-                                                        session.status === 'completed'
-                                                    ).length;
+                                                    const courseProgress = courseCompletionMap[data.course.id] || { total: 0, completed: 0 };
+                                                    const totalSessionCount = getTotalSessionsByLevel(data.course.level);
+                                                    const completedSessionCount = courseProgress.completed;
+
 
                                                     // Calculate progress percentage
                                                     const progress = totalSessionCount > 0
@@ -313,10 +343,9 @@ const TeacherDetail = () => {
                                             <div className="compact-course-list">
                                                 {previousMonthData.map(data => {
                                                     // Calculate progress based on completed sessions
-                                                    const totalSessionCount = data.course.sessionIds?.length || 0;
-                                                    const completedSessionCount = data.sessions.filter(session =>
-                                                        session.status === 'completed'
-                                                    ).length;
+                                                    const courseProgress = courseCompletionMap[data.course.id] || { total: 0, completed: 0 };
+                                                    const totalSessionCount = getTotalSessionsByLevel(data.course.level);
+                                                    const completedSessionCount = courseProgress.completed;
 
                                                     // Calculate progress percentage
                                                     const progress = totalSessionCount > 0
