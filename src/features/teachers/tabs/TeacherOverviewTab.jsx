@@ -18,7 +18,8 @@ import {
 } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserTie, faLayerGroup, faCalendarDay, faUserGraduate, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect} from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const TeacherOverview = () => {
   const [stats, setStats] = useState({
@@ -35,10 +36,16 @@ const TeacherOverview = () => {
   const [activeCoursesIds, setActiveCoursesIds] = useState(new Set());
   const [monthlySessions, setMonthlySessions] = useState([]);
   const [groupsData, setGroupsData] = useState([]);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     fetchOverviewData();
   }, []);
+
+  const handleTeacherClick = (teacherId) => {
+    navigate(`/teachers/${teacherId}`);
+  };
 
   const fetchOverviewData = async () => {
     try {
@@ -349,6 +356,9 @@ const TeacherOverview = () => {
                         className="compact-teacher-item"
                         key={teacher.id}
                         style={{ animationDelay: `${0.1 * index}s` }}
+                        onClick={() => handleTeacherClick(teacher.id)}
+                        role="button"
+                        tabIndex={0}
                       >
                         <div className="teacher-profile">
                           <FontAwesomeIcon icon={faUserTie} className="teacher-icon" />

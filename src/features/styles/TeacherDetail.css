@@ -1,0 +1,89 @@
+/* Add to src/styles/Content.css or create a new TeacherDetail.css file */
+
+.teacher-detail-page {
+    padding: 20px;
+  }
+  
+  .teacher-header {
+    margin-bottom: 24px;
+  }
+  
+  .teacher-title-section {
+    margin-bottom: 20px;
+  }
+  
+  .teacher-name {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: #333;
+  }
+  
+  .teacher-meta-info {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .teacher-separator {
+    margin: 0 8px;
+    color: #ccc;
+  }
+  
+  .month-summary {
+    margin-top: 16px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 16px;
+  }
+  
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .summary-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .summary-label {
+    font-weight: 500;
+    color: #555;
+  }
+  
+  .summary-value {
+    font-weight: 600;
+    color: var(--primary-blue);
+  }
+  
+  .long-session-count {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #FF8042;
+  }
+  
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .info-item .label {
+    font-weight: 500;
+    color: #666;
+  }
+  
+  .info-item .value {
+    font-weight: 600;
+    color: #333;
+  }
