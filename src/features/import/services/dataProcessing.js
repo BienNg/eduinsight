@@ -441,7 +441,18 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
                     attendance: {},
                     monthId: isFutureDate ? null : monthId, // Don't associate with a month if future date
                     sessionOrder: sessionOrderCounter++,
-                    status: 'ongoing' // All future sessions are ongoing
+                    status: (() => {
+                        if (!formattedDate) return 'ongoing';
+
+                        const [day, month, year] = formattedDate.split('.').map(Number);
+                        // Create date objects with consistent timezone handling
+                        const sessionDate = new Date(Date.UTC(year, month - 1, day));
+                        const today = new Date();
+                        // Convert today to UTC midnight
+                        const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+
+                        return sessionDate >= todayUTC ? 'ongoing' : 'completed';
+                    })()
                 };
 
                 // Update lastKnownDate if we have a valid date
