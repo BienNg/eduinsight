@@ -1,11 +1,16 @@
 // src/features/courses/CourseContent.jsx
+// Importing React and necessary hooks
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getAllRecords } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
+
+// Importing components
 import SearchBar from '../common/SearchBar';
 import ProgressBar from '../common/ProgressBar';
 import TabComponent from '../common/TabComponent';
+
+// Importing styles
 import '../styles/Content.css';
 import '../styles/CourseContent.css';
 

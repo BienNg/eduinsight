@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faFilter, faUserGraduate, faChalkboardTeacher, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 
 import StudentDetail from '../students/StudentDetail';
-import CourseDetail from '../courses/components/GroupDetail';
+import CourseDetail from '../courses/CourseDetail';
 import '../styles/Content.css';
 import '../styles/SchulerContent.css'; // We'll create this file
 import { useParams, useNavigate } from 'react-router-dom';
