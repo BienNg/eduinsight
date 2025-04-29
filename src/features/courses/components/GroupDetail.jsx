@@ -1,6 +1,7 @@
 // src/features/courses/components/GroupDetail.jsx
 import React from 'react';
 import ProgressBar from '../../common/ProgressBar';
+import CourseBadge from '../../common/CourseBadge';
 
 const GroupDetail = ({
     groupName,
@@ -71,27 +72,9 @@ const GroupDetail = ({
                         <div className="course-info-card">
                             <h3>Kurse in dieser Gruppe</h3>
                             {selectedGroupCourses && selectedGroupCourses.length > 0 ? (
-                                <div>
+                                <div className="course-badges-container">
                                     {selectedGroupCourses.map(course => (
-                                        <div
-                                            key={course.id}
-                                            onClick={() => window.location.href = `/courses/${course.id}`}
-                                        >
-                                            <div>
-                                                <span>{course.name || 'Unnamed Course'}</span>
-                                            </div>
-                                            <div>
-                                                <span>
-                                                    {Array.isArray(course.studentIds)
-                                                        ? `${course.studentIds.length} Schüler`
-                                                        : "0 Schüler"}
-                                                    {Array.isArray(course.sessionIds)
-                                                        ? ` • ${course.sessionIds.length} Lektionen`
-                                                        : ""}
-                                                </span>
-                                                <span>{course.status === 'ongoing' ? "Aktiv" : "Abgeschlossen"}</span>
-                                            </div>
-                                        </div>
+                                        <CourseBadge key={course.id} course={course} />
                                     ))}
                                 </div>
                             ) : (
