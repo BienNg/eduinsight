@@ -1,11 +1,95 @@
-// src/components/Dashboard/GroupDetail.jsx
-import { useState } from 'react';
+// src/features/courses/GroupDetail.jsx
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getAllRecords } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
-import '../styles/CourseDetail.css'; // Reuse existing styles
+import { handleDeleteCourse } from '../utils/courseDeletionUtils';
+import '../styles/CourseDetail.css';
 import '../styles/Content.css';
 
-const GroupDetail = ({ groupName, courses, onClose, onViewCourse, onDeleteCourse, deletingCourseId }) => {
+const GroupDetail = () => {
+    const { groupName } = useParams();
+    const navigate = useNavigate();
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+    const [deletingCourseId, setDeletingCourseId] = useState(null);
+
+    useEffect(() => {
+        const fetchGroupCourses = async () => {
+            try {
+                setLoading(true);
+                
+                // Get all courses and filter by group name
+                const allCourses = await getAllRecords('courses');
+                const groupCourses = allCourses.filter(course => course.group === groupName);
+                
+                // Get additional data needed for each course
+                const sessionsPromise = getAllRecords('sessions');
+                const teachersPromise = getAllRecords('teachers');
+                
+                const [allSessions, allTeachers] = await Promise.all([
+                    sessionsPromise,
+                    teachersPromise
+                ]);
+                
+                // Enrich course data
+                const enrichedCourses = groupCourses.map(course => {
+                    // Count students
+                    const studentCount = course.studentIds ? course.studentIds.length : 0;
+                    
+                    // Get sessions for this course
+                    const courseSessions = allSessions.filter(s => s.courseId === course.id);
+                    const sessionCount = courseSessions.length;
+                    
+                    // Find teacher info
+                    let teacherName = 'Unbekannt';
+                    if (course.teacherId) {
+                        const teacher = allTeachers.find(t => t.id === course.teacherId);
+                        teacherName = teacher ? teacher.name : 'Unbekannt';
+                    }
+                    
+                    return {
+                        ...course,
+                        studentCount,
+                        sessionCount,
+                        teacherName
+                    };
+                });
+                
+                setCourses(enrichedCourses);
+            } catch (err) {
+                console.error("Error fetching group courses:", err);
+                setError("Failed to load group data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        if (groupName) {
+            fetchGroupCourses();
+        }
+    }, [groupName]);
+
+    const onClose = () => {
+        navigate('/courses');
+    };
+
+    const onViewCourse = (courseId) => {
+        navigate(`/courses/${courseId}`, { state: { groupName } });
+    };
+
+    const onDeleteCourse = async (courseId, courseName, event) => {
+        await handleDeleteCourse(
+            courseId,
+            courseName,
+            setDeletingCourseId,
+            setCourses,
+            setError,
+            event
+        );
+    };
 
     // Get unique course levels for this group
     const levels = sortLanguageLevels(Array.from(new Set(courses.map(course => course.level))));
@@ -14,6 +98,9 @@ const GroupDetail = ({ groupName, courses, onClose, onViewCourse, onDeleteCourse
     const totalStudents = courses.reduce((total, course) => total + course.studentCount, 0);
     const totalSessions = courses.reduce((total, course) => total + course.sessionCount, 0);
     const totalTeachers = new Set(courses.map(course => course.teacherId).filter(id => id)).size;
+
+    if (loading) return <div className="loading">Loading group details...</div>;
+    if (error) return <div className="error">{error}</div>;
 
     return (
         <>

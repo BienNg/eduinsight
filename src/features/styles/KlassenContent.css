@@ -215,3 +215,24 @@
   .klassen-header .search-bar-pillar {
     width: 280px;
   }
+
+  .group-stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .arrow-icon {
+    display: flex;
+    align-items: center;
+    margin-left: 4px;
+  }
+  
+  .group-dashboard-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .group-dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }

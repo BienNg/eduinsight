@@ -102,6 +102,7 @@ const KlassenContent = () => {
   };
 
   const handleViewGroupDetails = (groupName) => {
+    console.log(`Navigating to group: ${groupName}`);
     navigate(`/courses/group/${groupName}`);
   };
 
@@ -245,7 +246,12 @@ const KlassenContent = () => {
             const lighterColor = adjustColor(group.color, 40); // Create lighter version for progress bar
 
             return (
-              <div className="group-dashboard-card" key={group.name}>
+              <div
+                className="group-dashboard-card"
+                key={group.name}
+                onClick={() => handleViewGroupDetails(group.name)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="group-avatar-container">
                   <div
                     className="group-avatar"
@@ -263,8 +269,9 @@ const KlassenContent = () => {
                         <div
                           className="level-badge clickable"
                           key={level}
-                          onClick={() => handleLevelBadgeClick(group.name, level)}
-                        >
+                          onClick={(e) => {
+                            handleLevelBadgeClick(group.name, level)
+                          }}                        >
                           {level}
                         </div>
                       ))}
@@ -273,6 +280,17 @@ const KlassenContent = () => {
                       <span>{group.courses.length} Kurse</span>
                       <span>{group.totalStudents} Schüler</span>
                       <span>{group.totalSessions} Lektionen</span>
+                      <span className="arrow-icon">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                          <path
+                            d="M5 19l14-14M5 5h14v14"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
                     </div>
                   </div>
 
@@ -302,14 +320,6 @@ const KlassenContent = () => {
                     />
                   </div>
 
-                  <div className="group-actions">
-                    <button
-                      className="btn-details"
-                      onClick={() => handleViewGroupDetails(group.name)}
-                    >
-                      Details ansehen
-                    </button>
-                  </div>
                 </div>
               </div>
             );
