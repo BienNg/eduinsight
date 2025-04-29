@@ -105,7 +105,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const excelWorksheet = excelWorkbook.worksheets[0];
     // Extract course level and group from filename
     const levelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
-    const level = levelMatch ? levelMatch[0] : 'unknown';
+    const level = levelMatch ? levelMatch[0] : '';
     const groupMatch = filename.match(/([GAMP]\d+)/i);
     const groupName = groupMatch ? groupMatch[1] : '';
     const courseName = `${groupName} ${level}`;
