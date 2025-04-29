@@ -95,6 +95,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
 
     const { ignoreMissingTimeColumns } = options;
     let sessionOrderCounter = 0;
+    
     // Use XLSX and ExcelJS to parse the file
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     const firstSheetName = workbook.SheetNames[0];
@@ -103,20 +104,46 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const excelWorkbook = new ExcelJS.Workbook();
     await excelWorkbook.xlsx.load(arrayBuffer);
     const excelWorksheet = excelWorkbook.worksheets[0];
-    // Extract course level and group from filename
-    const levelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
-    const level = levelMatch ? levelMatch[0] : '';
+    
+    // Updated level detection code
+    const getMLevel = (filename) => {
+        // For M-type courses, detect simple levels (A1, A2, B1)
+        const simpleLevelMatch = filename.match(/[AB][0-9]/i);
+        return simpleLevelMatch ? simpleLevelMatch[0] : '';
+    };
+
+    const getRegularLevel = (filename) => {
+        // For other course types, detect detailed levels (A1.1, A2.2, etc.)
+        const detailedLevelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
+        return detailedLevelMatch ? detailedLevelMatch[0] : '';
+    };
+
+    // First extract the group match
     const groupMatch = filename.match(/([GAMP]\d+)/i);
     const groupName = groupMatch ? groupMatch[1] : '';
+    const courseType = groupName.charAt(0).toUpperCase();
+
+    // Choose level detection based on course type
+    let level;
+    if (courseType === 'M') {
+        level = getMLevel(filename);
+    } else {
+        level = getRegularLevel(filename);
+        // If detailed level not found, fall back to simple level
+        if (!level) {
+            const fallbackLevel = getMLevel(filename);
+            level = fallbackLevel;
+        }
+    }
+    
+    // Now construct course name after both groupName and level are defined
     const courseName = `${groupName} ${level}`;
+    
     // Extract online/offline status
     const onlineMatch = filename.match(/_online/i);
     const offlineMatch = filename.match(/_offline/i);
     const mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
     let isFirstSession = true;
-
-
-
 
     // Find the header row with "Folien"
 
