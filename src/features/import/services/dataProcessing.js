@@ -112,7 +112,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     // Extract online/offline status
     const onlineMatch = filename.match(/_online/i);
     const offlineMatch = filename.match(/_offline/i);
-    const courseType = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
+    const mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');    
     let isFirstSession = true;
 
 
@@ -170,7 +170,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         }
     }
     // Create or get the group record
-    const groupRecord = await getOrCreateGroupRecord(groupName);
+    const groupRecord = await getOrCreateGroupRecord(groupName, mode);
 
     // Create the course record first
     const existingCourse = await findExistingCourse(groupName, level);
@@ -193,7 +193,6 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         name: courseName,
         level: level,
         groupId: groupRecord.id,
-        courseType: courseType,
         startDate: '',
         endDate: '',
         sessionIds: [],

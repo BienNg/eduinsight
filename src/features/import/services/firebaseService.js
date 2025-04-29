@@ -90,7 +90,7 @@ export const getNextGroupColor = async () => {
   }
 };
 
-export const getOrCreateGroupRecord = async (groupName) => {
+export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
   try {
     if (!groupName) return null;
 
@@ -113,6 +113,7 @@ export const getOrCreateGroupRecord = async (groupName) => {
       name: normalizedGroupName,
       courseIds: [],
       color: groupColor,
+      mode: mode,
       createdAt: new Date().toISOString()
     });
 
