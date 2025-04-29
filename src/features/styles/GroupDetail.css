@@ -1,0 +1,144 @@
+/* src/features/courses/styles/GroupDetail.css */  
+  .group-detail-panel-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .group-detail-panel-title {
+    margin: 0;
+    font-size: 40px;
+    font-weight: 900;
+    color: #333;
+  }
+  
+  .group-detail-group-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .group-detail-panel-content {
+    padding: 20px;
+  }
+  
+  .group-detail-stats-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .group-detail-stat-box {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    transition: transform 0.2s;
+  }
+  
+  .group-detail-stat-box h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+  }
+  
+  .group-detail-stat-box .group-detail-stat-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #0066cc;
+  }
+  
+  .group-detail-course-info-card {
+    padding: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+
+  }
+  
+  .group-detail-course-info-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #333;
+  }
+  
+  .group-detail-course-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .group-detail-teacher-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .group-detail-teacher-badge {
+    background: #f0f4f8;
+    color: #2d3748;
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .group-detail-no-courses-hint,
+  .group-detail-no-teachers-hint {
+    color: #888;
+    font-style: italic;
+    font-size: 14px;
+  }
+  
+  /* Skeleton Loading states */
+  .group-detail-skeleton-header {
+    height: 32px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: group-detail-shimmer 1.5s infinite;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  
+  .group-detail-skeleton-content {
+    height: 300px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: group-detail-shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  
+  @keyframes group-detail-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  
+  /* Empty states */
+  .group-detail-no-group-selected, 
+  .group-detail-loading,
+  .group-detail-error {
+    background-color: white;
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  @keyframes group-detail-fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }

@@ -26,9 +26,7 @@
 
 /* Groups list styles */
 .groups-list-container {
-  width: 25%;
-  min-width: 230px;
-  max-width: 230px;
+  width: 100%;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -300,7 +298,7 @@
   height: 100%;
   overflow-y: auto;
   background-color: #fff;
-  border-radius: 8px;
+  border-radius: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
