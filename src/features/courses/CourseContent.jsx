@@ -51,8 +51,11 @@ const CourseContent = () => {
   // Process groups with additional data
   const processedGroups = useMemo(() => {
     return groups.map(group => {
-      // Get courses for this group
-      const groupCourses = courses.filter(course => course.group === group.name);
+      // Get courses for this group using groupId instead of name
+      const groupCourses = courses.filter(course => {
+        // Check both group name and groupId to ensure we catch all matches
+        return (course.groupId === group.id) || (course.group === group.name);
+      });
 
       // Calculate statistics
       let totalStudents = 0;
@@ -61,13 +64,18 @@ const CourseContent = () => {
       const teacherIds = new Set();
 
       groupCourses.forEach(course => {
-        totalStudents += course.studentIds?.length || 0;
+        // Count unique students (avoid duplicates)
+        totalStudents += (course.studentIds?.length || 0);
+
         if (course.level) levels.add(course.level);
+
+        // Handle both single teacherId and teacherIds array
         if (course.teacherId) teacherIds.add(course.teacherId);
         if (course.teacherIds && Array.isArray(course.teacherIds)) {
           course.teacherIds.forEach(id => teacherIds.add(id));
         }
 
+        // Count sessions associated with this course
         const courseSessions = sessions.filter(s => s.courseId === course.id);
         totalSessions += courseSessions.length;
       });
