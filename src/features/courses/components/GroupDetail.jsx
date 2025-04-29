@@ -75,10 +75,12 @@ const GroupDetail = ({
                             {selectedGroupCourses && selectedGroupCourses.length > 0 ? (
                                 <div className="course-badges-container">
                                     {selectedGroupCourses.map(course => (
-                                        <div
-                                            key={course.id}
-                                        >
-                                            <CourseBadge course={course} groupName={selectedGroup.name} />
+                                        <div key={course.id}>
+                                            <CourseBadge
+                                                course={course}
+                                                groupName={selectedGroup.name}
+                                                onClick={() => onSelectCourse(course)}
+                                            />
                                         </div>
                                     ))}
                                 </div>

@@ -141,6 +141,7 @@ const DashboardLayout = () => {
             <Route path="/courses" element={<KlassenContent />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
             <Route path="/courses/group/:groupName" element={<KlassenContent />} />
+            <Route path="/courses/group/:groupName/course/:courseId" element={<KlassenContent />} />
 
             {/* Teacher routes */}
             <Route path="/teachers" element={<LehrerContent />} />
