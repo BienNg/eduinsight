@@ -4,9 +4,9 @@ import { useState } from 'react';
 import '../styles/Dashboard.css';
 import DashboardContent from './DashboardContent';
 import MonatContent from '../months/MonatContent';
-import KlassenContent from '../courses/CourseContent';
+import CourseContent from '../courses/CourseContent';
 import SchulerContent from './SchulerContent';
-import LehrerContent from '../teachers/TeacherContent'; // Add this import
+import TeacherContent from '../teachers/TeacherContent';
 import ImportContent from './ImportContent';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -62,9 +62,9 @@ const Dashboard = () => {
       case 'monat':
         return <MonatContent />;
       case 'klassen':
-        return <KlassenContent />;
+        return <CourseContent />;
       case 'lehrer':
-        return <LehrerContent />;
+        return <TeacherContent />;
       case 'schuler':
         return <SchulerContent />;
       case 'import':
