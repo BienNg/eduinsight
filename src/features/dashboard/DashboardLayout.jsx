@@ -13,7 +13,7 @@ import LehrerContent from '../teachers/TeacherContent';
 
 // Route components for detail views
 import TeacherDetail from '../teachers/TeacherDetail';
-import CourseDetail from '../courses/components/CourseDetail';
+import CourseDetail from '../courses/components/GroupDetail';
 import StudentDetail from '../students/StudentDetail';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
