@@ -23,7 +23,6 @@ const CourseContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('overview');
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -177,8 +176,6 @@ const CourseContent = () => {
           selectedGroup={selectedGroup}
           selectedGroupCourses={selectedGroupCourses}
           loading={loading}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
         />
       </div>
     </div>
