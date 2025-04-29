@@ -1,95 +1,167 @@
 /* src/features/courses/styles/CourseDetailPanel.css */
 
 .course-detail-panel {
-    padding: 20px;
-  }
-  
-  .course-detail-panel-header {
-    margin-bottom: 20px;
-  }
-  
-  .course-detail-panel-title {
-    font-size: 24px;
-    font-weight: 700;
-    margin: 0 0 8px 0;
-    color: #333;
-  }
-  
-  .course-detail-panel-section {
-    margin-bottom: 24px;
-  }
-  
-  .course-detail-panel-section-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0 0 12px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #0088FE;
-  }
-  
-  .course-detail-panel-info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-  
-  .course-detail-panel-info-item {
-    background-color: #f8f9fa;
-    border-radius: 12px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .course-detail-panel-info-label {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 4px;
-  }
-  
-  .course-detail-panel-info-value {
-    font-size: 16px;
-    font-weight: 500;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .course-detail-panel-icon {
-    color: #0088FE;
-    width: 16px;
-  }
-  
-  .course-detail-panel-student-list,
-  .course-detail-panel-session-list {
-    max-height: 200px;
-    overflow-y: auto;
-  }
-  
-  .course-detail-panel-student-item,
-  .course-detail-panel-session-item {
-    padding: 4px 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .course-detail-panel-student-item:last-child,
-  .course-detail-panel-session-item:last-child {
-    margin-bottom: 0;
-  }
-  
-  .course-detail-panel-student-name,
-  .course-detail-panel-session-date {
-    font-weight: 500;
-  }
-  
-  .course-detail-panel-empty-state {
-    color: #999;
-    font-style: italic;
-    text-align: center;
-    padding: 12px;
-  }
+  padding: 20px;
+}
+
+.course-detail-panel-header {
+  margin-bottom: 20px;
+}
+
+.course-detail-panel-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.course-detail-panel-section {
+  margin-bottom: 24px;
+}
+
+.course-detail-panel-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0088FE;
+}
+
+.course-detail-panel-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.course-detail-panel-info-item {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-detail-panel-info-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.course-detail-panel-info-value {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-detail-panel-icon {
+  color: #0088FE;
+  width: 16px;
+}
+
+.course-detail-panel-student-list,
+.course-detail-panel-session-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.course-detail-panel-student-item,
+.course-detail-panel-session-item {
+  padding: 4px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.course-detail-panel-student-item:last-child,
+.course-detail-panel-session-item:last-child {
+  margin-bottom: 0;
+}
+
+.course-detail-panel-student-name,
+.course-detail-panel-session-date {
+  font-weight: 500;
+}
+
+.course-detail-panel-empty-state {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 12px;
+}
+
+.course-detail-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.course-detail-panel-actions {
+  position: relative;
+}
+
+.course-detail-panel-settings {
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.course-detail-panel-settings:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.course-detail-panel-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 150px;
+}
+
+.course-detail-panel-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.course-detail-panel-dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.course-detail-panel-dropdown-icon {
+  margin-right: 8px;
+  color: #FF6B6B;
+}
+
+.course-detail-panel-deleting {
+  font-size: 12px;
+  color: #777;
+  font-style: italic;
+}
+
+.course-detail-panel-error {
+  padding: 8px 12px;
+  background-color: #FFEBEE;
+  color: #C62828;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}

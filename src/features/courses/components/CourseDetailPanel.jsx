@@ -1,5 +1,5 @@
 // src/features/courses/components/CourseDetailPanel.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faBook, 
@@ -9,11 +9,47 @@ import {
   faGraduationCap, 
   faInfoCircle, 
   faMapMarkerAlt, 
-  faClock
+  faClock,
+  faEllipsisV,
+  faTrash
 } from '@fortawesome/free-solid-svg-icons';
+import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
 import '../../styles/CourseDetailPanel.css';
 
-const CourseDetailPanel = ({ course, students, sessions, loading }) => {
+const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) => {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [deletingCourseId, setDeletingCourseId] = useState(null);
+  const [error, setError] = useState(null);
+
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
+    setShowDropdown(!showDropdown);
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      if (showDropdown) setShowDropdown(false);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showDropdown]);
+
+  const handleDelete = (e) => {
+    if (course) {
+      handleDeleteCourse(
+        course.id, 
+        course.name, 
+        setDeletingCourseId, 
+        setCourses, 
+        setError,
+        e
+      );
+    }
+    setShowDropdown(false);
+  };
+
   if (loading) {
     return (
       <div className="course-detail-panel">
@@ -49,7 +85,28 @@ const CourseDetailPanel = ({ course, students, sessions, loading }) => {
     <div className="course-detail-panel">
       <div className="course-detail-panel-header">
         <h2 className="course-detail-panel-title">{course.name || 'Kursdetails'}</h2>
+        <div className="course-detail-panel-actions">
+          {deletingCourseId === course.id ? (
+            <span className="course-detail-panel-deleting">Löschen...</span>
+          ) : (
+            <div className="course-detail-panel-settings" onClick={toggleDropdown}>
+              <FontAwesomeIcon icon={faEllipsisV} />
+              {showDropdown && (
+                <div className="course-detail-panel-dropdown">
+                  <button className="course-detail-panel-dropdown-item" onClick={handleDelete}>
+                    <FontAwesomeIcon icon={faTrash} className="course-detail-panel-dropdown-icon" />
+                    Kurs löschen
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {error && (
+        <div className="course-detail-panel-error">{error}</div>
+      )}
 
       <div className="course-detail-panel-section">
         <h3 className="course-detail-panel-section-title">

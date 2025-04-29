@@ -244,6 +244,7 @@ const CourseContent = () => {
             students={selectedCourseStudents}
             sessions={selectedCourseSessions}
             loading={loading && courseId && !selectedCourse}
+            setCourses={setCourses}
           />
         </div>
 
