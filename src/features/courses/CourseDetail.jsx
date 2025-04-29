@@ -5,7 +5,6 @@ import { handleDeleteCourse } from '../utils/courseDeletionUtils';
 import SessionDetailModal from '../sessions/SessionDetailModal';
 import StudentDetailModal from '../students/StudentDetailModal';
 import TabComponent from '../common/TabComponent';
-import CourseBadge from '../common/CourseBadge';
 
 
 // CSS Imports
@@ -381,13 +380,6 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
 
                 <div className="course-detail-header">
                     <h2>{course.name}</h2>
-                    <CourseBadge
-                        course={{
-                            ...course,
-                            name: course.status ? course.status.charAt(0).toUpperCase() + course.status.slice(1) : 'Ongoing'
-                        }}
-                        disableNavigation={true}
-                    />
                     {/* More Options Button */}
                     <div className="more-options-wrapper">
                         <button
