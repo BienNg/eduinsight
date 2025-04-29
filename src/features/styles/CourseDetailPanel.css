@@ -1,102 +1,95 @@
-/* src/styles/CourseContent.css - Add these styles */
-.course-content-layout.three-column {
-    display: grid;
-    grid-template-columns: 250px 1fr 1fr;
-    gap: 20px;
-    height: calc(100vh - 180px);
-    overflow: hidden;
-  }
-  
-  .course-content-layout .column {
-    height: 100%;
-    overflow-y: auto;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  
-  .groups-column {
-    min-width: 250px;
-  }
-  
-  .group-detail-column {
-    min-width: 300px;
-  }
-  
-  .course-detail-column {
-    min-width: 350px;
-  }
-  
-  .no-course-selected {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    color: #6b7280;
-    font-size: 0.9rem;
-    text-align: center;
+/* src/features/courses/styles/CourseDetailPanel.css */
+
+.course-detail-panel {
     padding: 20px;
   }
   
-  /* src/styles/CourseDetailPanel.css - Create this new file */
-  .course-detail-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  .course-detail-panel-header {
+    margin-bottom: 20px;
   }
   
-  .panel-header {
+  .course-detail-panel-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #333;
+  }
+  
+  .course-detail-panel-section {
+    margin-bottom: 24px;
+  }
+  
+  .course-detail-panel-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
     display: flex;
     align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #eaeaea;
+    gap: 8px;
+    color: #0088FE;
   }
   
-  .panel-header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #111827;
+  .course-detail-panel-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
   
-  .level-badge {
-    background-color: #e5e7eb;
-    color: #374151;
-    padding: 4px 8px;
+  .course-detail-panel-info-item {
+    background-color: #f8f9fa;
     border-radius: 12px;
-    font-size: 0.75rem;
-    margin-left: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
   }
   
-  .overview-tab, .students-tab, .sessions-tab {
-    padding: 16px;
+  .course-detail-panel-info-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  
+  .course-detail-panel-info-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .course-detail-panel-icon {
+    color: #0088FE;
+    width: 16px;
+  }
+  
+  .course-detail-panel-student-list,
+  .course-detail-panel-session-list {
+    max-height: 200px;
     overflow-y: auto;
   }
   
-  .students-table, .sessions-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
+  .course-detail-panel-student-item,
+  .course-detail-panel-session-item {
+    padding: 4px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   
-  .students-table th, .sessions-table th {
-    text-align: left;
-    padding: 8px 12px;
-    background-color: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+  .course-detail-panel-student-item:last-child,
+  .course-detail-panel-session-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .course-detail-panel-student-name,
+  .course-detail-panel-session-date {
     font-weight: 500;
-    color: #4b5563;
   }
   
-  .students-table td, .sessions-table td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  
-  .students-table tr:last-child td, .sessions-table tr:last-child td {
-    border-bottom: none;
-  }
-  
-  .students-table tr:hover, .sessions-table tr:hover {
-    background-color: #f9fafb;
+  .course-detail-panel-empty-state {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 12px;
   }
