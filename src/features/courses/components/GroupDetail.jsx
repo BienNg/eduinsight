@@ -77,10 +77,8 @@ const GroupDetail = ({
                                     {selectedGroupCourses.map(course => (
                                         <div
                                             key={course.id}
-                                            onClick={() => onSelectCourse(course)}
-                                            className={`course-badge-wrapper ${selectedCourseId === course.id ? 'selected' : ''}`}
                                         >
-                                            <CourseBadge course={course} />
+                                            <CourseBadge course={course} groupName={selectedGroup.name} />
                                         </div>
                                     ))}
                                 </div>
