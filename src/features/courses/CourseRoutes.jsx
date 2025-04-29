@@ -9,7 +9,8 @@ const CourseRoutes = () => {
     <Routes>
       <Route path="/" element={<CourseContent />} />
       <Route path="/group/:groupName" element={<CourseContent />} />
-      <Route path="/:id" element={<CourseDetail />} />
+      <Route path="/group/:groupName/course/:courseId" element={<CourseContent />} />
+      <Route path="/:id" element={<CourseDetail />} /> {/* Keep for backward compatibility */}
       <Route path="*" element={<Navigate to="/courses" replace />} />
     </Routes>
   );

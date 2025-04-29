@@ -7,7 +7,9 @@ const GroupDetail = ({
     groupName,
     selectedGroup,
     selectedGroupCourses,
-    loading
+    loading,
+    onSelectCourse, // Added this prop
+    selectedCourseId // Added this prop
 }) => {
     if (!groupName) {
         return (
@@ -36,7 +38,6 @@ const GroupDetail = ({
 
     return (
         <div className="group-detail-container">
-
             <div className="overview-panel animate-card">
                 <div className="panel-header">
                     <h2 className="panel-title">{selectedGroup.name}</h2>
@@ -74,7 +75,13 @@ const GroupDetail = ({
                             {selectedGroupCourses && selectedGroupCourses.length > 0 ? (
                                 <div className="course-badges-container">
                                     {selectedGroupCourses.map(course => (
-                                        <CourseBadge key={course.id} course={course} />
+                                        <div
+                                            key={course.id}
+                                            onClick={() => onSelectCourse(course)}
+                                            className={`course-badge-wrapper ${selectedCourseId === course.id ? 'selected' : ''}`}
+                                        >
+                                            <CourseBadge course={course} />
+                                        </div>
                                     ))}
                                 </div>
                             ) : (
@@ -109,7 +116,6 @@ const GroupDetail = ({
                 </div>
             </div>
         </div>
-
     );
 };
 

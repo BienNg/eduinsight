@@ -1,13 +1,14 @@
 // src/features/courses/CourseContent.jsx
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getAllRecords } from '../firebase/database';
+import { getAllRecords, getRecordById } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
 
 // Importing components
 import SearchBar from '../common/SearchBar';
 import GroupsList from './components/GroupsList';
 import GroupDetail from './components/GroupDetail';
+import CourseDetailPanel from './components/CourseDetailPanel'; // We'll create this
 
 // Importing styles
 import '../styles/Content.css';
@@ -15,7 +16,7 @@ import '../styles/CourseContent.css';
 
 const CourseContent = () => {
   const navigate = useNavigate();
-  const { groupName } = useParams();
+  const { groupName, courseId } = useParams(); // Add courseId parameter
   const [courses, setCourses] = useState([]);
   const [groups, setGroups] = useState([]);
   const [teachers, setTeachers] = useState([]);
@@ -23,6 +24,9 @@ const CourseContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedCourseStudents, setSelectedCourseStudents] = useState([]);
+  const [selectedCourseSessions, setSelectedCourseSessions] = useState([]);
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -51,8 +55,46 @@ const CourseContent = () => {
     fetchData();
   }, []);
 
+  // Fetch course details when courseId changes
+  useEffect(() => {
+    const fetchCourseDetails = async () => {
+      if (courseId) {
+        try {
+          const courseData = await getRecordById('courses', courseId);
+          if (courseData) {
+            setSelectedCourse(courseData);
+            
+            // Fetch students for this course
+            if (courseData.studentIds && courseData.studentIds.length > 0) {
+              const studentPromises = courseData.studentIds.map(sid => 
+                getRecordById('students', sid)
+              );
+              const students = await Promise.all(studentPromises);
+              setSelectedCourseStudents(students.filter(s => s !== null));
+            } else {
+              setSelectedCourseStudents([]);
+            }
+            
+            // Filter sessions for this course
+            const courseSessions = sessions.filter(s => s.courseId === courseId);
+            setSelectedCourseSessions(courseSessions);
+          }
+        } catch (err) {
+          console.error("Error fetching course details:", err);
+        }
+      } else {
+        setSelectedCourse(null);
+        setSelectedCourseStudents([]);
+        setSelectedCourseSessions([]);
+      }
+    };
+    
+    fetchCourseDetails();
+  }, [courseId, sessions]);
+
   // Process groups with additional data
   const processedGroups = useMemo(() => {
+    // Your existing group processing code
     return groups.map(group => {
       // Get courses for this group using groupId instead of name
       const groupCourses = courses.filter(course => {
@@ -149,6 +191,11 @@ const CourseContent = () => {
     navigate(`/courses/group/${group.name}`);
   }, [navigate]);
 
+  // Handle course selection
+  const handleSelectCourse = useCallback((course) => {
+    navigate(`/courses/group/${groupName}/course/${course.id}`);
+  }, [navigate, groupName]);
+
   // Handle search change
   const handleSearchChange = useCallback((e) => {
     setSearchQuery(e.target.value);
@@ -165,24 +212,46 @@ const CourseContent = () => {
         />
       </div>
 
-      <div className="course-content-layout">
+      <div className="course-content-layout three-column">
         {/* Left column: Groups list */}
-        <GroupsList
-          groups={filteredGroups}
-          loading={loading}
-          error={error}
-          searchQuery={searchQuery}
-          selectedGroupName={groupName}
-          onSelectGroup={handleSelectGroup}
-        />
+        <div className="column groups-column">
+          <GroupsList
+            groups={filteredGroups}
+            loading={loading}
+            error={error}
+            searchQuery={searchQuery}
+            selectedGroupName={groupName}
+            onSelectGroup={handleSelectGroup}
+          />
+        </div>
 
-        {/* Right column: Group detail */}
-        <GroupDetail
-          groupName={groupName}
-          selectedGroup={selectedGroup}
-          selectedGroupCourses={selectedGroupCourses}
-          loading={loading}
-        />
+        {/* Middle column: Group detail */}
+        <div className="column group-detail-column">
+          <GroupDetail
+            groupName={groupName}
+            selectedGroup={selectedGroup}
+            selectedGroupCourses={selectedGroupCourses}
+            loading={loading}
+            onSelectCourse={handleSelectCourse}
+            selectedCourseId={courseId}
+          />
+        </div>
+
+        {/* Right column: Course detail */}
+        <div className="column course-detail-column">
+          {courseId ? (
+            <CourseDetailPanel
+              course={selectedCourse}
+              students={selectedCourseStudents}
+              sessions={selectedCourseSessions}
+              loading={loading && !selectedCourse}
+            />
+          ) : (
+            <div className="no-course-selected">
+              <p>Wählen Sie einen Kurs aus, um Details anzuzeigen</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -190,6 +259,7 @@ const CourseContent = () => {
 
 // Helper function to calculate progress based on course levels
 const calculateGroupProgress = (levels) => {
+  // Your existing function
   if (!levels || levels.length === 0) return 0;
 
   // Define the course structure with expected levels
