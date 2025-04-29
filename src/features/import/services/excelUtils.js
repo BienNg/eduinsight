@@ -3,10 +3,10 @@ import ExcelJS from 'exceljs';
 
 const findValueInMergedRange = (worksheet, masterAddress) => {
   if (!masterAddress) return null;
-  
+
   const masterCell = worksheet.getCell(masterAddress);
   const mergeCellId = masterCell.master ? masterCell.master.address : masterAddress;
-  
+
   // Get all merge ranges from worksheet
   const mergeRanges = worksheet.mergeCells;
   if (!mergeRanges) return masterCell.value;
@@ -39,29 +39,25 @@ const findValueInMergedRange = (worksheet, masterAddress) => {
       }
     }
   }
-  
+
   return null;
 };
 
-const isCellPartOfMergedRegion = (worksheet, row, col) => {
-  if (!worksheet.mergeCells) return false;
+const isFutureDate = (dateValue) => {
+  if (!dateValue) return false;
 
-  for (const mergeRange of worksheet.mergeCells) {
-    const [startCell, endCell] = mergeRange.split(':');
-    const startCol = startCell.replace(/[0-9]/g, '');
-    const startRow = parseInt(startCell.replace(/\D/g, ''));
-    const endCol = endCell.replace(/[0-9]/g, '');
-    const endRow = parseInt(endCell.replace(/\D/g, ''));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    // Convert column letters to numeric indices (A=1, B=2, etc.)
-    const startColIndex = startCol.split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0);
-    const endColIndex = endCol.split('').reduce((acc, char) => acc * 26 + char.charCodeAt(0) - 64, 0);
+  if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+    const [day, month, year] = dateValue.split('.').map(Number);
+    const sessionDate = new Date(year, month - 1, day);
+    return sessionDate > today;
+  }
 
-    // Check if the cell is within the merged region
-    if (row >= startRow && row <= endRow &&
-      col >= startColIndex && col <= endColIndex) {
-      return true;
-    }
+  if (typeof dateValue === 'number') {
+    const jsDate = excelDateToJSDate(dateValue);
+    return jsDate ? jsDate > today : false;
   }
 
   return false;
@@ -281,6 +277,8 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
 
     // Get the header row first before checking the folien index
     const headerRow = jsonData[headerRowIndex];
+    const dateIndex = findColumnIndex(headerRow, ["Unterrichtstag", "Datum", "Tag", "Date", "Day"]);
+    const teacherIndex = findColumnIndex(headerRow, "Lehrer");
 
     // Now add the empty Folien cells check
     const folienIndex = findColumnIndex(headerRow, ["Folien", "Canva"]);
@@ -299,6 +297,12 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
         const hasOtherData = row.some((cell, index) => index !== folienIndex && cell);
 
         if (hasOtherData) {
+          // Check if this is a future date
+          const dateValue = dateIndex !== -1 ? row[dateIndex] : null;
+          if (isFutureDate(dateValue)) {
+            continue; // Skip validation for future dates
+          }
+
           // Get the Excel row and cell
           const excelRow = excelWorksheet.getRow(i + 1);
           const folienCell = excelRow.getCell(folienIndex + 1);
@@ -390,8 +394,6 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
 
     // 4. Validate session data with a more flexible approach
     // Get the indices of crucial columns
-    const dateIndex = findColumnIndex(headerRow, ["Unterrichtstag", "Datum", "Tag", "Date", "Day"]);
-    const teacherIndex = findColumnIndex(headerRow, "Lehrer");
 
     // Start from row after header
     const sessionsStartRow = headerRowIndex + 1;
