@@ -1,5 +1,4 @@
 // src/features/courses/CourseContent.jsx
-// Importing React and necessary hooks
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getAllRecords } from '../firebase/database';
@@ -7,8 +6,8 @@ import { sortLanguageLevels } from '../utils/levelSorting';
 
 // Importing components
 import SearchBar from '../common/SearchBar';
-import ProgressBar from '../common/ProgressBar';
-import TabComponent from '../common/TabComponent';
+import GroupsList from './components/GroupsList';
+import GroupDetail from './components/GroupDetail';
 
 // Importing styles
 import '../styles/Content.css';
@@ -64,13 +63,16 @@ const CourseContent = () => {
 
       // Calculate statistics
       let totalStudents = 0;
+      const uniqueStudentIds = new Set();
       let totalSessions = 0;
       const levels = new Set();
       const teacherIds = new Set();
 
       groupCourses.forEach(course => {
-        // Count unique students (avoid duplicates)
-        totalStudents += (course.studentIds?.length || 0);
+        // Track unique students
+        if (course.studentIds && Array.isArray(course.studentIds)) {
+          course.studentIds.forEach(id => uniqueStudentIds.add(id));
+        }
 
         if (course.level) levels.add(course.level);
 
@@ -96,7 +98,7 @@ const CourseContent = () => {
       return {
         ...group,
         coursesCount: groupCourses.length,
-        totalStudents,
+        totalStudents: uniqueStudentIds.size,
         totalSessions,
         levels: Array.from(levels),
         teachers: teacherNames,
@@ -147,13 +149,6 @@ const CourseContent = () => {
     setSearchQuery(e.target.value);
   }, []);
 
-  // Define tabs for group detail view
-  const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'courses', label: 'Courses' },
-    { id: 'levels', label: 'Levels' }
-  ];
-
   return (
     <div className="course-content">
       <div className="course-content-header">
@@ -167,174 +162,24 @@ const CourseContent = () => {
 
       <div className="course-content-layout">
         {/* Left column: Groups list */}
-        <div className="groups-list-container">
-          {loading && (
-            <div className="groups-list-loading">
-              <div className="skeleton-item"></div>
-              <div className="skeleton-item"></div>
-              <div className="skeleton-item"></div>
-            </div>
-          )}
-
-          {error && (
-            <div className="groups-list-error">
-              <p>{error}</p>
-            </div>
-          )}
-
-          {!loading && !error && filteredGroups.length === 0 && (
-            <div className="groups-list-empty">
-              {searchQuery ? (
-                <p>Keine Ergebnisse für "{searchQuery}" gefunden.</p>
-              ) : (
-                <p>Keine Kursgruppen gefunden.</p>
-              )}
-            </div>
-          )}
-
-          {!loading && !error && filteredGroups.length > 0 && (
-            <div className="groups-list">
-              {filteredGroups.map(group => (
-                <div
-                  key={group.id || group.name}
-                  className={`group-list-item ${groupName === group.name ? 'selected' : ''}`}
-                  onClick={() => handleSelectGroup(group)}
-                >
-                  <div
-                    className="group-color-indicator"
-                    style={{ backgroundColor: group.color || '#0088FE' }}
-                  />
-                  <div className="group-list-content">
-                    <div className="group-list-header">
-                      <h3>{group.name}</h3>
-                      <span className="course-count">{group.coursesCount}</span>
-                    </div>
-                    <div className="group-list-stats">
-                      <span>{group.totalStudents} Schüler</span>
-                      <span>{group.totalSessions} Lektionen</span>
-                    </div>
-                    <ProgressBar
-                      progress={group.progress}
-                      color={group.color || '#0088FE'}
-                      height="4px"
-                      showLabel={false}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <GroupsList
+          groups={filteredGroups}
+          loading={loading}
+          error={error}
+          searchQuery={searchQuery}
+          selectedGroupName={groupName}
+          onSelectGroup={handleSelectGroup}
+        />
 
         {/* Right column: Group detail */}
-        <div className="group-detail-container">
-          {!groupName && (
-            <div className="no-group-selected">
-              <p>Wählen Sie eine Gruppe aus der Liste, um Details anzuzeigen</p>
-            </div>
-          )}
-
-          {loading && groupName && (
-            <div className="group-detail-loading">
-              <div className="skeleton-header"></div>
-              <div className="skeleton-tabs"></div>
-              <div className="skeleton-content"></div>
-            </div>
-          )}
-
-          {!loading && groupName && selectedGroup && (
-            <div className="group-detail-view">
-              <div className="group-detail-header">
-                <h2>{selectedGroup.name}</h2>
-                <div
-                  className="group-badge"
-                  style={{ backgroundColor: selectedGroup.color || '#0088FE' }}
-                >
-                  {selectedGroup.coursesCount} Kurse
-                </div>
-              </div>
-
-              <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
-                {activeTab === 'overview' && (
-                  <div className="overview-tab">
-                    <div className="stats-row">
-                      <div className="stat-box">
-                        <h3>Kurse</h3>
-                        <div className="stat-value">{selectedGroup.coursesCount}</div>
-                      </div>
-                      <div className="stat-box">
-                        <h3>Schüler</h3>
-                        <div className="stat-value">{selectedGroup.totalStudents}</div>
-                      </div>
-                      <div className="stat-box">
-                        <h3>Lektionen</h3>
-                        <div className="stat-value">{selectedGroup.totalSessions}</div>
-                      </div>
-                      <div className="stat-box">
-                        <h3>Lehrer</h3>
-                        <div className="stat-value">{selectedGroup.teachers.length}</div>
-                      </div>
-                    </div>
-
-                    <div className="course-info-card">
-                      <h3>Kursstufen</h3>
-                      <div className="level-badges-container">
-                        {sortLanguageLevels(selectedGroup.levels).map(level => (
-                          <div key={level} className="level-badge">
-                            {level}
-                            <span className="count">
-                              {selectedGroupCourses.filter(c => c.level === level).length} Kurse
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="course-info-card">
-                      <h3>Lehrkräfte</h3>
-                      <div className="teacher-badges-container">
-                        {selectedGroup.teachers.length > 0 ? (
-                          selectedGroup.teachers.map(teacher => (
-                            <span key={teacher} className="teacher-badge">
-                              {teacher}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="no-teachers-hint">Keine Lehrkräfte gefunden</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="course-info-card">
-                      <h3>Lernfortschritt</h3>
-                      <ProgressBar
-                        progress={selectedGroup.progress}
-                        color={selectedGroup.color || '#0088FE'}
-                        showLabel={true}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'courses' && (
-                  <div className="courses-tab">
-                    <h3>Alle Kurse in {selectedGroup.name}</h3>
-                    {/* Implement your courses table or grid here */}
-                    <p className="placeholder-text">Kursübersicht wird implementiert...</p>
-                  </div>
-                )}
-
-                {activeTab === 'levels' && (
-                  <div className="levels-tab">
-                    <h3>Kursstufen in {selectedGroup.name}</h3>
-                    {/* Implement your levels view here */}
-                    <p className="placeholder-text">Stufenübersicht wird implementiert...</p>
-                  </div>
-                )}
-              </TabComponent>
-            </div>
-          )}
-        </div>
+        <GroupDetail
+          groupName={groupName}
+          selectedGroup={selectedGroup}
+          selectedGroupCourses={selectedGroupCourses}
+          loading={loading}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
       </div>
     </div>
   );
