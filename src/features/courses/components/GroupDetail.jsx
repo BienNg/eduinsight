@@ -45,9 +45,9 @@ const GroupDetail = ({
   }
 
   return (
-    <div className="group-detail-view">
-      <div className="group-detail-header">
-        <h2>{selectedGroup.name}</h2>
+    <div className="overview-panel animate-card">
+      <div className="panel-header">
+        <h2 className="panel-title">{selectedGroup.name}</h2>
         <div
           className="group-badge"
           style={{ backgroundColor: selectedGroup.color || '#0088FE' }}
@@ -56,25 +56,27 @@ const GroupDetail = ({
         </div>
       </div>
 
-      <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
-        {activeTab === 'overview' && (
-          <GroupOverviewTab selectedGroup={selectedGroup} selectedGroupCourses={selectedGroupCourses} />
-        )}
+      <div className="panel-content">
+        <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
+          {activeTab === 'overview' && (
+            <GroupOverviewTab selectedGroup={selectedGroup} selectedGroupCourses={selectedGroupCourses} />
+          )}
 
-        {activeTab === 'courses' && (
-          <div className="courses-tab">
-            <h3>Alle Kurse in {selectedGroup.name}</h3>
-            <p className="placeholder-text">Kursübersicht wird implementiert...</p>
-          </div>
-        )}
+          {activeTab === 'courses' && (
+            <div className="courses-tab">
+              <h3>Alle Kurse in {selectedGroup.name}</h3>
+              <p className="placeholder-text">Kursübersicht wird implementiert...</p>
+            </div>
+          )}
 
-        {activeTab === 'levels' && (
-          <div className="levels-tab">
-            <h3>Kursstufen in {selectedGroup.name}</h3>
-            <p className="placeholder-text">Stufenübersicht wird implementiert...</p>
-          </div>
-        )}
-      </TabComponent>
+          {activeTab === 'levels' && (
+            <div className="levels-tab">
+              <h3>Kursstufen in {selectedGroup.name}</h3>
+              <p className="placeholder-text">Stufenübersicht wird implementiert...</p>
+            </div>
+          )}
+        </TabComponent>
+      </div>
     </div>
   );
 };
