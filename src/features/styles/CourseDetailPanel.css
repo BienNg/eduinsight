@@ -165,3 +165,8 @@
   margin-bottom: 16px;
   font-size: 14px;
 }
+
+.course-detail-panel-session-title {
+  font-weight: 500;
+  margin-right: 12px;
+}

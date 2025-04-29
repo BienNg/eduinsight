@@ -178,21 +178,23 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
           Lektionen ({sessions?.length || 0})
         </h3>
         <div className="course-detail-panel-session-list">
-          {sessions && sessions.length > 0 ? (
-            sessions.map((session) => (
-              <div key={session.id} className="course-detail-panel-session-item">
-                <span className="course-detail-panel-session-date">{session.date}</span>
-                <span className="course-detail-panel-session-status">
-                  {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
-                </span>
-              </div>
-            ))
-          ) : (
-            <div className="course-detail-panel-empty-state">
-              Keine Lektionen gefunden
-            </div>
-          )}
-        </div>
+  {sessions && sessions.length > 0 ? (
+    sessions.map((session) => (
+      <div key={session.id} className="course-detail-panel-session-item">
+        <span className="course-detail-panel-session-title">{session.title || 'Unbenannte Lektion'}</span>
+        <span className="course-detail-panel-session-date">{session.date}</span>
+        <span className="course-detail-panel-session-status">
+          {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
+        </span>
+      </div>
+    ))
+  ) : (
+    <div className="course-detail-panel-empty-state">
+      Keine Lektionen gefunden
+    </div>
+  )}
+</div>
+
       </div>
     </div>
   );
