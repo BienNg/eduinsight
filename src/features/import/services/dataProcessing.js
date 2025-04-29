@@ -95,7 +95,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
 
     const { ignoreMissingTimeColumns } = options;
     let sessionOrderCounter = 0;
-    
+
     // Use XLSX and ExcelJS to parse the file
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     const firstSheetName = workbook.SheetNames[0];
@@ -104,7 +104,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const excelWorkbook = new ExcelJS.Workbook();
     await excelWorkbook.xlsx.load(arrayBuffer);
     const excelWorksheet = excelWorkbook.worksheets[0];
-    
+
     // Updated level detection code
     const getMLevel = (filename) => {
         // For M-type courses, detect simple levels (A1, A2, B1)
@@ -124,8 +124,11 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const courseType = groupName.charAt(0).toUpperCase();
 
     // Choose level detection based on course type
-    let level;
-    if (courseType === 'M') {
+    let level = '';
+    if (courseType === 'A') {
+        // Leave level empty for type A courses, regardless of any numbering
+        level = '';
+    } else if (courseType === 'M') {
         level = getMLevel(filename);
     } else {
         level = getRegularLevel(filename);
@@ -135,10 +138,10 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
             level = fallbackLevel;
         }
     }
-    
-    // Now construct course name after both groupName and level are defined
-    const courseName = `${groupName} ${level}`;
-    
+
+    // Now construct course name - still use the full groupName
+    const courseName = level ? `${groupName} ${level}` : groupName;
+
     // Extract online/offline status
     const onlineMatch = filename.match(/_online/i);
     const offlineMatch = filename.match(/_offline/i);
