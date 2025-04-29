@@ -149,13 +149,28 @@
 
 /* Group detail styles */
 .group-detail-container {
+  width: 100%;
   flex: 1;
-  background-color: white;
+  display: flex;
+  height: 100%;
+  background-color: transparent;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: auto;
+  overflow: hidden;
 }
 
+.group-detail-container .overview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0;
+  animation-delay: 0s;
+}
+
+.overview-panel .panel-content {
+  flex: 1;
+  overflow-y: auto;
+}
 .group-detail-view {
   padding: 20px;
 }
@@ -270,9 +285,5 @@
     max-width: 100%;
     margin-bottom: 20px;
     max-height: 300px;
-  }
-
-  .group-detail-container {
-    width: 100%;
   }
 }
