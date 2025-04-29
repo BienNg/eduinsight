@@ -1,6 +1,48 @@
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 
+const findValueInMergedRange = (worksheet, masterAddress) => {
+  if (!masterAddress) return null;
+  
+  const masterCell = worksheet.getCell(masterAddress);
+  const mergeCellId = masterCell.master ? masterCell.master.address : masterAddress;
+  
+  // Get all merge ranges from worksheet
+  const mergeRanges = worksheet.mergeCells;
+  if (!mergeRanges) return masterCell.value;
+
+  // Find the merge range that contains our cell
+  const mergeRange = Object.keys(mergeRanges).find(range => {
+    const [start, end] = range.split(':');
+    return start === mergeCellId || end === mergeCellId;
+  });
+
+  if (!mergeRange) return masterCell.value;
+
+  // Parse the range (e.g., 'A1:A3')
+  const [start, end] = mergeRange.split(':');
+  const startCell = worksheet.getCell(start);
+  const endCell = worksheet.getCell(end);
+
+  // Get the boundaries
+  const top = Math.min(startCell.row, endCell.row);
+  const bottom = Math.max(startCell.row, endCell.row);
+  const left = Math.min(startCell.column, endCell.column);
+  const right = Math.max(startCell.column, endCell.column);
+
+  // Check every cell in the merge range for a value
+  for (let row = top; row <= bottom; row++) {
+    for (let col = left; col <= right; col++) {
+      const cell = worksheet.getCell(row, col);
+      if (cell.value && cell.value.toString().trim() !== '') {
+        return cell.value;
+      }
+    }
+  }
+  
+  return null;
+};
+
 const isCellPartOfMergedRegion = (worksheet, row, col) => {
   if (!worksheet.mergeCells) return false;
 
@@ -265,23 +307,14 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
           const isMerged = folienCell.isMerged;
 
           if (isMerged) {
-            // Find the master cell's value
-            // Master cell is the top-left cell of the merge range
             const masterCellAddress = folienCell.master ? folienCell.master.address : null;
-
             if (masterCellAddress) {
-              const masterCell = excelWorksheet.getCell(masterCellAddress);
-              if (!masterCell.value || masterCell.value.toString().trim() === '') {
-                emptyFolienCells.push(i + 1);
-              }
-            } else {
-              // If we can't determine the master cell, check this cell directly
-              if (!folienCell.value || folienCell.value.toString().trim() === '') {
+              const mergedValue = findValueInMergedRange(excelWorksheet, masterCellAddress);
+              if (!mergedValue || mergedValue.toString().trim() === '') {
                 emptyFolienCells.push(i + 1);
               }
             }
           } else {
-            // Not merged, check directly
             if (!folienCell.value || folienCell.value.toString().trim() === '') {
               emptyFolienCells.push(i + 1);
             }
