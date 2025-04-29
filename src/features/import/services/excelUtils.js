@@ -365,13 +365,48 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
     let currentSessionTitle = null;
     let sessionCount = 0;
     let lastKnownDate = null;
+    let hasFoundFilledSession = false;
+    let hasEmptyCellsAfterFilled = false;
+    let lastFilledSessionRow = -1;
 
     // Get current date for comparison with session dates
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+    const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
 
+    // First pass - find the pattern of filled/empty sessions
+    for (let i = sessionsStartRow; i < jsonData.length; i++) {
+      const row = jsonData[i];
 
+      // Skip completely empty rows
+      if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+        continue;
+      }
+
+      const folienValue = folienIndex !== -1 ? row[folienIndex] : null;
+
+      // Only check rows that appear to be session rows
+      if (folienValue && folienValue.toString().trim() !== '') {
+        const dateValue = dateIndex !== -1 ? row[dateIndex] : null;
+        const teacherValue = teacherIndex !== -1 ? row[teacherIndex] : null;
+        const startTimeValue = startTimeIndex !== -1 ? row[startTimeIndex] : null;
+        const endTimeValue = endTimeIndex !== -1 ? row[endTimeIndex] : null;
+
+        // Consider a row "filled" if it has at least date and teacher
+        const isRowFilled = dateValue && teacherValue;
+
+        if (isRowFilled) {
+          hasFoundFilledSession = true;
+          lastFilledSessionRow = i;
+        } else if (hasFoundFilledSession) {
+          // If we find empty cells after having found filled ones,
+          // this indicates we might be in the "future sessions" section
+          hasEmptyCellsAfterFilled = true;
+        }
+      }
+    }
+
+    // Main validation loop
     for (let i = sessionsStartRow; i < jsonData.length; i++) {
       const row = jsonData[i];
 
@@ -386,6 +421,10 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
       if (folienValue && folienValue.toString().trim() !== '') {
         currentSessionTitle = folienValue;
         sessionCount++;
+
+        // Calculate if this might be a future session based on pattern detection
+        // If this row comes after the last filled row and we've found the empty-after-filled pattern
+        const mightBeFutureSession = hasEmptyCellsAfterFilled && i > lastFilledSessionRow;
 
         // Validate date if column exists
         if (dateIndex !== -1) {
@@ -423,10 +462,13 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
           } else {
             // If date is missing but we have a previous date, this is likely a continuation
             // No error for this case, as we'll use the last known date during processing
-            if (!lastKnownDate) {
+            if (!lastKnownDate && !mightBeFutureSession) {
               errors.push(`Row ${i + 1}: Session "${folienValue}" is missing a date and no previous date is available.`);
             }
           }
+        }
+        if (mightBeFutureSession) {
+          continue;
         }
 
         // Validate time values for sessions not in current month
@@ -453,6 +495,7 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
 
           // Check if date is in the future
           let isFutureDate = false;
+
           if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
             const [day, month, year] = dateValue.split('.').map(Number);
             const sessionDate = new Date(year, month - 1, day);
