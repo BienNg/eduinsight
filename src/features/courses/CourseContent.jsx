@@ -127,9 +127,15 @@ const CourseContent = () => {
 
   // Get courses for the selected group
   const selectedGroupCourses = useMemo(() => {
-    if (!groupName) return [];
-    return courses.filter(course => course.group === groupName);
-  }, [groupName, courses]);
+    if (!groupName || !selectedGroup) return [];
+
+    return courses.filter(course =>
+      // Match by groupId (primary method)
+      course.groupId === selectedGroup.id ||
+      // Fallback for legacy data that might use group name instead
+      course.group === groupName
+    );
+  }, [groupName, selectedGroup, courses]);
 
   // Get sessions for the selected group's courses
   const selectedGroupSessions = useMemo(() => {

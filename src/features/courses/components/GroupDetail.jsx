@@ -1,7 +1,6 @@
 // src/features/courses/components/GroupDetail.jsx
 import React from 'react';
 import ProgressBar from '../../common/ProgressBar';
-import { sortLanguageLevels } from '../../utils/levelSorting';
 
 const GroupDetail = ({
     groupName,
@@ -70,17 +69,34 @@ const GroupDetail = ({
                         </div>
 
                         <div className="course-info-card">
-                            <h3>Kursstufen</h3>
-                            <div className="level-badges-container">
-                                {sortLanguageLevels(selectedGroup.levels).map(level => (
-                                    <div key={level} className="level-badge">
-                                        {level}
-                                        <span className="count">
-                                            {selectedGroupCourses.filter(c => c.level === level).length} Kurse
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+                            <h3>Kurse in dieser Gruppe</h3>
+                            {selectedGroupCourses && selectedGroupCourses.length > 0 ? (
+                                <div>
+                                    {selectedGroupCourses.map(course => (
+                                        <div
+                                            key={course.id}
+                                            onClick={() => window.location.href = `/courses/${course.id}`}
+                                        >
+                                            <div>
+                                                <span>{course.name || 'Unnamed Course'}</span>
+                                            </div>
+                                            <div>
+                                                <span>
+                                                    {Array.isArray(course.studentIds)
+                                                        ? `${course.studentIds.length} Schüler`
+                                                        : "0 Schüler"}
+                                                    {Array.isArray(course.sessionIds)
+                                                        ? ` • ${course.sessionIds.length} Lektionen`
+                                                        : ""}
+                                                </span>
+                                                <span>{course.status === 'ongoing' ? "Aktiv" : "Abgeschlossen"}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="no-courses-hint">Keine Kurse in dieser Gruppe gefunden</p>
+                            )}
                         </div>
 
                         <div className="course-info-card">
