@@ -187,6 +187,28 @@ const cleanupOrphanTeachers = async (teacherIds) => {
   }
 };
 
+export const cleanupEmptyGroups = async () => {
+  try {
+    console.log("Checking for empty groups to clean up...");
+    const groups = await getAllRecords('groups');
+
+    for (const group of groups) {
+      // Skip groups without an ID
+      if (!group.id) continue;
+
+      // Check if courseIds is empty or undefined
+      if (!group.courseIds || group.courseIds.length === 0) {
+        console.log(`Deleting empty group: ${group.id} (${group.name || 'Unnamed'})`);
+        await remove(ref(database, `groups/${group.id}`));
+      }
+    }
+    
+    console.log("Completed empty group cleanup");
+  } catch (error) {
+    console.error("Error cleaning up empty groups:", error);
+  }
+};
+
 // Remove a student from a course
 export const removeStudentFromCourse = async (studentId, courseId) => {
   try {

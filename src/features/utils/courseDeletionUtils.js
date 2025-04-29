@@ -1,4 +1,5 @@
-import { getRecordById, deleteRecord, updateRecord, getAllRecords } from '../firebase/database';
+// Modified src/features/utils/courseDeletionUtils.js
+import { getRecordById, deleteRecord, updateRecord, getAllRecords, cleanupEmptyGroups } from '../firebase/database';
 
 export const handleDeleteCourse = async (courseId, courseName, setDeletingCourseId, setCourses, setError, event) => {
     if (event) event.stopPropagation();
@@ -89,8 +90,20 @@ export const handleDeleteCourse = async (courseId, courseName, setDeletingCourse
                 }
             }
 
+            // Update the group's courseIds to remove this course
+            if (course.groupId) {
+                const group = await getRecordById('groups', course.groupId);
+                if (group && group.courseIds) {
+                    const updatedGroupCourseIds = group.courseIds.filter(id => id !== courseId);
+                    await updateRecord('groups', course.groupId, { courseIds: updatedGroupCourseIds });
+                }
+            }
+
             // Delete the course itself
             await deleteRecord('courses', courseId);
+
+            // Run cleanup processes
+            await cleanupEmptyGroups();
 
             // Update the courses list if provided
             setCourses && setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
