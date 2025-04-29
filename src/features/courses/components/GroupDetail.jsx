@@ -1,9 +1,9 @@
 // src/features/courses/GroupDetail.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getAllRecords } from '../firebase/database';
-import { sortLanguageLevels } from '../utils/levelSorting';
-import { handleDeleteCourse } from '../utils/courseDeletionUtils';
+import { getAllRecords } from '../../firebase/database';
+import { sortLanguageLevels } from '../../utils/levelSorting';
+import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
 import '../styles/CourseDetail.css';
 import '../styles/Content.css';
 

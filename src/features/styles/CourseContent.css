@@ -1,0 +1,278 @@
+/* src/styles/CourseContent.css */
+.course-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px;
+}
+
+.course-content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.course-content-header h2 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.course-content-layout {
+  display: flex;
+  height: calc(100vh - 180px);
+  gap: 20px;
+}
+
+/* Groups list styles */
+.groups-list-container {
+  width: 25%;
+  min-width: 250px;
+  max-width: 320px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.groups-list {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.group-list-item {
+  display: flex;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.group-list-item:hover {
+  background-color: #f7f9fc;
+}
+
+.group-list-item.selected {
+  background-color: #f0f7ff;
+}
+
+.group-color-indicator {
+  width: 6px;
+  min-height: 100%;
+  border-radius: 3px;
+  margin-right: 12px;
+}
+
+.group-list-content {
+  flex: 1;
+}
+
+.group-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.group-list-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.course-count {
+  font-size: 12px;
+  color: #666;
+  background-color: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 12px;
+}
+
+.group-list-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Loading states */
+.groups-list-loading .skeleton-item,
+.group-detail-loading .skeleton-header,
+.group-detail-loading .skeleton-tabs,
+.group-detail-loading .skeleton-content {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.groups-list-loading .skeleton-item {
+  height: 80px;
+  margin: 16px;
+}
+
+.group-detail-loading .skeleton-header {
+  height: 40px;
+  margin: 20px 20px 24px 20px;
+}
+
+.group-detail-loading .skeleton-tabs {
+  height: 48px;
+  margin: 0 20px 24px 20px;
+}
+
+.group-detail-loading .skeleton-content {
+  height: 400px;
+  margin: 0 20px 20px 20px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Empty and error states */
+.groups-list-empty,
+.groups-list-error,
+.no-group-selected {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 20px;
+  color: #666;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Group detail styles */
+.group-detail-container {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.group-detail-view {
+  padding: 20px;
+}
+
+.group-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.group-detail-header h2 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.group-badge {
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Stats row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Course info cards */
+.course-info-card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.course-info-card h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+/* Level badges */
+.level-badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.level-badge {
+  background-color: #e9f5ff;
+  color: #0066cc;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.level-badge .count {
+  font-size: 12px;
+  color: #0066cc;
+  opacity: 0.7;
+  margin-left: 8px;
+}
+
+/* Teacher badges */
+.teacher-badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.teacher-badge {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.no-teachers-hint {
+  color: #999;
+  font-style: italic;
+}
+
+/* Tabs content */
+.placeholder-text {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .course-content-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .groups-list-container {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 20px;
+    max-height: 300px;
+  }
+
+  .group-detail-container {
+    width: 100%;
+  }
+}
