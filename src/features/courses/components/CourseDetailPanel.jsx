@@ -74,13 +74,6 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
     );
   }
 
-  // Format date if available
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE');
-  };
-
   return (
     <div className="course-detail-panel">
       <div className="course-detail-panel-header">
@@ -146,7 +139,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
             <span className="course-detail-panel-info-label">Startdatum</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faCalendarAlt} className="course-detail-panel-icon" />
-              {formatDate(course.startDate)}
+              {course.startDate}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
@@ -188,7 +181,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
           {sessions && sessions.length > 0 ? (
             sessions.map((session) => (
               <div key={session.id} className="course-detail-panel-session-item">
-                <span className="course-detail-panel-session-date">{formatDate(session.date)}</span>
+                <span className="course-detail-panel-session-date">{session.date}</span>
                 <span className="course-detail-panel-session-status">
                   {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
                 </span>
