@@ -106,13 +106,13 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     // Extract course level and group from filename
     const levelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
     const level = levelMatch ? levelMatch[0] : 'unknown';
-    const groupMatch = filename.match(/G(\d+)/i);
-    const groupName = groupMatch ? `G${groupMatch[1]}` : '';
+    const groupMatch = filename.match(/([GAMP]\d+)/i);
+    const groupName = groupMatch ? groupMatch[1] : '';
     const courseName = `${groupName} ${level}`;
     // Extract online/offline status
     const onlineMatch = filename.match(/_online/i);
     const offlineMatch = filename.match(/_offline/i);
-    const mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');    
+    const mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
     let isFirstSession = true;
 
 
@@ -171,6 +171,11 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     }
     // Create or get the group record
     const groupRecord = await getOrCreateGroupRecord(groupName, mode);
+
+    if (!groupRecord || !groupRecord.id) {
+        console.error("Failed to create or retrieve a valid group record with ID");
+        throw new Error("Failed to process file: Could not create group record");
+    }
 
     // Create the course record first
     const existingCourse = await findExistingCourse(groupName, level);
