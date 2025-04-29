@@ -32,7 +32,7 @@ const CourseContent = () => {
           getAllRecords('teachers'),
           getAllRecords('sessions')
         ]);
-        
+
         setGroups(groupsData);
         setCourses(coursesData);
         setTeachers(teachersData);
@@ -50,48 +50,28 @@ const CourseContent = () => {
 
   // Process groups with additional data
   const processedGroups = useMemo(() => {
-    const result = [];
-    
-    // Create a map for quick lookup of courses by group
-    const coursesByGroup = {};
-    
-    // First pass: organize courses by group
-    courses.forEach(course => {
-      const groupName = course.group || 'Ungrouped';
-      if (!coursesByGroup[groupName]) {
-        coursesByGroup[groupName] = [];
-      }
-      coursesByGroup[groupName].push(course);
-    });
-    
-    // Second pass: process group data
-    groups.forEach(group => {
-      const groupCourses = coursesByGroup[group.name] || [];
-      
+    return groups.map(group => {
+      // Get courses for this group
+      const groupCourses = courses.filter(course => course.group === group.name);
+
       // Calculate statistics
       let totalStudents = 0;
       let totalSessions = 0;
       const levels = new Set();
       const teacherIds = new Set();
-      
+
       groupCourses.forEach(course => {
-        // Count students
         totalStudents += course.studentIds?.length || 0;
-        
-        // Add course level
         if (course.level) levels.add(course.level);
-        
-        // Add teacher IDs
         if (course.teacherId) teacherIds.add(course.teacherId);
         if (course.teacherIds && Array.isArray(course.teacherIds)) {
           course.teacherIds.forEach(id => teacherIds.add(id));
         }
-        
-        // Count sessions
+
         const courseSessions = sessions.filter(s => s.courseId === course.id);
         totalSessions += courseSessions.length;
       });
-      
+
       // Get teacher names
       const teacherNames = Array.from(teacherIds)
         .map(id => {
@@ -99,9 +79,8 @@ const CourseContent = () => {
           return teacher ? teacher.name : null;
         })
         .filter(Boolean);
-      
-      // Add processed group data
-      result.push({
+
+      return {
         ...group,
         coursesCount: groupCourses.length,
         totalStudents,
@@ -109,58 +88,14 @@ const CourseContent = () => {
         levels: Array.from(levels),
         teachers: teacherNames,
         progress: calculateGroupProgress(Array.from(levels))
-      });
+      };
     });
-    
-    // Handle Ungrouped courses
-    const ungroupedCourses = coursesByGroup['Ungrouped'] || [];
-    if (ungroupedCourses.length > 0) {
-      // Create a synthetic group for ungrouped courses
-      const ungroupedLevels = new Set();
-      let ungroupedStudents = 0;
-      let ungroupedSessions = 0;
-      const ungroupedTeacherIds = new Set();
-      
-      ungroupedCourses.forEach(course => {
-        if (course.level) ungroupedLevels.add(course.level);
-        ungroupedStudents += course.studentIds?.length || 0;
-        
-        if (course.teacherId) ungroupedTeacherIds.add(course.teacherId);
-        if (course.teacherIds && Array.isArray(course.teacherIds)) {
-          course.teacherIds.forEach(id => ungroupedTeacherIds.add(id));
-        }
-        
-        const courseSessions = sessions.filter(s => s.courseId === course.id);
-        ungroupedSessions += courseSessions.length;
-      });
-      
-      const ungroupedTeacherNames = Array.from(ungroupedTeacherIds)
-        .map(id => {
-          const teacher = teachers.find(t => t.id === id);
-          return teacher ? teacher.name : null;
-        })
-        .filter(Boolean);
-      
-      result.push({
-        id: 'ungrouped',
-        name: 'Ungrouped',
-        color: '#999999',
-        coursesCount: ungroupedCourses.length,
-        totalStudents: ungroupedStudents,
-        totalSessions: ungroupedSessions,
-        levels: Array.from(ungroupedLevels),
-        teachers: ungroupedTeacherNames,
-        progress: calculateGroupProgress(Array.from(ungroupedLevels))
-      });
-    }
-    
-    return result;
   }, [groups, courses, teachers, sessions]);
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return processedGroups;
-    
+
     const query = searchQuery.toLowerCase();
     return processedGroups.filter(group => {
       return (
@@ -216,7 +151,7 @@ const CourseContent = () => {
           onChange={handleSearchChange}
         />
       </div>
-      
+
       <div className="course-content-layout">
         {/* Left column: Groups list */}
         <div className="groups-list-container">
@@ -227,13 +162,13 @@ const CourseContent = () => {
               <div className="skeleton-item"></div>
             </div>
           )}
-          
+
           {error && (
             <div className="groups-list-error">
               <p>{error}</p>
             </div>
           )}
-          
+
           {!loading && !error && filteredGroups.length === 0 && (
             <div className="groups-list-empty">
               {searchQuery ? (
@@ -243,7 +178,7 @@ const CourseContent = () => {
               )}
             </div>
           )}
-          
+
           {!loading && !error && filteredGroups.length > 0 && (
             <div className="groups-list">
               {filteredGroups.map(group => (
@@ -252,8 +187,8 @@ const CourseContent = () => {
                   className={`group-list-item ${groupName === group.name ? 'selected' : ''}`}
                   onClick={() => handleSelectGroup(group)}
                 >
-                  <div 
-                    className="group-color-indicator" 
+                  <div
+                    className="group-color-indicator"
                     style={{ backgroundColor: group.color || '#0088FE' }}
                   />
                   <div className="group-list-content">
@@ -277,7 +212,7 @@ const CourseContent = () => {
             </div>
           )}
         </div>
-        
+
         {/* Right column: Group detail */}
         <div className="group-detail-container">
           {!groupName && (
@@ -285,7 +220,7 @@ const CourseContent = () => {
               <p>Wählen Sie eine Gruppe aus der Liste, um Details anzuzeigen</p>
             </div>
           )}
-          
+
           {loading && groupName && (
             <div className="group-detail-loading">
               <div className="skeleton-header"></div>
@@ -293,19 +228,19 @@ const CourseContent = () => {
               <div className="skeleton-content"></div>
             </div>
           )}
-          
+
           {!loading && groupName && selectedGroup && (
             <div className="group-detail-view">
               <div className="group-detail-header">
                 <h2>{selectedGroup.name}</h2>
-                <div 
-                  className="group-badge" 
+                <div
+                  className="group-badge"
                   style={{ backgroundColor: selectedGroup.color || '#0088FE' }}
                 >
                   {selectedGroup.coursesCount} Kurse
                 </div>
               </div>
-              
+
               <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
                 {activeTab === 'overview' && (
                   <div className="overview-tab">
@@ -327,7 +262,7 @@ const CourseContent = () => {
                         <div className="stat-value">{selectedGroup.teachers.length}</div>
                       </div>
                     </div>
-                    
+
                     <div className="course-info-card">
                       <h3>Kursstufen</h3>
                       <div className="level-badges-container">
@@ -341,7 +276,7 @@ const CourseContent = () => {
                         ))}
                       </div>
                     </div>
-                    
+
                     <div className="course-info-card">
                       <h3>Lehrkräfte</h3>
                       <div className="teacher-badges-container">
@@ -356,7 +291,7 @@ const CourseContent = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="course-info-card">
                       <h3>Lernfortschritt</h3>
                       <ProgressBar
@@ -367,7 +302,7 @@ const CourseContent = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {activeTab === 'courses' && (
                   <div className="courses-tab">
                     <h3>Alle Kurse in {selectedGroup.name}</h3>
@@ -375,7 +310,7 @@ const CourseContent = () => {
                     <p className="placeholder-text">Kursübersicht wird implementiert...</p>
                   </div>
                 )}
-                
+
                 {activeTab === 'levels' && (
                   <div className="levels-tab">
                     <h3>Kursstufen in {selectedGroup.name}</h3>
