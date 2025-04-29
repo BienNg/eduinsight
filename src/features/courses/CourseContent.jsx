@@ -63,10 +63,10 @@ const CourseContent = () => {
           const courseData = await getRecordById('courses', courseId);
           if (courseData) {
             setSelectedCourse(courseData);
-            
+
             // Fetch students for this course
             if (courseData.studentIds && courseData.studentIds.length > 0) {
-              const studentPromises = courseData.studentIds.map(sid => 
+              const studentPromises = courseData.studentIds.map(sid =>
                 getRecordById('students', sid)
               );
               const students = await Promise.all(studentPromises);
@@ -74,7 +74,7 @@ const CourseContent = () => {
             } else {
               setSelectedCourseStudents([]);
             }
-            
+
             // Filter sessions for this course
             const courseSessions = sessions.filter(s => s.courseId === courseId);
             setSelectedCourseSessions(courseSessions);
@@ -88,7 +88,7 @@ const CourseContent = () => {
         setSelectedCourseSessions([]);
       }
     };
-    
+
     fetchCourseDetails();
   }, [courseId, sessions]);
 
@@ -239,19 +239,14 @@ const CourseContent = () => {
 
         {/* Right column: Course detail */}
         <div className="column course-detail-column">
-          {courseId ? (
-            <CourseDetailPanel
-              course={selectedCourse}
-              students={selectedCourseStudents}
-              sessions={selectedCourseSessions}
-              loading={loading && !selectedCourse}
-            />
-          ) : (
-            <div className="no-course-selected">
-              <p>Wählen Sie einen Kurs aus, um Details anzuzeigen</p>
-            </div>
-          )}
+          <CourseDetailPanel
+            course={selectedCourse}
+            students={selectedCourseStudents}
+            sessions={selectedCourseSessions}
+            loading={loading && courseId && !selectedCourse}
+          />
         </div>
+
       </div>
     </div>
   );
