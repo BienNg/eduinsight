@@ -1,15 +1,15 @@
 // JSX Imports
 import { useState, useEffect } from 'react';
-import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '../firebase/database';
-import { handleDeleteCourse } from '../utils/courseDeletionUtils';
-import SessionDetailModal from '../sessions/SessionDetailModal';
-import StudentDetailModal from '../students/StudentDetailModal';
-import TabComponent from '../common/TabComponent';
+import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '../../firebase/database';
+import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
+import SessionDetailModal from '../../sessions/SessionDetailModal';
+import StudentDetailModal from '../../students/StudentDetailModal';
+import TabComponent from '../../common/TabComponent';
 
 // CSS Imports
-import '../styles/CourseDetail.css';
-import '../styles/Content.css'
-import '../common/Tabs.css';
+import '../../styles/CourseDetail.css';
+import '../../styles/Content.css'
+import '../../common/Tabs.css';
 
 // Library Imports
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
