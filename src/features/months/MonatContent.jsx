@@ -1,26 +1,13 @@
-// Css Imports
+// Modify MonatContent.jsx
+import React, { useState, useEffect } from 'react';
 import '../styles/MonatContent.css';
 import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
 
-// JSX Imports
 import OverviewTab from './tabs/MonthOverviewTab';
 import useMonthData from '../dashboard/hooks/useMonthData';
 import TabComponent from '../common/TabComponent';
-
-// Library Imports
-import React, { useState } from 'react';
-
-const getPreviousMonthId = () => {
-  const now = new Date();
-  // Go back one month
-  now.setMonth(now.getMonth() - 1);
-  const year = now.getFullYear();
-  // Add 1 to getMonth() because it's zero-indexed, then pad with leading zero if needed
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-};
 
 const getMonthName = (monthId) => {
   const [year, month] = monthId.split('-');
@@ -48,13 +35,24 @@ const MonatContent = () => {
     filterMonths
   } = useMonthData();
 
-  const previousMonthId = getPreviousMonthId();
-  const [activeTab, setActiveTab] = useState('overview');
+  // Set initial active tab to the most recent month
+  const [activeTab, setActiveTab] = useState('');
 
-  // Create a single tab with the month name
-  const tabs = [
-    { id: 'overview', label: getMonthName(previousMonthId) }
-  ];
+  // Sort months in descending order (newest first)
+  const sortedMonths = [...months].sort((a, b) => b.id.localeCompare(a.id));
+  
+  // Effect to set the initial active tab after data is loaded
+  useEffect(() => {
+    if (sortedMonths.length > 0 && !activeTab) {
+      setActiveTab(sortedMonths[0].id);
+    }
+  }, [sortedMonths, activeTab]);
+
+  // Create tabs for all available months
+  const tabs = sortedMonths.map(month => ({
+    id: month.id,
+    label: getMonthName(month.id)
+  }));
 
   if (loading) {
     return <div>Daten werden geladen...</div>;
@@ -78,7 +76,7 @@ const MonatContent = () => {
         <div className="month-title-section">
           <p className="overview-description">Alle wichtigen Daten auf einem Blick</p>
           <h1 className="overview-heading">
-            Übersicht für {getMonthName(previousMonthId)}
+            Übersicht für {activeTab ? getMonthName(activeTab) : ''}
           </h1>
         </div>
         <div className="month-tabs-section">
@@ -91,14 +89,16 @@ const MonatContent = () => {
       </div>
 
       <div className="month-content-area">
-        <OverviewTab
-          currentMonthId={previousMonthId}
-          monthDetails={monthDetails}
-          sessions={sessions}
-          courses={courses}
-          teachers={teachers}
-          groups={groups}
-        />
+        {activeTab && (
+          <OverviewTab
+            currentMonthId={activeTab}
+            monthDetails={monthDetails}
+            sessions={sessions}
+            courses={courses}
+            teachers={teachers}
+            groups={groups}
+          />
+        )}
       </div>
     </div>
   );
