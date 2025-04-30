@@ -159,3 +159,36 @@ export const detectWeekdayPatternWithOutliers = (sessions) => {
     missingDays: missingDays
   };
 };
+
+/**
+ * Calculates session duration based on group type and mode
+ * @param {string} groupType - Group type (G, A, P, M) from the group record
+ * @param {string} groupMode - Group mode (Online, Offline) from the group record
+ * @param {boolean} isFirstSession - Whether this is the first session in the course
+ * @param {string} startTime - Session start time (HH:MM)
+ * @param {string} endTime - Session end time (HH:MM)
+ * @returns {number} - Duration in hours
+ */
+export const calculateSessionDuration = (groupType, groupMode, isFirstSession, startTime, endTime) => {
+  // G-Online special case
+  if (groupType === 'G' && groupMode === 'Online') {
+    // Only if it's first session AND actual duration is long
+    if (isFirstSession && startTime && endTime && isLongSession(startTime, endTime)) {
+      return 2.0;
+    } else {
+      return 1.5; // Standard G-Online duration
+    }
+  }
+  
+  // Other group types
+  if (groupType === 'G' && groupMode === 'Offline') {
+    return 2.5; // G-Offline
+  } else if (groupType === 'A' || groupType === 'P') {
+    return 1.5; // A and P courses
+  } else if (groupType === 'M') {
+    return 1.25; // M courses
+  }
+  
+  // Default fallback
+  return 1.5;
+};

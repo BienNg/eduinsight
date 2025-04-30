@@ -13,7 +13,12 @@ import { createRecord, updateRecord, getRecordById } from '../../firebase/databa
 import { ref, get, update } from "firebase/database";
 import { database } from "../../firebase/config";
 import { validateExcelFile as validateExcelFileFunction } from './excelUtils';
-import { isLongSession, detectWeekdayPatternWithOutliers } from '../../utils/sessionUtils';
+import {
+    isLongSession,
+    countLongSessions,
+    detectWeekdayPatternWithOutliers,
+    calculateSessionDuration
+} from '../../utils/sessionUtils';
 
 
 
@@ -144,8 +149,8 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     const courseName = level ? `${groupName} ${level}` : groupName;
 
     // Extract online/offline status
-    const onlineMatch = filename.match(/_online/i);
-    const offlineMatch = filename.match(/_offline/i);
+    const onlineMatch = filename.match(/online/i);
+    const offlineMatch = filename.match(/offline/i);
     const mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
     let isFirstSession = true;
 
@@ -207,6 +212,12 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         console.error("Failed to create or retrieve a valid group record with ID");
         throw new Error("Failed to process file: Could not create group record");
     }
+
+
+    // Get the group type and mode from the group record
+    const groupType = groupRecord.type || 'G'; // Default to 'G' if not specified
+    const groupMode = groupRecord.mode || 'Unknown'; // Get mode from group record
+
 
     // Create the course record first
     const existingCourse = await findExistingCourse(groupName, level);
@@ -461,14 +472,22 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
                     title: folienTitle,
                     content: contentValue || '',
                     notes: notesValue || '',
-                    date: isFutureDate ? '' : (formattedDate || ''), // Leave date empty if future date
+                    date: isFutureDate ? '' : (formattedDate || ''),
                     startTime: columnIndices.startTime !== -1 ? (isFutureDate ? '' : formatTime(startTimeValue)) : '',
                     endTime: columnIndices.endTime !== -1 ? (isFutureDate ? '' : formatTime(endTimeValue)) : '',
                     teacherId: teacherId || '',
                     contentItems: [],
                     attendance: {},
-                    monthId: isFutureDate ? null : monthId, // Don't associate with a month if future date
+                    monthId: isFutureDate ? null : monthId,
                     sessionOrder: sessionOrderCounter++,
+                    // Use both groupType and groupMode from the group record
+                    duration: calculateSessionDuration(
+                        groupType,    // From group record
+                        groupMode,    // From group record 
+                        isFirstSession,
+                        columnIndices.startTime !== -1 ? formatTime(startTimeValue) : '',
+                        columnIndices.endTime !== -1 ? formatTime(endTimeValue) : ''
+                    ),
                     status: (() => {
                         if (!formattedDate) return 'ongoing';
 
@@ -482,6 +501,9 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
                         return sessionDate >= todayUTC ? 'ongoing' : 'completed';
                     })()
                 };
+
+                isFirstSession = false;
+
 
                 // Update lastKnownDate if we have a valid date
                 if (formattedDate) {

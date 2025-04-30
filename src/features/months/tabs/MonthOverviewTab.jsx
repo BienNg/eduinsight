@@ -16,6 +16,7 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
         navigate(`/courses/${course.id}`);
     };
 
+
     const getMonthName = (monthId) => {
         const [year, month] = monthId.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1, 1);
@@ -211,7 +212,7 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                     </div>
                     <div className="overview-panel">
                         <div className="panel-header">
-                            <h3 className="panel-title">Kurse letzten Monat ({currentMonthCourses.length})</h3>
+                            <h3 className="panel-title">Kurse im {getMonthName(currentMonthId)} ({currentMonthCourses.length})</h3>
                         </div>
                         <div className="panel-content">
                             {currentMonthCourses.length > 0 ? (
