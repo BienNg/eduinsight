@@ -13,7 +13,8 @@ import { createRecord, updateRecord, getRecordById } from '../../firebase/databa
 import { ref, get, update } from "firebase/database";
 import { database } from "../../firebase/config";
 import { validateExcelFile as validateExcelFileFunction } from './excelUtils';
-import { isLongSession } from '../../utils/sessionUtils';
+import { isLongSession, detectWeekdayPatternWithOutliers } from '../../utils/sessionUtils';
+
 
 
 const COURSE_COLORS = [
@@ -656,13 +657,22 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         courseStatus = 'ongoing';
     }
 
+    // Detect weekday pattern and outliers from all valid sessions
+    const validSessions = sessions.filter(session => session.date);
+    const { pattern, outliers, missingDays } = detectWeekdayPatternWithOutliers(validSessions);
+
     // Update course with session dates and teacher
     await updateRecord('courses', courseRecord.id, {
         startDate: firstSessionDate || '',
         endDate: lastSessionDate || '',
         sessionIds: courseRecord.sessionIds,
         teacherIds: Array.from(teacherIds),
-        status: courseStatus
+        status: courseStatus,
+        weekdays: {
+            pattern: pattern,
+            outliers: outliers,
+            missingDays: missingDays
+        }
     });
 
     // Update teacher records with this course

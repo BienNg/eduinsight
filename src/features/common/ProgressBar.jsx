@@ -28,13 +28,13 @@ const calculateWeightedProgress = (courseProgress) => {
 
 const ProgressBar = ({
     progress,
-    courseProgress, // New prop for course-specific progress
+    courseProgress,
     color = '#0088FE',
     showLabel = true,
     height = '8px',
     className = '',
-    labelPosition = 'right', // 'right', 'above', or 'none'
-    customLabel = null // Add this new prop
+    labelPosition = 'right',
+    customLabel = null
 }) => {
     // Calculate weighted progress if courseProgress is provided, otherwise use direct progress
     const calculatedProgress = courseProgress
@@ -44,6 +44,9 @@ const ProgressBar = ({
     // Ensure progress is between 0-100
     const normalizedProgress = Math.min(100, Math.max(0, calculatedProgress));
     const [animated, setAnimated] = useState(false);
+    
+    // Set color to green if progress is 100%
+    const progressColor = normalizedProgress === 100 ? '#4CAF50' : color;
 
     // Trigger animation after component mounts
     useEffect(() => {
@@ -55,7 +58,7 @@ const ProgressBar = ({
     }, []);
 
     // Create a lighter version of the color for the progress fill
-    const lighterColor = adjustColor(color, 40);
+    const lighterColor = adjustColor(progressColor, 40);
 
     // This will display either the custom label or the percentage
     const displayLabel = customLabel || `${Math.round(normalizedProgress)}%`;

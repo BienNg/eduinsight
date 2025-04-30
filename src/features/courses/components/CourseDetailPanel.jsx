@@ -1,5 +1,5 @@
 // src/features/courses/components/CourseDetailPanel.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faBook, 
@@ -14,12 +14,36 @@ import {
   faTrash
 } from '@fortawesome/free-solid-svg-icons';
 import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
+import { getRecordById } from '../../firebase/database';
 import '../../styles/CourseDetailPanel.css';
 
 const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
   const [error, setError] = useState(null);
+  const [teacherName, setTeacherName] = useState('Nicht zugewiesen');
+
+  
+  useEffect(() => {
+    const fetchTeacherData = async () => {
+      if (course && course.teacherIds && course.teacherIds.length > 0) {
+        try {
+          // Use the first teacher ID from the array
+          const teacherId = course.teacherIds[0];
+          const teacherRecord = await getRecordById('teachers', teacherId);
+          if (teacherRecord && teacherRecord.name) {
+            setTeacherName(teacherRecord.name);
+          }
+        } catch (err) {
+          console.error("Error fetching teacher data:", err);
+        }
+      } else {
+        setTeacherName('Nicht zugewiesen');
+      }
+    };
+
+    fetchTeacherData();
+  }, [course]);
 
   const toggleDropdown = (e) => {
     e.stopPropagation();
@@ -125,7 +149,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
             <span className="course-detail-panel-info-label">Lehrkraft</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faChalkboardTeacher} className="course-detail-panel-icon" />
-              {course.teacherName || 'Nicht zugewiesen'}
+              {teacherName}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
