@@ -1,5 +1,7 @@
 // src/features/dashboard/tabs/OverviewTab.jsx
 import ProgressBar from '../../common/ProgressBar';
+import TeacherTooltip from '../components/TeacherTooltip';
+import useTooltip from '../../hooks/useTooltip';
 
 import '../../styles/cards/Cards.css';
 import '../../styles/Content.css';
@@ -11,11 +13,28 @@ import { calculateTotalHours } from '../../utils/timeUtils';
 
 const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers, groups }) => {
     const navigate = useNavigate();
+    const {
+        isTooltipVisible,
+        tooltipPosition,
+        tooltipData,
+        showTooltip,
+        hideTooltip,
+        cancelHideTooltip
+    } = useTooltip();
 
     const handleCourseClick = (course) => {
         navigate(`/courses/${course.id}`);
     };
 
+    const getTeacherSessions = (teacherId) => {
+        return currentMonthSessions.filter(s => s.teacherId === teacherId);
+    };
+
+    // Handle showing the teacher tooltip
+    const handleTeacherHover = (teacher, event) => {
+        const teacherSessions = getTeacherSessions(teacher.id);
+        showTooltip({ teacher, sessions: teacherSessions }, event);
+    };
 
     const getMonthName = (monthId) => {
         const [year, month] = monthId.split('-');
@@ -120,7 +139,12 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                                     const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
                                     const teacherHours = calculateTotalHours(teacherSessions);
                                     return (
-                                        <div className="compact-teacher-item" key={teacher.id}>
+                                        <div
+                                            className="compact-teacher-item"
+                                            key={teacher.id}
+                                            onMouseEnter={(e) => handleTeacherHover(teacher, e)}
+                                            onMouseLeave={hideTooltip}
+                                        >
                                             <div className="teacher-name">{teacher.name}</div>
                                             <div className="teacher-meta">
                                                 <span>{teacherSessions.length} Lektionen</span>
@@ -135,6 +159,7 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                         )}
                     </div>
                 </div>
+
                 <div className="overview-column">
                     <div className="analytics-row">
                         <div className="analytics-card animate-card">
@@ -385,6 +410,24 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                     </div>
                 </div>
             </div>
+            {isTooltipVisible && tooltipData && (
+                <div
+                    className="tooltip-container"
+                    style={{
+                        top: `${tooltipPosition.top}px`,
+                        left: `${tooltipPosition.left}px`
+                    }}
+                    onMouseEnter={cancelHideTooltip}
+                    onMouseLeave={hideTooltip}
+                >
+                    <TeacherTooltip
+                        teacher={tooltipData.teacher}
+                        sessions={tooltipData.sessions}
+                        courses={courses}
+                        groups={groups}
+                    />
+                </div>
+            )}
         </div>
     );
 };
