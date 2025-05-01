@@ -1,14 +1,14 @@
 // src/features/courses/components/CourseDetailPanel.jsx
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faBook, 
-  faUsers, 
-  faCalendarAlt, 
-  faChalkboardTeacher, 
-  faGraduationCap, 
-  faInfoCircle, 
-  faMapMarkerAlt, 
+import {
+  faBook,
+  faUsers,
+  faCalendarAlt,
+  faChalkboardTeacher,
+  faGraduationCap,
+  faInfoCircle,
+  faMapMarkerAlt,
   faClock,
   faEllipsisV,
   faTrash
@@ -23,7 +23,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
   const [error, setError] = useState(null);
   const [teacherName, setTeacherName] = useState('Nicht zugewiesen');
 
-  
+
   useEffect(() => {
     const fetchTeacherData = async () => {
       if (course && course.teacherIds && course.teacherIds.length > 0) {
@@ -55,7 +55,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
     const handleClickOutside = () => {
       if (showDropdown) setShowDropdown(false);
     };
-    
+
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showDropdown]);
@@ -63,10 +63,10 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
   const handleDelete = (e) => {
     if (course) {
       handleDeleteCourse(
-        course.id, 
-        course.name, 
-        setDeletingCourseId, 
-        setCourses, 
+        course.id,
+        course.name,
+        setDeletingCourseId,
+        setCourses,
         setError,
         e
       );
@@ -196,22 +196,28 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
           Lektionen ({sessions?.length || 0})
         </h3>
         <div className="course-detail-panel-session-list">
-  {sessions && sessions.length > 0 ? (
-    sessions.map((session) => (
-      <div key={session.id} className="course-detail-panel-session-item">
-        <span className="course-detail-panel-session-title">{session.title || 'Unbenannte Lektion'}</span>
-        <span className="course-detail-panel-session-date">{session.date}</span>
-        <span className="course-detail-panel-session-status">
-          {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
-        </span>
-      </div>
-    ))
-  ) : (
-    <div className="course-detail-panel-empty-state">
-      Keine Lektionen gefunden
-    </div>
-  )}
-</div>
+          {sessions && sessions.length > 0 ? (
+            sessions.map((session) => (
+              <div key={session.id} className="course-detail-panel-session-item">
+                <span className="course-detail-panel-session-title">{session.title || 'Unbenannte Lektion'}</span>
+                <span className="course-detail-panel-session-date">{session.date}</span>
+                <div className="course-detail-panel-session-badges">
+                  <span className={`course-detail-panel-status-badge ${session.status === 'completed' ? 'status-completed' : 'status-planned'}`}>
+                    {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
+                  </span>
+                  <span className="course-detail-panel-duration-badge">
+                    {session.duration || course.duration || '60'} h.
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="course-detail-panel-empty-state">
+              Keine Lektionen gefunden
+            </div>
+          )}
+        </div>
+
 
       </div>
     </div>
