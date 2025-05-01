@@ -16,7 +16,7 @@
 }
 
 .course-detail-panel-section {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .course-detail-badge {
@@ -76,7 +76,7 @@
 
 .course-detail-panel-student-list,
 .course-detail-panel-session-list {
-  max-height: 200px;
+  max-height: auto;
   overflow-y: auto;
 }
 
@@ -228,4 +228,30 @@
 .course-detail-panel-session-title {
   font-weight: 500;
   flex: 1;
+}
+
+.course-detail-panel-month-divider {
+  padding: 8px 4px 4px 12px;
+  margin-top: 8px;
+  position: relative;
+}
+
+.course-detail-panel-month-name {
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-primary-main, #0066cc);
+  background-color: var(--color-background-paper, #ffffff);
+  padding: 0 8px;
+  position: relative;
+}
+
+.course-detail-panel-month-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background-color: var(--color-divider, #e0e0e0);
+  z-index: 0;
 }

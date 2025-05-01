@@ -46,6 +46,47 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
     fetchTeacherData();
   }, [course]);
 
+  // In the CourseDetailPanel component, before the return statement
+  const sortedAndGroupedSessions = React.useMemo(() => {
+    if (!sessions || sessions.length === 0) return [];
+
+    // Sort sessions by date (assuming EU format DD.MM.YYYY)
+    const sortedSessions = [...sessions].sort((a, b) => {
+      const [dayA, monthA, yearA] = a.date.split('.');
+      const [dayB, monthB, yearB] = b.date.split('.');
+      return new Date(`${yearA}-${monthA}-${dayA}`) - new Date(`${yearB}-${monthB}-${dayB}`);
+    });
+
+    // Add month information for grouping
+    const germanMonths = [
+      'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+      'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+    ];
+
+    let currentMonth = null;
+    let currentYear = null;
+
+    return sortedSessions.map((session, index) => {
+      const [day, month, year] = session.date.split('.');
+      const monthIndex = parseInt(month, 10) - 1; // Convert to 0-indexed
+      const sessionMonth = germanMonths[monthIndex];
+      const sessionYear = year;
+
+      const isNewMonth = currentMonth !== sessionMonth || currentYear !== sessionYear;
+
+      if (isNewMonth) {
+        currentMonth = sessionMonth;
+        currentYear = sessionYear;
+      }
+
+      return {
+        ...session,
+        isNewMonth,
+        monthDisplay: `${sessionMonth} ${sessionYear}`
+      };
+    });
+  }, [sessions]);
+
   const toggleDropdown = (e) => {
     e.stopPropagation();
     setShowDropdown(!showDropdown);
@@ -198,19 +239,26 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
         </h3>
         <div className="course-detail-panel-session-list">
           {sessions && sessions.length > 0 ? (
-            sessions.map((session) => (
-              <div key={session.id} className="course-detail-panel-session-item">
-                <span className="course-detail-panel-session-title">{session.title || 'Unbenannte Lektion'}</span>
-                <span className="course-detail-panel-session-date">{session.date}</span>
-                <div className="course-detail-panel-session-badges">
-                  <span className={`course-detail-panel-status-badge ${session.status === 'completed' ? 'status-completed' : 'status-planned'}`}>
-                    {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
-                  </span>
-                  <span className="course-detail-panel-duration-badge">
-                    {session.duration || course.duration || '60'} h.
-                  </span>
+            sortedAndGroupedSessions.map((session, index) => (
+              <React.Fragment key={session.id || index}>
+                {session.isNewMonth && (
+                  <div className="course-detail-panel-month-divider">
+                    <span className="course-detail-panel-month-name">{session.monthDisplay}</span>
+                  </div>
+                )}
+                <div className="course-detail-panel-session-item">
+                  <span className="course-detail-panel-session-title">{session.title || 'Unbenannte Lektion'}</span>
+                  <span className="course-detail-panel-session-date">{session.date}</span>
+                  <div className="course-detail-panel-session-badges">
+                    <span className={`course-detail-panel-status-badge ${session.status === 'completed' ? 'status-completed' : 'status-planned'}`}>
+                      {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
+                    </span>
+                    <span className="course-detail-panel-duration-badge">
+                      {session.duration || course.duration || '60'} h.
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </React.Fragment>
             ))
           ) : (
             <div className="course-detail-panel-empty-state">
