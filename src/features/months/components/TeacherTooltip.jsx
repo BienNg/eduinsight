@@ -1,11 +1,15 @@
 // src/features/months/components/TeacherTooltip.jsx
 import React from 'react';
 import '../../styles/tooltips/TeacherTooltip.css';
+import { calculateTotalHours } from '../../utils/timeUtils';
 
 const TeacherTooltip = ({ teacher, sessions, courses, groups }) => {
   if (!teacher || !sessions || sessions.length === 0) {
     return <div className="teacher-tooltip">No sessions found</div>;
   }
+
+  // Calculate total duration of all sessions using timeUtils
+  const totalDuration = calculateTotalHours(sessions);
 
   // Group sessions by group
   const sessionsByGroup = {};
@@ -35,28 +39,36 @@ const TeacherTooltip = ({ teacher, sessions, courses, groups }) => {
       <div className="tooltip-header">
         <h3>{teacher.name}'s Sessions</h3>
         <div className="tooltip-summary">
-          <span>Total: {sessions.length} sessions</span>
+          <span>Total: {sessions.length} sessions ({totalDuration.toFixed(1)}h)</span>
         </div>
       </div>
       
       <div className="tooltip-content">
-        {sortedGroups.map(groupName => (
-          <div key={groupName} className="tooltip-group">
-            <div className="group-name">{groupName}</div>
-            <div className="group-sessions">
-              {sessionsByGroup[groupName].map(session => (
-                <div key={session.id} className="session-item">
-                  <span className="session-date">{session.date}</span>
-                  <span className="session-title">{session.title}</span>
-                  <span className="session-course">{session.courseName}</span>
-                </div>
-              ))}
+        {sortedGroups.map(groupName => {
+          // Calculate group total duration using timeUtils
+          const groupDuration = calculateTotalHours(sessionsByGroup[groupName]);
+          
+          return (
+            <div key={groupName} className="tooltip-group">
+              <div className="group-name">{groupName}</div>
+              <div className="group-sessions">
+                {sessionsByGroup[groupName].map(session => (
+                  <div key={session.id} className="session-item">
+                    <span className="session-date">{session.date}</span>
+                    <span className="session-title">{session.title}</span>
+                    <span className="session-course">{session.courseName}</span>
+                    <span className="session-duration">
+                      {session.duration ? `${session.duration}h` : '-'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="group-summary">
+                {sessionsByGroup[groupName].length} sessions ({groupDuration.toFixed(1)}h)
+              </div>
             </div>
-            <div className="group-summary">
-              {sessionsByGroup[groupName].length} sessions
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
