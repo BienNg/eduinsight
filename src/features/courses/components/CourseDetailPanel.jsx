@@ -23,7 +23,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
   const [deletingCourseId, setDeletingCourseId] = useState(null);
   const [error, setError] = useState(null);
   const [teacherName, setTeacherName] = useState('Nicht zugewiesen');
-
+  const [sessionTeachers, setSessionTeachers] = useState({});
 
   useEffect(() => {
     const fetchTeacherData = async () => {
@@ -45,6 +45,38 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
 
     fetchTeacherData();
   }, [course]);
+
+  // Fetch teachers for sessions
+  useEffect(() => {
+    const fetchSessionTeachers = async () => {
+      if (!sessions || sessions.length === 0) return;
+      
+      const teacherMap = {};
+      
+      for (const session of sessions) {
+        if (session.teacherId) {
+          try {
+            // Check if we already fetched this teacher
+            if (!teacherMap[session.teacherId]) {
+              const teacherRecord = await getRecordById('teachers', session.teacherId);
+              teacherMap[session.teacherId] = teacherRecord && teacherRecord.name ? 
+                teacherRecord.name : 'Nicht zugewiesen';
+            }
+          } catch (err) {
+            console.error(`Error fetching teacher for session ${session.id}:`, err);
+            teacherMap[session.teacherId] = 'Nicht zugewiesen';
+          }
+        } else {
+          // If no teacher ID is provided, use the course's teacher
+          teacherMap[session.id] = teacherName;
+        }
+      }
+      
+      setSessionTeachers(teacherMap);
+    };
+
+    fetchSessionTeachers();
+  }, [sessions, teacherName]);
 
   // In the CourseDetailPanel component, before the return statement
   const sortedAndGroupedSessions = React.useMemo(() => {
@@ -249,6 +281,9 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
                 <div className="course-detail-panel-session-item">
                   <span className="course-detail-panel-session-title">{session.title || 'Unbenannte Lektion'}</span>
                   <span className="course-detail-panel-session-date">{session.date}</span>
+                  <span className="course-detail-panel-session-teacher">
+                    {session.teacherId ? sessionTeachers[session.teacherId] : sessionTeachers[session.id] || 'Nicht zugewiesen'}
+                  </span>
                   <div className="course-detail-panel-session-badges">
                     <span className={`course-detail-panel-status-badge ${session.status === 'completed' ? 'status-completed' : 'status-planned'}`}>
                       {session.status === 'completed' ? 'Abgeschlossen' : 'Geplant'}
@@ -266,8 +301,6 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
             </div>
           )}
         </div>
-
-
       </div>
     </div>
   );

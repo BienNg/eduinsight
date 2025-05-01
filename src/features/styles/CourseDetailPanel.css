@@ -255,3 +255,31 @@
   background-color: var(--color-divider, #e0e0e0);
   z-index: 0;
 }
+
+.course-detail-panel-session-teacher {
+  color: var(--color-text-secondary, #666666);
+  margin-right: 12px;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+/* Update the existing style to accommodate the new column */
+.course-detail-panel-session-date {
+  color: var(--color-text-secondary, #666666);
+  margin-right: 12px;
+  white-space: nowrap;
+  min-width: 80px; /* Add fixed width to maintain alignment */
+}
+
+/* Adjust the title to make room for other columns */
+.course-detail-panel-session-title {
+  font-weight: 500;
+  flex: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
