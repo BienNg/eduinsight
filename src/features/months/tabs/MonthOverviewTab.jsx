@@ -2,6 +2,8 @@
 import ProgressBar from '../../common/ProgressBar';
 import TeacherTooltip from '../components/TeacherTooltip';
 import useTooltip from '../../hooks/useTooltip';
+import CountryBadge from '../../common/CountryBadge';
+
 
 import '../../styles/cards/Cards.css';
 import '../../styles/Content.css';
@@ -145,7 +147,10 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
                                             onMouseEnter={(e) => handleTeacherHover(teacher, e)}
                                             onMouseLeave={hideTooltip}
                                         >
-                                            <div className="teacher-name">{teacher.name}</div>
+                                            <div className="teacher-name">
+                                                {teacher.name}
+                                                <CountryBadge country={teacher.country} />
+                                            </div>
                                             <div className="teacher-meta">
                                                 <span>{teacherSessions.length} Lektionen</span>
                                                 <span>{teacherHours.toFixed(1)}h</span>
