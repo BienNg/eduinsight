@@ -14,10 +14,11 @@ import {
   faTrash
 } from '@fortawesome/free-solid-svg-icons';
 import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
+import { calculateTotalHours } from '../../utils/timeUtils';
 import { getRecordById } from '../../firebase/database';
 import '../../styles/CourseDetailPanel.css';
 
-const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) => {
+const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, group }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
   const [error, setError] = useState(null);
@@ -140,7 +141,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
           <div className="course-detail-panel-info-item">
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faBook} className="course-detail-panel-icon" />
-              {course.type || 'Standard'}
+              {group.type || 'Standard'}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
@@ -152,7 +153,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
           <div className="course-detail-panel-info-item">
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faMapMarkerAlt} className="course-detail-panel-icon" />
-              {course.location || 'Online'}
+              {group.mode || 'Online'}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
@@ -164,7 +165,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
           <div className="course-detail-panel-info-item">
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faClock} className="course-detail-panel-icon" />
-              {course.duration || '60'} Min.
+              {calculateTotalHours(sessions)} Stunden
             </span>
           </div>
         </div>
