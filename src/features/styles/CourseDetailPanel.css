@@ -19,39 +19,50 @@
   margin-bottom: 24px;
 }
 
+.course-detail-badge {
+  background: #f0f4f8;
+  color: #2d3748;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Add consistent header styling */
 .course-detail-panel-section-title {
-  font-size: 16px;
-  font-weight: 600;
   margin: 0 0 12px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #0088FE;
+  font-size: 16px;
+  color: #333;
 }
 
 .course-detail-panel-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  /* Change to row layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 20px;
+  gap: 10px;
 }
 
 .course-detail-panel-info-item {
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
+  padding: 16px;
+  background-color: transparent;
+  border-radius: 0;
 }
 
 .course-detail-panel-info-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #666;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .course-detail-panel-info-value {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
   display: flex;
   align-items: center;

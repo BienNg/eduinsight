@@ -132,42 +132,36 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses }) 
         </h3>
         <div className="course-detail-panel-info-grid">
           <div className="course-detail-panel-info-item">
-            <span className="course-detail-panel-info-label">Stufe</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faGraduationCap} className="course-detail-panel-icon" />
               {course.level || 'N/A'}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
-            <span className="course-detail-panel-info-label">Kurstyp</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faBook} className="course-detail-panel-icon" />
               {course.type || 'Standard'}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
-            <span className="course-detail-panel-info-label">Lehrkraft</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faChalkboardTeacher} className="course-detail-panel-icon" />
               {teacherName}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
-            <span className="course-detail-panel-info-label">Ort</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faMapMarkerAlt} className="course-detail-panel-icon" />
               {course.location || 'Online'}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
-            <span className="course-detail-panel-info-label">Startdatum</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faCalendarAlt} className="course-detail-panel-icon" />
               {course.startDate}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
-            <span className="course-detail-panel-info-label">Dauer</span>
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faClock} className="course-detail-panel-icon" />
               {course.duration || '60'} Min.
