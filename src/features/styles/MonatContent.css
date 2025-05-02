@@ -6,10 +6,12 @@
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
+  overflow: hidden;
 }
 
 .month-title-section {
   flex: 1;
+  min-width: 400px;
 }
 
 .month-tabs-section {
