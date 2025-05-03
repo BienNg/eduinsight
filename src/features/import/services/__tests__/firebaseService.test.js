@@ -14,7 +14,6 @@ import {
   seedDatabase, 
   createTestDatabase 
 } from '../../../test/firebaseTestUtils';
-import { createRecord, updateRecord, getRecordById } from '../../../firebase/database';
 
 // Mock Firebase
 jest.mock('../../../firebase/config', () => {
@@ -22,23 +21,59 @@ jest.mock('../../../firebase/config', () => {
   return { database };
 });
 
-jest.mock('../../../firebase/database', () => {
-  const originalModule = jest.requireActual('../../../firebase/database');
-  return {
-    ...originalModule,
-    // We need to make sure we're using our mocked version
-    createRecord: jest.fn(originalModule.createRecord),
-    updateRecord: jest.fn(originalModule.updateRecord),
-    getAllRecords: jest.fn(originalModule.getAllRecords),
-    getRecordById: jest.fn(originalModule.getRecordById)
-  };
-});
+// Define mocks before jest.mock
+const mockCreateRecord = jest.fn();
+const mockUpdateRecord = jest.fn();
+const mockGetAllRecords = jest.fn();
+const mockGetRecordById = jest.fn();
+
+// Mock database functions
+jest.mock('../../../firebase/database', () => ({
+  createRecord: mockCreateRecord,
+  updateRecord: mockUpdateRecord,
+  getAllRecords: mockGetAllRecords,
+  getRecordById: mockGetRecordById
+}));
 
 describe('Firebase Service Functions', () => {
   beforeEach(async () => {
     resetDatabase();
     await seedDatabase(createTestDatabase());
     jest.clearAllMocks();
+    
+    // Set up mock implementations for each test
+    mockCreateRecord.mockImplementation((collection, data) => {
+      return Promise.resolve({ id: `${collection}-123`, ...data });
+    });
+    
+    mockUpdateRecord.mockImplementation(() => Promise.resolve());
+    
+    mockGetAllRecords.mockImplementation((collection) => {
+      if (collection === 'groups') {
+        return Promise.resolve([
+          { id: 'group1', name: 'G1', courseIds: [], color: '#911DD2' }
+        ]);
+      }
+      if (collection === 'teachers') {
+        return Promise.resolve([
+          { id: 'teacher1', name: 'John Smith', courseIds: ['course1'] }
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+    
+    mockGetRecordById.mockImplementation((collection, id) => {
+      if (collection === 'groups' && id === 'group1') {
+        return Promise.resolve({ id: 'group1', name: 'G1', courseIds: ['course1'] });
+      }
+      if (collection === 'courses' && id === 'course1') {
+        return Promise.resolve({ id: 'course1', name: 'G1 B1.2', level: 'B1.2', groupId: 'group1' });
+      }
+      if (collection === 'students' && id === 'student1') {
+        return Promise.resolve({ id: 'student1', name: 'Test Student', courseIds: ['course1'] });
+      }
+      return Promise.resolve(null);
+    });
   });
 
   describe('getNextGroupColor', () => {
@@ -199,7 +234,7 @@ describe('Firebase Service Functions', () => {
       expect(student.courseIds).toContain('newCourse');
       
       // Check that database was updated
-      updateRecord.mock.calls.length > 0;
+      expect(mockUpdateRecord).toHaveBeenCalled();
     });
   });
 
