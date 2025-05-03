@@ -84,6 +84,19 @@ const SessionFilters = ({
           </div>
 
           <div className="filter-item">
+            <label htmlFor="statusFilter">Status:</label>
+            <select
+              id="statusFilter"
+              value={filters.status || ''}
+              onChange={(e) => onFilterChange('status', e.target.value || null)}
+            >
+              <option value="">All Statuses</option>
+              <option value="ongoing">Ongoing</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          <div className="filter-item">
             <label htmlFor="filterLogic">Filter Logic:</label>
             <select
               id="filterLogic"

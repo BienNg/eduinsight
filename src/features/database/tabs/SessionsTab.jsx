@@ -2,13 +2,16 @@
 import React, { useState, useMemo } from 'react';
 import SessionFilters from '../components/SessionFilters';
 import '../../styles/Filters.css';
+import '../../styles/Content.css';
+
 
 const SessionsTab = ({ sessions, teachers, courses, months, groups }) => {
   const [filters, setFilters] = useState({
     teacherId: null,
     courseId: null,
     monthId: null,
-    groupId: null
+    groupId: null,
+    status: null
   });
   const [filterLogic, setFilterLogic] = useState('AND');
 
@@ -20,7 +23,7 @@ const SessionsTab = ({ sessions, teachers, courses, months, groups }) => {
   };
 
   const filteredSessions = useMemo(() => {
-    if (!filters.teacherId && !filters.courseId && !filters.monthId && !filters.groupId) {
+    if (!filters.teacherId && !filters.courseId && !filters.monthId && !filters.groupId && !filters.status) {
       return sessions;
     }
 
@@ -69,11 +72,17 @@ const SessionsTab = ({ sessions, teachers, courses, months, groups }) => {
           groupMatch = course && course.groupId === filters.groupId;
         }
       }
+      
+      // Status match logic
+      let statusMatch = true;
+      if (filters.status) {
+        statusMatch = session.status === filters.status;
+      }
 
       if (filterLogic === 'AND') {
-        return teacherMatch && courseMatch && monthMatch && groupMatch;
+        return teacherMatch && courseMatch && monthMatch && groupMatch && statusMatch;
       } else {
-        return teacherMatch || courseMatch || monthMatch || groupMatch;
+        return teacherMatch || courseMatch || monthMatch || groupMatch || statusMatch;
       }
     });
   }, [sessions, filters, filterLogic, courses]);
@@ -101,6 +110,7 @@ const SessionsTab = ({ sessions, teachers, courses, months, groups }) => {
               <th>Teacher</th>
               <th>Course</th>
               <th>Group</th>
+              <th className="status-column">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -128,6 +138,9 @@ const SessionsTab = ({ sessions, teachers, courses, months, groups }) => {
                   </td>
                   <td>
                     {group ? group.name : 'N/A'}
+                  </td>
+                  <td className={`status-${session.status || 'unknown'} status-column`}>
+                    {session.status || 'Unknown'}
                   </td>
                 </tr>
               );
