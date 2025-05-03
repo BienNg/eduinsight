@@ -3,14 +3,20 @@ import { calculateTotalHours } from '../timeUtils';
 import { isLongSession } from '../sessionUtils';
 
 describe('calculateTotalHours', () => {
-  test('calculates total hours based on session count', () => {
+  test('calculates total hours based on session durations', () => {
+    // Create a date string for today in DD.MM.YYYY format
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
+    const dateString = `${day}.${month}.${year}`;
+    
     const sessions = [
-      { id: '1', title: 'Session 1' },
-      { id: '2', title: 'Session 2' },
-      { id: '3', title: 'Session 3' }
+      { id: '1', title: 'Session 1', date: dateString, duration: 1.5 },
+      { id: '2', title: 'Session 2', date: dateString, duration: 1.5 },
+      { id: '3', title: 'Session 3', date: dateString, duration: 1.5 }
     ];
     
-    // Each session counts as 1.5 hours
     expect(calculateTotalHours(sessions)).toBe(4.5);
   });
   
@@ -25,6 +31,7 @@ describe('calculateTotalHours', () => {
 });
 
 describe('isLongSession', () => {
+  // Tests for isLongSession remain unchanged
   test('returns true when session is at least 1h50m long', () => {
     expect(isLongSession('14:00', '15:50')).toBe(true);
     expect(isLongSession('14:00', '16:00')).toBe(true);
