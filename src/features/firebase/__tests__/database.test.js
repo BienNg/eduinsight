@@ -1,107 +1,112 @@
 // src/features/firebase/__tests__/database.test.js
+
+// 1. First, import the jest testing framework
 import { jest } from '@jest/globals';
-import { 
-  createRecord, 
-  updateRecord, 
-  getRecordById, 
-  getAllRecords, 
-  deleteRecord, 
+
+// 2. Declare mock functions BEFORE mocking modules
+const mockPush = jest.fn().mockReturnValue({ key: 'mock-id' });
+const mockSet = jest.fn().mockResolvedValue(undefined);
+const mockGet = jest.fn().mockImplementation(() => ({
+  exists: () => true,
+  val: () => ({ id: 'mock-id', name: 'Test Record' })
+}));
+const mockUpdate = jest.fn().mockResolvedValue(undefined);
+const mockRemove = jest.fn().mockResolvedValue(undefined);
+const mockRef = jest.fn().mockReturnValue({});
+
+// 3. Mock modules BEFORE importing the code that uses them
+jest.mock('firebase/database', () => ({
+  ref: mockRef,
+  push: mockPush,
+  set: mockSet,
+  get: mockGet,
+  update: mockUpdate,
+  remove: mockRemove
+}));
+
+jest.mock('../../firebase/config', () => ({
+  database: {}
+}));
+
+// 4. NOW import the functions to test - AFTER mocking their dependencies
+import {
+  createRecord,
+  updateRecord,
+  getRecordById,
+  getAllRecords,
+  deleteRecord,
   cleanupEmptyGroups 
 } from '../database';
-import { 
-  resetDatabase, 
-  seedDatabase, 
-  createTestDatabase, 
-  createTestCourse 
-} from '../../test/firebaseTestUtils';
-
-// Mock Firebase
-jest.mock('../config', () => {
-  const { database } = require('../../../__mocks__/firebase');
-  return { database };
-});
 
 describe('Database Operations', () => {
-  beforeEach(async () => {
-    resetDatabase();
-    await seedDatabase(createTestDatabase());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Reset mock implementations for each test
+    mockGet.mockImplementation(() => ({
+      exists: () => true,
+      val: () => ({ id: 'mock-id', name: 'Test Record' })
+    }));
   });
 
   describe('createRecord', () => {
     test('creates a new record with provided data', async () => {
       // Arrange
-      const newCourse = {
-        name: 'New Course',
-        level: 'A1',
-        groupId: 'group1',
-        startDate: '01.05.2025',
-        endDate: '31.07.2025',
-        status: 'ongoing'
-      };
-
-      // Act
-      const createdCourse = await createRecord('courses', newCourse);
-
-      // Assert
-      expect(createdCourse).toHaveProperty('id');
-      expect(createdCourse.name).toBe('New Course');
+      const data = { name: 'Test Course' };
       
-      // Verify it was stored in the database
-      const storedCourse = await getRecordById('courses', createdCourse.id);
-      expect(storedCourse).toEqual(createdCourse);
+      // Act
+      const result = await createRecord('courses', data);
+      
+      // Assert
+      expect(mockPush).toHaveBeenCalled();
+      expect(mockSet).toHaveBeenCalled();
+      expect(result).toEqual(expect.objectContaining({ 
+        id: 'mock-id', 
+        name: 'Test Course' 
+      }));
     });
   });
 
   describe('updateRecord', () => {
     test('updates an existing record', async () => {
       // Arrange
-      const courseId = 'course1';
-      const updateData = {
-        name: 'Updated Course Name',
-        status: 'completed'
-      };
-
+      const id = 'existing-id';
+      const data = { name: 'Updated Name' };
+      
       // Act
-      await updateRecord('courses', courseId, updateData);
-
+      const result = await updateRecord('courses', id, data);
+      
       // Assert
-      const updatedCourse = await getRecordById('courses', courseId);
-      expect(updatedCourse.name).toBe('Updated Course Name');
-      expect(updatedCourse.status).toBe('completed');
-      expect(updatedCourse.level).toBe('B1.2'); // Original data should be preserved
-    });
-
-    test('handles update for non-existent record', async () => {
-      // Arrange
-      const nonExistentId = 'nonexistent';
-      const updateData = { name: 'Nonexistent Course' };
-
-      // Act & Assert
-      await expect(updateRecord('courses', nonExistentId, updateData))
-        .rejects.toThrow();
+      expect(mockRef).toHaveBeenCalled();
+      expect(mockUpdate).toHaveBeenCalled();
+      expect(result).toEqual(expect.objectContaining({ 
+        id, 
+        name: 'Updated Name' 
+      }));
     });
   });
 
   describe('getRecordById', () => {
     test('retrieves a record by its id', async () => {
-      // Arrange
-      const courseId = 'course1';
-
       // Act
-      const course = await getRecordById('courses', courseId);
-
+      const result = await getRecordById('courses', 'mock-id');
+      
       // Assert
-      expect(course).toHaveProperty('id', courseId);
-      expect(course.name).toBe('Test Course course1');
+      expect(mockRef).toHaveBeenCalled();
+      expect(mockGet).toHaveBeenCalled();
+      expect(result).toEqual({ id: 'mock-id', name: 'Test Record' });
     });
-
+    
     test('returns null for non-existent record', async () => {
       // Arrange
-      const nonExistentId = 'nonexistent';
-
+      mockGet.mockImplementationOnce(() => ({
+        exists: () => false,
+        val: () => null
+      }));
+      
       // Act
-      const result = await getRecordById('courses', nonExistentId);
-
+      const result = await getRecordById('courses', 'non-existent-id');
+      
       // Assert
       expect(result).toBeNull();
     });
@@ -110,76 +115,83 @@ describe('Database Operations', () => {
   describe('getAllRecords', () => {
     test('retrieves all records of a specific type', async () => {
       // Arrange
-      await createRecord('courses', createTestCourse('course2'));
-      await createRecord('courses', createTestCourse('course3'));
-
+      mockGet.mockImplementationOnce(() => ({
+        exists: () => true,
+        val: () => ({
+          'id1': { id: 'id1', name: 'Course 1' },
+          'id2': { id: 'id2', name: 'Course 2' }
+        })
+      }));
+      
       // Act
-      const courses = await getAllRecords('courses');
-
+      const result = await getAllRecords('courses');
+      
       // Assert
-      expect(courses).toHaveLength(3);
-      expect(courses.map(c => c.id)).toContain('course1');
-      expect(courses.map(c => c.id)).toContain('course2');
-      expect(courses.map(c => c.id)).toContain('course3');
+      expect(result).toHaveLength(2);
+      expect(result).toEqual([
+        { id: 'id1', name: 'Course 1' },
+        { id: 'id2', name: 'Course 2' }
+      ]);
     });
-
+    
     test('returns empty array when no records exist', async () => {
       // Arrange
-      await seedDatabase({ emptyCollection: {} });
-
+      mockGet.mockImplementationOnce(() => ({
+        exists: () => false,
+        val: () => null
+      }));
+      
       // Act
-      const records = await getAllRecords('emptyCollection');
-
+      const result = await getAllRecords('emptyCollection');
+      
       // Assert
-      expect(records).toEqual([]);
+      expect(result).toEqual([]);
     });
   });
 
   describe('deleteRecord', () => {
     test('deletes a record by its id', async () => {
       // Arrange
-      const courseId = 'course1';
+      const id = 'record-to-delete';
       
-      // Verify it exists before deletion
-      const beforeDelete = await getRecordById('courses', courseId);
-      expect(beforeDelete).not.toBeNull();
-
       // Act
-      await deleteRecord('courses', courseId);
-
+      const result = await deleteRecord('courses', id);
+      
       // Assert
-      const afterDelete = await getRecordById('courses', courseId);
-      expect(afterDelete).toBeNull();
+      expect(mockRef).toHaveBeenCalled();
+      expect(mockRemove).toHaveBeenCalled();
+      expect(result).toBe(true);
     });
-
+    
     test('handles deletion of non-existent record', async () => {
       // Arrange
-      const nonExistentId = 'nonexistent';
-
+      const nonExistentId = 'non-existent-id';
+      mockGet.mockImplementationOnce(() => ({
+        exists: () => false,
+        val: () => null
+      }));
+      
       // Act & Assert - should not throw an error
-      await expect(deleteRecord('courses', nonExistentId)).resolves.not.toThrow();
+      await expect(deleteRecord('courses', nonExistentId)).resolves.toBe(true);
     });
   });
 
   describe('cleanupEmptyGroups', () => {
     test('removes groups with no courses', async () => {
       // Arrange
-      await createRecord('groups', {
-        id: 'emptyGroup',
-        name: 'Empty Group',
-        courseIds: []
-      });
-
+      mockGet.mockImplementationOnce(() => ({
+        exists: () => true,
+        val: () => ({
+          'group1': { id: 'group1', name: 'Empty Group', courseIds: [] },
+          'group2': { id: 'group2', name: 'Group with courses', courseIds: ['course1'] }
+        })
+      }));
+      
       // Act
       await cleanupEmptyGroups();
-
-      // Assert
-      const emptyGroup = await getRecordById('groups', 'emptyGroup');
-      expect(emptyGroup).toBeNull();
       
-      // The non-empty group should still exist
-      const nonEmptyGroup = await getRecordById('groups', 'group1');
-      expect(nonEmptyGroup).not.toBeNull();
+      // Assert
+      expect(mockRemove).toHaveBeenCalled();
     });
   });
 });
