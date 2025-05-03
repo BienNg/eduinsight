@@ -4,6 +4,7 @@ import { useImport } from './ImportContext';
 import '../styles/Content.css';
 import { FOCUS_IMPORT_TAB_EVENT } from './ImportContext';
 import ImportDropZone from '../import/components/ImportDropZone';
+import GoogleSheetsImport from '../import/components/GoogleSheetsImport'; // Add this import
 import ProcessingQueue from '../import/components/ProcessingQueue';
 import CompletedFiles from '../import/components/CompletedFiles';
 import FailedFiles from '../import/components/FailedFiles';
@@ -18,6 +19,7 @@ const ImportContent = () => {
     completedFiles,
     failedFiles,
     addFilesToQueue,
+    addGoogleSheetToQueue, // Add this
     clearCompletedFiles,
     clearFailedFiles
   } = useImport();
@@ -55,6 +57,10 @@ const ImportContent = () => {
           <p>Upload Excel files containing student data, class information, or attendance records.</p>
 
           <ImportDropZone onFilesAdded={addFilesToQueue} />
+          
+          {/* Add the Google Sheets import component */}
+          <GoogleSheetsImport onSheetSubmitted={addGoogleSheetToQueue} />
+          
           <ProcessingQueue queue={processingQueue} />
           <CompletedFiles files={completedFiles} onClear={clearCompletedFiles} />
           <FailedFiles files={failedFiles} onClear={clearFailedFiles} />

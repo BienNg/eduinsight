@@ -25,7 +25,25 @@ export const ImportProvider = ({ children }) => {
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
 
+  const addGoogleSheetToQueue = async (arrayBuffer, filename) => {
+    const sheetWithMeta = {
+      id: Date.now() + Math.random().toString(36).substr(2, 9),
+      name: filename,
+      status: 'queued',
+      progress: 0,
+      error: null,
+      isGoogleSheet: true,
+      arrayBuffer
+    };
 
+    // Show toast notification
+    toast.info(`Added Google Sheet to queue`, {
+      description: filename.substring(0, 60) + (filename.length > 60 ? '...' : ''),
+      onClick: navigateToImport
+    });
+
+    setProcessingQueue(prev => [...prev, sheetWithMeta]);
+  };
 
   // Helper function for navigating to import tab
   const navigateToImport = () => {
@@ -53,10 +71,10 @@ export const ImportProvider = ({ children }) => {
         // Create a toast ID for this file
         const toastId = `import-${currentFile.id}`;
 
-        // Show processing toast - entire toast clickable
+        // Show processing toast
         toast.loading(`Processing ${currentFile.name}...`, {
           id: toastId,
-          duration: Infinity, // stays until dismissed or updated
+          duration: Infinity,
           onClick: navigateToImport
         });
 
@@ -67,8 +85,46 @@ export const ImportProvider = ({ children }) => {
             ...prev.slice(1)
           ]);
 
-          // Process the file
-          await processFile(currentFile.file);
+          if (currentFile.isGoogleSheet && currentFile.arrayBuffer) {
+            // Process Google Sheet data that was already fetched
+            updateProgress(30);
+
+            // Import necessary function
+            const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
+
+            // Validate the data
+            const validationResult = await validateExcelFile(currentFile.arrayBuffer, currentFile.name);
+
+            updateProgress(50);
+
+            // Check for validation errors
+            if (validationResult.errors && validationResult.errors.length > 0) {
+              if (validationResult.missingTimeColumns && validationResult.hasOnlyTimeErrors) {
+                // Handle missing time columns case
+                setPendingFile({
+                  arrayBuffer: currentFile.arrayBuffer,
+                  name: currentFile.name,
+                  isGoogleSheet: true
+                });
+                setShowTimeModal(true);
+
+                // Remove from processing queue as we'll handle it separately
+                setProcessingQueue(prev => prev.slice(1));
+                setLoading(false);
+                return;
+              } else {
+                throw new Error(`Validation failed: ${validationResult.errors.join(', ')}`);
+              }
+            }
+
+            // Process the file
+            await processB1CourseFileWithColors(currentFile.arrayBuffer, currentFile.name, {});
+
+            updateProgress(100);
+          } else {
+            // Process regular uploaded file
+            await processFile(currentFile.file);
+          }
 
           // Add to completed files
           setCompletedFiles(prev => [...prev, {
@@ -76,7 +132,7 @@ export const ImportProvider = ({ children }) => {
             status: 'completed',
             progress: 100
           }]);
-          // Update toast to success - entire toast clickable
+          // Update toast to success
           toast.success(`Successfully imported ${currentFile.name}`, {
             id: toastId,
             duration: 5000,
@@ -90,7 +146,7 @@ export const ImportProvider = ({ children }) => {
             error: error.message
           }]);
 
-          // Update toast to error - entire toast clickable
+          // Update toast to error
           toast.error(`Failed to import ${currentFile.name}`, {
             id: toastId,
             duration: 5000,
@@ -106,7 +162,8 @@ export const ImportProvider = ({ children }) => {
     };
 
     processNextFile();
-  }, [processingQueue, loading, navigate]);
+  }, [processingQueue, loading, navigate, location.pathname]);
+
 
   const updateProgress = (progress) => {
     if (processingQueue.length > 0) {
@@ -364,6 +421,7 @@ export const ImportProvider = ({ children }) => {
         failedFiles,
         loading,
         addFilesToQueue,
+        addGoogleSheetToQueue, // Add this new function
         clearCompletedFiles,
         clearFailedFiles
       }}
