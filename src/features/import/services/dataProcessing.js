@@ -21,6 +21,64 @@ import {
 } from '../../utils/sessionUtils';
 
 
+// Add this pre-validation function to dataProcessing.js
+const validateSessionsBeforeProcessing = (jsonData, headerRowIndex, columnIndices) => {
+    const errors = [];
+
+    // Get current date for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Process each row to pre-validate sessions
+    for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+
+        // Skip empty rows
+        if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+            continue;
+        }
+
+        // Extract values using our column mapping
+        const getValue = (index) => index !== -1 && index < row.length ? row[index] : null;
+
+        const folienTitle = getValue(columnIndices.folien);
+        const dateValue = getValue(columnIndices.date);
+        const teacherValue = getValue(columnIndices.teacher);
+
+        // Only check rows that appear to be session rows
+        if (folienTitle && folienTitle.toString().trim() !== '') {
+            // Check for completed sessions without teachers
+            if (dateValue) {
+                let formattedDate = '';
+                let isFutureDate = false;
+
+                // Format date and check if it's in the future
+                if (typeof dateValue === 'string' && dateValue.includes('.')) {
+                    formattedDate = dateValue;
+                    const [day, month, year] = dateValue.split('.').map(Number);
+                    const sessionDate = new Date(year, month - 1, day);
+                    isFutureDate = sessionDate > today;
+                } else if (typeof dateValue === 'number') {
+                    const jsDate = excelDateToJSDate(dateValue);
+                    if (jsDate) {
+                        isFutureDate = jsDate > today;
+                        const day = jsDate.getDate().toString().padStart(2, '0');
+                        const month = (jsDate.getMonth() + 1).toString().padStart(2, '0');
+                        const year = jsDate.getFullYear();
+                        formattedDate = `${day}.${month}.${year}`;
+                    }
+                }
+
+                // If it's a completed session (not in the future) and has no teacher, that's an error
+                if (!isFutureDate && (!teacherValue || teacherValue.toString().trim() === '')) {
+                    errors.push(`Session "${folienTitle}" on ${formattedDate || 'unknown date'} is completed but has no teacher assigned. All completed sessions must have a teacher.`);
+                }
+            }
+        }
+    }
+
+    return errors;
+};
 
 const COURSE_COLORS = [
     '#911DD2', // Purple Base
@@ -183,6 +241,11 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         teacher: findColumnIndex(headerRow, ["Lehrer"]),
         message: findColumnIndex(headerRow, ["Nachrichten"])
     };
+
+    const validationErrors = validateSessionsBeforeProcessing(jsonData, headerRowIndex, columnIndices);
+    if (validationErrors.length > 0) {
+        throw new Error(validationErrors[0]); // Throw the first error found
+    }
 
     // Extract student information
     const students = [];
@@ -466,6 +529,9 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
                     }
                 }
 
+                if (currentSession && currentSession.status === 'completed' && (!currentSession.teacherId || currentSession.teacherId === '')) {
+                    throw new Error(`Session "${currentSession.title}" on ${currentSession.date || 'unknown date'} is completed but has no teacher assigned. All completed sessions must have a teacher.`);
+                }
 
                 currentSession = {
                     courseId: courseRecord.id,
@@ -619,6 +685,10 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
 
     // Add the last session if we have one
     if (currentSession) {
+        // Validate completed sessions have teachers
+        if (currentSession.status === 'completed' && (!currentSession.teacherId || currentSession.teacherId === '')) {
+            throw new Error(`Session "${currentSession.title}" on ${currentSession.date || 'unknown date'} is completed but has no teacher assigned. All completed sessions must have a teacher.`);
+        }
         const sessionRecord = await createRecord('sessions', currentSession);
         courseRecord.sessionIds.push(sessionRecord.id);
 

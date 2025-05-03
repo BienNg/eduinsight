@@ -43,7 +43,7 @@ const findValueInMergedRange = (worksheet, masterAddress) => {
   return null;
 };
 
-const isFutureDate = (dateValue) => {
+export const isFutureDate = (dateValue) => {
   if (!dateValue) return false;
 
   const today = new Date();
@@ -248,6 +248,26 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
   const errors = [];
   let missingTimeColumns = false;
 
+  const checkIsFutureDate = (dateValue) => {
+    if (!dateValue) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+      const [day, month, year] = dateValue.split('.').map(Number);
+      const sessionDate = new Date(year, month - 1, day);
+      return sessionDate > today;
+    }
+
+    if (typeof dateValue === 'number') {
+      const jsDate = excelDateToJSDate(dateValue);
+      return jsDate ? jsDate > today : false;
+    }
+
+    return false;
+  };
+
   try {
     // Use both XLSX for structure and ExcelJS for colors/formatting
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -299,7 +319,7 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
         if (hasOtherData) {
           // Check if this is a future date
           const dateValue = dateIndex !== -1 ? row[dateIndex] : null;
-          if (isFutureDate(dateValue)) {
+          if (checkIsFutureDate(dateValue)) {
             continue; // Skip validation for future dates
           }
 
@@ -569,10 +589,21 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
 
             if (teacherIndex !== -1) {
               const teacherValue = row[teacherIndex];
-              if (!teacherValue) {
-                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information in the "Lehrer" column.`);
+              const dateValue = dateIndex !== -1 ? row[dateIndex] : null;
+
+              // Skip validation for future dates only
+              let isFutureSession = false;
+              if (dateValue) {
+                isFutureSession = checkIsFutureDate(dateValue);
+              }
+
+              // Add special error for completed sessions (not future ones) without teacher
+              if (!teacherValue && !isFutureSession) {
+                errors.push(`Row ${i + 1}: Session "${folienValue}" is missing teacher information in the "Lehrer" column. All completed sessions must have a teacher assigned.`);
               }
             }
+
+
           }
         }
       }

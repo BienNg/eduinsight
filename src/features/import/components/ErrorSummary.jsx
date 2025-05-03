@@ -22,6 +22,8 @@ const ErrorSummary = ({ errors, filename }) => {
         errorType = 'Missing Start Times';
       } else if (error.includes('missing an end time')) {
         errorType = 'Missing End Times';
+      } else if (error.includes('missing teacher information') && error.includes('completed session')) {
+        errorType = 'Missing Teacher For Completed Session';
       } else if (error.includes('missing teacher information')) {
         errorType = 'Missing Teacher Information';
       } else if (error.includes('missing a date')) {
@@ -69,6 +71,8 @@ const ErrorSummary = ({ errors, filename }) => {
         return 'Add start times in the "von" column for these sessions';
       case 'Missing End Times':
         return 'Add end times in the "bis" column for these sessions';
+      case 'Missing Teacher For Completed Session':
+        return 'Add teacher names in the "Lehrer" column for all completed sessions - this is required';
       case 'Missing Teacher Information':
         return 'Add teacher names in the "Lehrer" column for these sessions';
       case 'Missing Dates':
