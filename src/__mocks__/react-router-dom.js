@@ -1,13 +1,13 @@
 // src/__mocks__/react-router-dom.js
-const reactRouterDom = {
+const navigateMock = jest.fn();
+
+module.exports = {
     BrowserRouter: ({ children }) => children,
     Routes: ({ children }) => children,
     Route: () => null,
     Link: ({ children }) => children,
-    useNavigate: () => jest.fn(),
+    useNavigate: () => navigateMock,
     useLocation: () => ({ pathname: '/' }),
     useParams: () => ({}),
     Outlet: () => null
 };
-
-module.exports = reactRouterDom;
