@@ -282,7 +282,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
                   <span className="course-detail-panel-session-title">{session.title || 'Unbenannte Lektion'}</span>
                   <span className="course-detail-panel-session-date">{session.date}</span>
                   <span className="course-detail-panel-session-teacher">
-                    {session.teacherId ? sessionTeachers[session.teacherId] : sessionTeachers[session.id] || 'Nicht zugewiesen'}
+                    {session.teacherId ? sessionTeachers[session.teacherId] : 'Nicht zugewiesen'}
                   </span>
                   <div className="course-detail-panel-session-badges">
                     <span className={`course-detail-panel-status-badge ${session.status === 'completed' ? 'status-completed' : 'status-planned'}`}>

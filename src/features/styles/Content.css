@@ -1091,3 +1091,73 @@
   background-color: #f5f5f5;
   border-top: 1px solid #e0e0e0;
 }
+
+/* Sessions Bulk Actions */
+.sessions-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.selection-counter {
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.select-all-button {
+  padding: 6px 12px;
+  background-color: #e0e0e0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.select-all-button:hover {
+  background-color: #d0d0d0;
+}
+
+.delete-button {
+  padding: 6px 12px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+  background-color: #d32f2f;
+}
+
+.delete-button:disabled {
+  background-color: #ffccbc;
+  cursor: not-allowed;
+}
+
+/* Table Styles */
+.checkbox-column {
+  width: 40px;
+  text-align: center;
+}
+
+.checkbox-column input {
+  cursor: pointer;
+}
+
+.selected-row {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.selected-row:hover {
+  background-color: rgba(33, 150, 243, 0.15);
+}
