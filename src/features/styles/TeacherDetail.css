@@ -276,3 +276,101 @@
     font-size: 14px;
     color: #777;
 }
+
+/* Add to src/styles/TeacherDetail.css */
+
+.value-with-edit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .btn-edit {
+    background: none;
+    border: none;
+    color: var(--color-gray-600);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--border-radius-sm);
+    font-size: 12px;
+  }
+  
+  .btn-edit:hover {
+    color: var(--color-primary-main);
+    background-color: var(--color-gray-100);
+  }
+  
+  .edit-country-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .country-input {
+    padding: 4px 8px;
+    border: 1px solid var(--color-gray-400);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+  }
+  
+  .edit-actions {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--border-radius-sm);
+    font-size: 12px;
+  }
+  
+  .btn-icon.success {
+    color: var(--color-success-main);
+  }
+  
+  .btn-icon.success:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+  }
+  
+  .btn-icon.cancel {
+    color: var(--color-error-main);
+  }
+  
+  .btn-icon.cancel:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+  }
+  
+  .update-status {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+  }
+  
+  .update-status.success {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: var(--color-success-main);
+  }
+  
+  .update-status.error {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: var(--color-error-main);
+  }
+
+  .country-select {
+    padding: 4px 8px;
+    border: 1px solid var(--color-gray-400);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+    background-color: white;
+  }
+  
+  .country-select:focus {
+    outline: none;
+    border-color: var(--color-primary-main);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+  }
+  

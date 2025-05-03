@@ -2,7 +2,7 @@
 import ProgressBar from '../common/ProgressBar';
 import TabCard from '../common/TabCard'
 
-import { getRecordById, getAllRecords } from '../firebase/database';
+import { getRecordById, getAllRecords, updateRecord } from '../firebase/database';
 import {
     getCurrentMonthSessions,
     getPreviousMonthSessions,
@@ -19,7 +19,7 @@ import '../styles/cards/Cards.css';
 import '../styles/TeacherDetail.css';
 
 // Library imports
-import { faClock, faArrowLeft, faCalendarAlt, faHourglassHalf, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faArrowLeft, faCalendarAlt, faHourglassHalf, faStar, faEdit, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -41,6 +41,10 @@ const TeacherDetail = () => {
     const [courseCompletionMap, setCourseCompletionMap] = useState({});
     const { id } = useParams();
     const navigate = useNavigate();
+    const [isEditingCountry, setIsEditingCountry] = useState(false);
+    const [countryValue, setCountryValue] = useState('');
+    const [updateStatus, setUpdateStatus] = useState(null);
+    const availableCountries = ['Deutschland', 'Vietnam'];
 
     // First, create a new state for the hover tooltip
     const [hoverTooltip, setHoverTooltip] = useState({
@@ -157,7 +161,9 @@ const TeacherDetail = () => {
                 if (!teacherData) {
                     throw new Error("Teacher not found");
                 }
-                setTeacher(teacherData);
+                setTeacher(teacherData)
+
+                setCountryValue(teacherData.country || '');
 
                 const coursesData = await Promise.all(
                     (teacherData.courseIds || []).map(courseId => getRecordById('courses', courseId))
@@ -250,6 +256,24 @@ const TeacherDetail = () => {
     const totalPrevMonthHours = previousMonthData.reduce((sum, data) => sum + data.totalHours, 0);
     const totalPrevMonthSessions = previousMonthData.reduce((sum, data) => sum + data.sessions.length, 0);
     const totalPrevLongSessions = previousMonthData.reduce((sum, data) => sum + data.longSessionsCount, 0);
+
+    const handleUpdateCountry = async () => {
+        try {
+            setUpdateStatus(null);
+            await updateRecord('teachers', id, { country: countryValue });
+            setTeacher(prev => ({ ...prev, country: countryValue }));
+            setIsEditingCountry(false);
+            setUpdateStatus('success');
+
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+                setUpdateStatus(null);
+            }, 3000);
+        } catch (err) {
+            console.error("Error updating teacher country:", err);
+            setUpdateStatus('error');
+        }
+    };
 
 
     return (
@@ -565,7 +589,53 @@ const TeacherDetail = () => {
                                 </div>
                                 <div className="info-item">
                                     <span className="label">Land:</span>
-                                    <span className="value">{teacher.country || 'No Country'}</span>
+                                    {isEditingCountry ? (
+                                        <div className="edit-country-container">
+                                            <select
+                                                value={countryValue}
+                                                onChange={(e) => setCountryValue(e.target.value)}
+                                                className="country-select"
+                                                autoFocus
+                                            >
+                                                <option value="">-- Select Country --</option>
+                                                {availableCountries.map(country => (
+                                                    <option key={country} value={country}>
+                                                        {country}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="edit-actions">
+                                                <button
+                                                    onClick={handleUpdateCountry}
+                                                    className="btn-icon success"
+                                                    title="Save"
+                                                >
+                                                    <FontAwesomeIcon icon={faCheck} />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsEditingCountry(false);
+                                                        setCountryValue(teacher.country || '');
+                                                    }}
+                                                    className="btn-icon cancel"
+                                                    title="Cancel"
+                                                >
+                                                    <FontAwesomeIcon icon={faTimes} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="value-with-edit">
+                                            <span className="value">{teacher.country || 'No Country'}</span>
+                                            <button
+                                                onClick={() => setIsEditingCountry(true)}
+                                                className="btn-edit"
+                                                title="Edit country"
+                                            >
+                                                <FontAwesomeIcon icon={faEdit} />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="info-item">
                                     <span className="label">Gesamt Kurse:</span>
@@ -584,6 +654,13 @@ const TeacherDetail = () => {
                                     <span className="value">{(sessions.length * 1.5).toFixed(1)}</span>
                                 </div>
                             </div>
+
+                            {updateStatus && (
+                                <div className={`update-status ${updateStatus}`}>
+                                    {updateStatus === 'success' ? 'Country updated successfully!' : 'Failed to update country.'}
+                                </div>
+                            )}
+
                         </div>
                     </div>
 
