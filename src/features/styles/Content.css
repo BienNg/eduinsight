@@ -1063,3 +1063,31 @@
     background-position: 200% 0;
   }
 }
+
+/* Add this to your existing Content.css file */
+.database-content {
+  width: 100%;
+  padding: 20px;
+}
+
+.database-content h2 {
+  margin-bottom: 20px;
+}
+
+.sessions-table-container, 
+.students-table-container {
+  background-color: white;
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 16px;
+}
+
+.more-items-hint {
+  text-align: center;
+  padding: 12px;
+  color: #666;
+  font-style: italic;
+  background-color: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+}

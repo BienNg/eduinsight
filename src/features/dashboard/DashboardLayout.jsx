@@ -10,6 +10,7 @@ import MonatContent from '../months/MonatContent';
 import KlassenContent from '../courses/CourseContent';
 import SchulerContent from './SchulerContent';
 import LehrerContent from '../teachers/TeacherContent';
+import DatabaseView from '../database/DatabaseView';
 
 // Route components for detail views
 import TeacherDetail from '../teachers/TeacherDetail';
@@ -25,7 +26,8 @@ import {
   faChevronLeft,
   faChevronRight,
   faFileExcel,
-  faUserTie
+  faUserTie,
+  faDatabase
 } from '@fortawesome/free-solid-svg-icons';
 
 const DashboardLayout = () => {
@@ -56,6 +58,9 @@ const DashboardLayout = () => {
         break;
       case 'import':
         navigate('/import');
+        break;
+      case 'database':
+        navigate('/database');
         break;
       default:
         navigate('/');
@@ -123,6 +128,13 @@ const DashboardLayout = () => {
           >
             <FontAwesomeIcon icon={faUserGraduate} className="icon" />
           </li>
+          <li
+            data-tooltip="Database"
+            className={location.pathname.startsWith('/database') ? 'active' : ''}
+            onClick={() => handleNavigation('database')}
+          >
+            <FontAwesomeIcon icon={faDatabase} className="icon" />
+          </li>
         </ul>
       </div>
 
@@ -150,6 +162,9 @@ const DashboardLayout = () => {
             {/* Student routes */}
             <Route path="/students" element={<SchulerContent />} />
             <Route path="/students/:id" element={<StudentDetail />} />
+            
+            {/* Add the new route for database view */}
+            <Route path="/database" element={<DatabaseView />} />
           </Routes>
         </div>
       </div>
