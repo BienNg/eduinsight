@@ -4,6 +4,7 @@ import TimeColumnsModal from '../import/TimeColumnsModal';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { validateExcelFile, processB1CourseFileWithColors } from '../import/services/dataProcessing';
+import { logDatabaseChange } from '../firebase/changelog';
 
 
 
@@ -24,6 +25,7 @@ export const ImportProvider = ({ children }) => {
   // Add new state for modal
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
+
 
   const addGoogleSheetToQueue = async (arrayBuffer, filename) => {
     const sheetWithMeta = {
@@ -260,80 +262,92 @@ export const ImportProvider = ({ children }) => {
   };
 
   // Process file with improved time column handling
-  const processFile = async (file) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const reader = new FileReader();
+  // Process file with improved time column handling
+const processFile = async (file) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const reader = new FileReader();
 
-        reader.onload = async (e) => {
-          try {
-            const arrayBuffer = e.target.result;
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target.result;
 
-            // Simulating progress updates during validation
-            updateProgress(10);
+          // Simulating progress updates during validation
+          updateProgress(10);
 
-            // Import these functions from your ImportContent file
-            const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
+          // Import these functions from your ImportContent file
+          const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
 
-            // Validate the file
-            const validationResult = await validateExcelFile(arrayBuffer, file.name);
+          // Validate the file
+          const validationResult = await validateExcelFile(arrayBuffer, file.name);
 
-            console.log('Validation result:', validationResult); // Debug log
-            updateProgress(30);
+          console.log('Validation result:', validationResult); // Debug log
+          updateProgress(30);
 
-            // Simplified check for time-only errors using the new flag
-            if (validationResult.missingTimeColumns && validationResult.hasOnlyTimeErrors) {
-              console.log('Showing time columns modal for file:', file.name); // Debug log
+          // Simplified check for time-only errors using the new flag
+          if (validationResult.missingTimeColumns && validationResult.hasOnlyTimeErrors) {
+            console.log('Showing time columns modal for file:', file.name); // Debug log
 
-              // Make sure we don't already have this file pending
-              if (!pendingFile || pendingFile.name !== file.name) {
-                // Set pending file and show modal
-                setPendingFile({
-                  file,
-                  arrayBuffer,
-                  name: file.name
-                });
-                setShowTimeModal(true);
-              }
-
-              // Remove from processing queue as we'll handle it separately
-              setProcessingQueue(prev => prev.slice(1));
-              setLoading(false);
-              resolve();
-              return;
+            // Make sure we don't already have this file pending
+            if (!pendingFile || pendingFile.name !== file.name) {
+              // Set pending file and show modal
+              setPendingFile({
+                file,
+                arrayBuffer,
+                name: file.name
+              });
+              setShowTimeModal(true);
             }
 
-            // Handle other validation errors
-            if (validationResult.errors && validationResult.errors.length > 0) {
-              throw new Error(
-                `Validation failed: ${validationResult.errors.join(', ')}`
-              );
-            }
-
-            updateProgress(50);
-
-            // Process the file with the existing function
-            await processB1CourseFileWithColors(arrayBuffer, file.name, {});
-
-            updateProgress(90);
-
+            // Remove from processing queue as we'll handle it separately
+            setProcessingQueue(prev => prev.slice(1));
+            setLoading(false);
             resolve();
-          } catch (error) {
-            console.error('Error in file processing:', error); // Debug log
-            reject(error);
+            return;
           }
-        };
 
-        reader.onerror = (error) => {
-          reject(new Error(`Error reading file: ${error}`));
-        };
+          // Handle other validation errors
+          if (validationResult.errors && validationResult.errors.length > 0) {
+            throw new Error(
+              `Validation failed: ${validationResult.errors.join(', ')}`
+            );
+          }
 
-        reader.readAsArrayBuffer(file);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  };
+          updateProgress(50);
+
+          // Process the file with the existing function
+          const result = await processB1CourseFileWithColors(arrayBuffer, file.name, {});
+          
+          // Log the database changes
+          await logDatabaseChange({
+            filename: file.name,
+            coursesAdded: 1,
+            sessionsAdded: result.sessionCount || 0,
+            monthsAffected: result.monthIds ? Array.from(result.monthIds) : [],
+            studentsAdded: result.studentIds ? result.studentIds.length : 0,
+            teachersAdded: result.teacherIds ? result.teacherIds.length : 0,
+            type: 'import'
+          });
+
+          updateProgress(90);
+
+          resolve();
+        } catch (error) {
+          console.error('Error in file processing:', error); // Debug log
+          reject(error);
+        }
+      };
+
+      reader.onerror = (error) => {
+        reject(new Error(`Error reading file: ${error}`));
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 
   // Add handlers for modal actions
   const handleCancelImport = () => {

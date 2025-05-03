@@ -20,6 +20,9 @@ import {
     calculateSessionDuration
 } from '../../utils/sessionUtils';
 
+import { logDatabaseChange } from '../../firebase/changelog';
+
+
 
 // Add this pre-validation function to dataProcessing.js
 const validateSessionsBeforeProcessing = (jsonData, headerRowIndex, columnIndices) => {
@@ -852,6 +855,16 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         }
     }
 
+    await logDatabaseChange({
+        filename,
+        coursesAdded: 1,
+        sessionsAdded: sessions.length,
+        monthsAffected: Array.from(monthIds),
+        studentsAdded: students.length,
+        teachersAdded: teacherIds.size,
+        type: 'import'
+      });
+      
     return {
         ...courseRecord,
         sessionCount: sessions.length

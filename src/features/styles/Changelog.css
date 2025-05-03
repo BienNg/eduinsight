@@ -1,0 +1,53 @@
+/* src/features/styles/Changelog.css */
+.changelog-panel {
+    font-family: 'Montserrat', sans-serif;
+  }
+  
+  .changelog-panel h3 {
+    color: #333;
+    font-weight: 600;
+  }
+  
+  .day-group {
+    margin-bottom: 15px;
+  }
+  
+  .day-group .day-header {
+    font-weight: 500;
+    color: #555;
+    background-color: #f9f9f9;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  
+  .log-entry {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+  }
+  
+  .log-entry:hover {
+    background-color: #f9f9f9;
+  }
+  
+  .log-entry .time {
+    color: #888;
+    font-size: 0.8rem;
+  }
+  
+  .log-entry .filename {
+    font-weight: 500;
+    color: #1e88e5;
+  }
+  
+  .log-entry .details {
+    margin-top: 5px;
+    color: #555;
+  }
+  
+  .log-entry .sub-details {
+    font-size: 0.9rem;
+    color: #777;
+    margin-top: 3px;
+  }
