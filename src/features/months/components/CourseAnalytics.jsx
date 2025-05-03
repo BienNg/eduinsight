@@ -5,6 +5,27 @@ import { prepareLevelData, prepareChartData, CHART_COLORS } from '../utils/month
 const CourseAnalytics = ({ courses, monthDetails }) => {
   const chartData = prepareChartData(new Date(), monthDetails);
   const levelData = prepareLevelData(courses);
+  
+  // Custom tooltip formatter to show percentage
+  const customTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const totalValue = levelData.reduce((sum, item) => sum + item.value, 0);
+      const percentage = ((payload[0].value / totalValue) * 100).toFixed(1);
+      
+      return (
+        <div className="custom-tooltip" style={{ 
+          backgroundColor: '#fff', 
+          padding: '10px', 
+          border: '1px solid #ccc',
+          borderRadius: '4px'
+        }}>
+          <p><strong>{payload[0].name}</strong></p>
+          <p>{`${payload[0].value} Kurse (${percentage}%)`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="analytics-row">
@@ -32,7 +53,7 @@ const CourseAnalytics = ({ courses, monthDetails }) => {
                   <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip animationDuration={200} animationEasing="ease-in-out" />
+              <Tooltip content={customTooltip} animationDuration={200} animationEasing="ease-in-out" />
               <Legend
                 wrapperStyle={{
                   paddingTop: '20px',
@@ -48,6 +69,7 @@ const CourseAnalytics = ({ courses, monthDetails }) => {
           </ResponsiveContainer>
         </div>
       </div>
+      {/* Rest of your component remains the same */}
       <div className="analytics-card animate-card">
         <h3>Anzahl Kurse pro Monat</h3>
         <div style={{ width: '100%', height: '200px' }}>

@@ -1,62 +1,75 @@
 // Helper functions for month overview tab
 export const getMonthName = (monthId) => {
     if (!monthId) return '';
-    
+
     const [year, month] = monthId.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
     const monthNames = [
-      'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-      'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+        'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
     ];
     return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-  };
-  
-  export const prepareLevelData = (courses) => {
+};
+
+export const prepareLevelData = (courses) => {
+    // Define the specific levels we want to display, in the correct order
+    const validLevels = ['A1.1', 'A1.2', 'A2.1', 'A2.2', 'B1.1', 'B1.2'];
+
+    // Filter courses to only include those with valid levels
+    const filteredCourses = courses.filter(course => validLevels.includes(course.level));
+
+    // Initialize counts for each level (starting at 0)
     const levelCounts = {};
-    courses.forEach(course => {
-      const level = course.level || 'Unbekannt';
-      levelCounts[level] = (levelCounts[level] || 0) + 1;
+    validLevels.forEach(level => {
+        levelCounts[level] = 0;
     });
-    return Object.entries(levelCounts).map(([level, count]) => ({
-      name: level,
-      value: count
+
+    // Count occurrences of each level
+    filteredCourses.forEach(course => {
+        levelCounts[course.level]++;
+    });
+
+    // Convert to the required format for the chart, maintaining order
+    return validLevels.map(level => ({
+        name: level,
+        value: levelCounts[level]
     }));
-  };
-  
-  export const prepareChartData = (currentDate, monthDetails) => {
+};
+
+export const prepareChartData = (currentDate, monthDetails) => {
     const last4Months = Array.from({ length: 4 }, (_, i) => {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (3 - i), 1);
-      return {
-        year: date.getFullYear(),
-        month: date.getMonth() + 1
-      };
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (3 - i), 1);
+        return {
+            year: date.getFullYear(),
+            month: date.getMonth() + 1
+        };
     });
-    
+
     const monthNames = [
-      'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'
+        'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'
     ];
-    
+
     return last4Months.map(({ year, month }) => {
-      const monthId = `${year}-${month.toString().padStart(2, '0')}`;
-      const details = monthDetails[monthId];
-      return {
-        month: monthNames[month - 1].substring(0, 3),
-        courses: details ? details.courseCount : 0
-      };
+        const monthId = `${year}-${month.toString().padStart(2, '0')}`;
+        const details = monthDetails[monthId];
+        return {
+            month: monthNames[month - 1].substring(0, 3),
+            courses: details ? details.courseCount : 0
+        };
     });
-  };
-  
-  export const groupCoursesByGroup = (courses, getGroupName) => {
+};
+
+export const groupCoursesByGroup = (courses, getGroupName) => {
     const courseGroups = {};
     courses.forEach(course => {
-      const groupName = getGroupName(course.groupId);
-      if (!courseGroups[groupName]) {
-        courseGroups[groupName] = [];
-      }
-      courseGroups[groupName].push(course);
+        const groupName = getGroupName(course.groupId);
+        if (!courseGroups[groupName]) {
+            courseGroups[groupName] = [];
+        }
+        courseGroups[groupName].push(course);
     });
     return courseGroups;
-  };
-  
-  export const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+};
+
+export const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
