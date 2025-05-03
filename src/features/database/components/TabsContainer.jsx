@@ -58,6 +58,7 @@ const TabsContainer = ({ data }) => {
                     teachers={teachers}
                     courses={courses}
                     months={months}
+                    groups={groups}
                 />
             </TabPanel>
 

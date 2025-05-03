@@ -5,6 +5,7 @@ const SessionFilters = ({
   teachers, 
   courses, 
   months, 
+  groups,
   filters, 
   onFilterChange, 
   filterLogic, 
@@ -41,6 +42,22 @@ const SessionFilters = ({
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-item">
+            <label htmlFor="groupFilter">Group:</label>
+            <select
+              id="groupFilter"
+              value={filters.groupId || ''}
+              onChange={(e) => onFilterChange('groupId', e.target.value || null)}
+            >
+              <option value="">All Groups</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
                 </option>
               ))}
             </select>
