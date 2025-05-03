@@ -24,10 +24,38 @@ const GoogleSheetsImport = ({ onSheetSubmitted }) => {
         setIsSubmitting(true);
 
         try {
-            // Extract sheet ID and create export URL
-            const exportUrl = getExportUrl(sheetsUrl);
+            const sheetId = getSheetId(sheetsUrl);
+            let filename = `GoogleSheet_${sheetId}.xlsx`; // Default fallback
+            
+            try {
+                // Try to fetch the HTML page to extract the title
+                const htmlResponse = await fetch(sheetsUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/html',
+                    },
+                    // Required to avoid CORS issues
+                    mode: 'cors',
+                });
+                
+                if (htmlResponse.ok) {
+                    const htmlContent = await htmlResponse.text();
+                    // Extract title from HTML content
+                    const titleMatch = htmlContent.match(/<title>(.*?)<\/title>/i);
+                    if (titleMatch && titleMatch[1]) {
+                        // Clean up the title (remove " - Google Sheets" part)
+                        let sheetTitle = titleMatch[1].replace(/ - Google Sheets$/, '');
+                        // Ensure the filename ends with .xlsx
+                        filename = sheetTitle.endsWith('.xlsx') ? sheetTitle : `${sheetTitle}.xlsx`;
+                    }
+                }
+            } catch (titleError) {
+                // If title extraction fails, continue with the default filename
+                console.warn('Could not extract Google Sheet title:', titleError);
+            }
 
-            // Fetch the sheet data
+            // Now fetch the actual sheet content
+            const exportUrl = getExportUrl(sheetsUrl);
             const response = await fetch(exportUrl);
 
             if (!response.ok) {
@@ -36,9 +64,6 @@ const GoogleSheetsImport = ({ onSheetSubmitted }) => {
 
             // Get the array buffer from the response
             const arrayBuffer = await response.arrayBuffer();
-
-            // Format a filename
-            const filename = `GoogleSheet_${getSheetId(sheetsUrl)}.xlsx`;
 
             // Pass the data to parent component for processing
             await onSheetSubmitted(arrayBuffer, filename);
