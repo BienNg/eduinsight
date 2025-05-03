@@ -93,16 +93,7 @@ export const getNextGroupColor = async () => {
 export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
   try {
     if (!groupName || groupName.trim() === '') {
-      console.error("Group name is empty or null");
-      // Create a default group instead of returning null
-      return await createRecord('groups', {
-        name: "Unknown Group",
-        courseIds: [],
-        color: await getNextGroupColor(),
-        mode: mode,
-        type: 'G', // Default type
-        createdAt: new Date().toISOString()
-      });
+      throw new Error("Group name is empty or null. Import cannot proceed without a valid group name (e.g., G1, A2, etc.)");
     }
 
     // Rest of your function remains the same...

@@ -117,10 +117,19 @@ export const ImportProvider = ({ children }) => {
               }
             }
 
-            // Process the file
-            await processB1CourseFileWithColors(currentFile.arrayBuffer, currentFile.name, {});
-
-            updateProgress(100);
+            try {
+              // Process the file
+              await processB1CourseFileWithColors(currentFile.arrayBuffer, currentFile.name, {});
+              updateProgress(100);
+            } catch (processingError) {
+              // If the error is about missing group info, provide a clearer message
+              if (processingError.message.includes('Group name') ||
+                processingError.message.includes('Level information') ||
+                processingError.message.includes('Course mode')) {
+                throw new Error(`Import failed: ${processingError.message} For Google Sheets imports, please make sure your Sheet name follows the format: "G1 B1.2 Online" or similar.`);
+              }
+              throw processingError;
+            }
           } else {
             // Process regular uploaded file
             await processFile(currentFile.file);

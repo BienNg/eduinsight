@@ -169,6 +169,56 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     await excelWorkbook.xlsx.load(arrayBuffer);
     const excelWorksheet = excelWorkbook.worksheets[0];
 
+    let groupName = '';
+    let level = '';
+
+    // 1. Try to get group from filename first (standard approach)
+    const filenameGroupMatch = filename.match(/([GAMP]\d+)/i);
+    if (filenameGroupMatch) {
+        groupName = filenameGroupMatch[1];
+    }
+
+    // 2. If not found in filename, look for it in sheet data
+    // This is useful for Google Sheets imports
+    if (!groupName) {
+        throw new Error("Group name (e.g., G1, A2, M3, P4) not found in the filename or sheet. Please rename your file to include a valid group code.");
+    }
+
+    // 3. If still no group found, check sheet name as last resort
+    if (!groupName && firstSheetName) {
+        const sheetNameGroupMatch = firstSheetName.match(/([GAMP]\d+)/i);
+        if (sheetNameGroupMatch) {
+            groupName = sheetNameGroupMatch[1];
+        }
+    }
+
+    // Level detection - same approach but for level patterns
+    // Try filename first
+    const filenameLevelMatch = filename.match(/[AB][0-9]\.[0-9]/i) || filename.match(/[AB][0-9]/i);
+    if (filenameLevelMatch) {
+        level = filenameLevelMatch[0];
+    }
+
+    // If not in filename, try sheet data
+    if (!level) {
+        for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+            const row = jsonData[i];
+            if (!row) continue;
+
+            for (let j = 0; j < Math.min(3, row.length); j++) {
+                const cellValue = row[j];
+                if (cellValue && typeof cellValue === 'string') {
+                    const cellLevelMatch = cellValue.match(/[AB][0-9]\.[0-9]/i) || cellValue.match(/[AB][0-9]/i);
+                    if (cellLevelMatch) {
+                        level = cellLevelMatch[0];
+                        break;
+                    }
+                }
+            }
+            if (level) break;
+        }
+    }
+
     // Updated level detection code
     const getMLevel = (filename) => {
         // For M-type courses, detect simple levels (A1, A2, B1)
@@ -184,11 +234,8 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
 
     // First extract the group match
     const groupMatch = filename.match(/([GAMP]\d+)/i);
-    const groupName = groupMatch ? groupMatch[1] : '';
+    groupName = groupMatch ? groupMatch[1] : '';
     const courseType = groupName.charAt(0).toUpperCase();
-
-    // Choose level detection based on course type
-    let level = '';
     if (courseType === 'A') {
         // Leave level empty for type A courses, regardless of any numbering
         level = '';
@@ -203,14 +250,28 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
         }
     }
 
+    // Validate level for non-A course types
+    if (courseType !== 'A' && !level) {
+        throw new Error(`Level information (e.g., A1, B2.1) not found for ${groupName}. Please include level information in the filename.`);
+    }
+
     // Now construct course name - still use the full groupName
     const courseName = level ? `${groupName} ${level}` : groupName;
 
     // Extract online/offline status
-    const onlineMatch = filename.match(/online/i);
-    const offlineMatch = filename.match(/offline/i);
+    const onlineMatch = filename.match(/online/i) ||
+        firstSheetName.match(/online/i);
+    const offlineMatch = filename.match(/offline/i) ||
+        firstSheetName.match(/offline/i);
     const mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
     let isFirstSession = true;
+
+    // Validate mode
+    if (mode === 'Unknown') {
+        throw new Error(`Course mode (Online/Offline) not specified for ${groupName}. Please include 'Online' or 'Offline' in the filename.`);
+    }
+
+
 
     // Find the header row with "Folien"
 
