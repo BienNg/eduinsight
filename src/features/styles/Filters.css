@@ -1,0 +1,56 @@
+/* src/features/styles/Filters.css */
+.session-filters {
+    margin-bottom: var(--spacing-md);
+    background-color: var(--color-background-paper);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-card);
+  }
+  
+  .filter-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    align-items: flex-end;
+  }
+  
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 160px;
+  }
+  
+  .filter-item label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--spacing-xxs);
+    color: var(--color-text-secondary);
+  }
+  
+  .filter-item select {
+    padding: 8px 12px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-gray-300);
+    background-color: var(--color-background-paper);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    width: 100%;
+  }
+  
+  .filter-item select:focus {
+    outline: none;
+    border-color: var(--color-primary-main);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+  }
+  
+  @media (max-width: 768px) {
+    .filter-item {
+      width: 100%;
+    }
+  }
