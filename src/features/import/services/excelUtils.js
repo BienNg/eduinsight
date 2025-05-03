@@ -43,6 +43,22 @@ const findValueInMergedRange = (worksheet, masterAddress) => {
   return null;
 };
 
+const isDateBefore2020 = (dateValue) => {
+  if (!dateValue) return false;
+
+  if (typeof dateValue === 'string' && dateValue.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+    const [day, month, year] = dateValue.split('.').map(Number);
+    return year < 2020;
+  }
+
+  if (typeof dateValue === 'number') {
+    const jsDate = excelDateToJSDate(dateValue);
+    return jsDate && jsDate.getFullYear() < 2020;
+  }
+
+  return false;
+};
+
 export const isFutureDate = (dateValue) => {
   if (!dateValue) return false;
 
@@ -428,6 +444,28 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
+
+    if (dateIndex !== -1) {
+      // Check for dates before 2020
+      for (let i = sessionsStartRow; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        
+        // Skip completely empty rows
+        if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+          continue;
+        }
+        
+        const dateValue = row[dateIndex];
+        if (dateValue && isDateBefore2020(dateValue)) {
+          const folienValue = folienIndex !== -1 ? row[folienIndex] : `Row ${i + 1}`;
+          const sessionTitle = folienValue && folienValue.toString().trim() !== '' 
+            ? folienValue
+            : `Row ${i + 1}`;
+            
+          errors.push(`Row ${i + 1}: Session "${sessionTitle}" has a date before 2020. All dates must be 2020 or later.`);
+        }
+      }
+    }
 
     // First pass - find the pattern of filled/empty sessions
     for (let i = sessionsStartRow; i < jsonData.length; i++) {
