@@ -23,6 +23,7 @@ const SessionFilters = ({
               onChange={(e) => onFilterChange('teacherId', e.target.value || null)}
             >
               <option value="">All Teachers</option>
+              <option value="empty">No Teacher</option>
               {teachers.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
                   {teacher.name}
@@ -39,6 +40,7 @@ const SessionFilters = ({
               onChange={(e) => onFilterChange('courseId', e.target.value || null)}
             >
               <option value="">All Courses</option>
+              <option value="empty">No Course</option>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.name}
@@ -55,6 +57,7 @@ const SessionFilters = ({
               onChange={(e) => onFilterChange('groupId', e.target.value || null)}
             >
               <option value="">All Groups</option>
+              <option value="empty">No Group</option>
               {groups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
@@ -71,6 +74,7 @@ const SessionFilters = ({
               onChange={(e) => onFilterChange('monthId', e.target.value || null)}
             >
               <option value="">All Months</option>
+              <option value="empty">No Month</option>
               {months.map((month) => (
                 <option key={month.id} value={month.id}>
                   {month.name}

@@ -25,17 +25,49 @@ const SessionsTab = ({ sessions, teachers, courses, months, groups }) => {
     }
 
     return sessions.filter((session) => {
-      const teacherMatch = !filters.teacherId || session.teacherId === filters.teacherId;
-      const courseMatch = !filters.courseId || session.courseId === filters.courseId;
-      const monthMatch = !filters.monthId || session.monthId === filters.monthId;
+      // Teacher match logic
+      let teacherMatch = true;
+      if (filters.teacherId) {
+        if (filters.teacherId === 'empty') {
+          teacherMatch = !session.teacherId;
+        } else {
+          teacherMatch = session.teacherId === filters.teacherId;
+        }
+      }
+
+      // Course match logic
+      let courseMatch = true;
+      if (filters.courseId) {
+        if (filters.courseId === 'empty') {
+          courseMatch = !session.courseId;
+        } else {
+          courseMatch = session.courseId === filters.courseId;
+        }
+      }
+
+      // Month match logic
+      let monthMatch = true;
+      if (filters.monthId) {
+        if (filters.monthId === 'empty') {
+          monthMatch = !session.monthId;
+        } else {
+          monthMatch = session.monthId === filters.monthId;
+        }
+      }
       
       // Group match logic
       let groupMatch = true;
       if (filters.groupId) {
-        // First find the course for this session
-        const course = courses.find((c) => c.id === session.courseId);
-        // Then check if the course's groupId matches the filter
-        groupMatch = course && course.groupId === filters.groupId;
+        if (filters.groupId === 'empty') {
+          // Match if either the course doesn't exist or the course has no groupId
+          const course = courses.find((c) => c.id === session.courseId);
+          groupMatch = !course || !course.groupId;
+        } else {
+          // Find the course for this session
+          const course = courses.find((c) => c.id === session.courseId);
+          // Then check if the course's groupId matches the filter
+          groupMatch = course && course.groupId === filters.groupId;
+        }
       }
 
       if (filterLogic === 'AND') {
