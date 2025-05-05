@@ -2,6 +2,86 @@ import { ref, push, set, get, update, remove, query, orderByChild, equalTo } fro
 import { database } from "../../firebase/config";
 import { createRecord, updateRecord, getAllRecords, getRecordById } from '../../firebase/database';
 
+// src/features/import/services/firebaseService.js - add this function
+export const getNextCourseColor = async () => {
+  try {
+    // Get all existing courses
+    const coursesRef = ref(database, 'courses');
+    const coursesSnapshot = await get(coursesRef);
+    const courses = [];
+
+    if (coursesSnapshot.exists()) {
+      const coursesData = coursesSnapshot.val();
+      Object.keys(coursesData).forEach(key => {
+        courses.push({
+          id: key,
+          ...coursesData[key]
+        });
+      });
+    }
+
+    // Define available colors
+    const COURSE_COLORS = [
+      '#911DD2', // Purple Base
+      '#7310A8', // Purple Dark
+      '#FF5F68', // Coral Red Base
+      '#D94D54', // Coral Dark
+      '#4DBEFF', // Sky Blue Base
+      '#3A9BD4', // Sky Dark
+      '#18BF69', // Emerald Green Base
+      '#139954', // Emerald Dark
+      '#FBC14E', // Golden Yellow Base
+      '#D9A53F', // Golden Dark
+      '#D21D91', // Purple Complement
+      '#5FFFC8', // Coral Complement
+      '#FF944D', // Sky Complement
+      '#BF181D', // Emerald Complement
+      '#4E9CFB'  // Golden Complement
+    ];
+
+    // Count color usage
+    const colorUsage = {};
+    COURSE_COLORS.forEach(color => {
+      colorUsage[color] = 0;
+    });
+
+    // Count how many times each color is used
+    courses.forEach(course => {
+      if (course.color && colorUsage[course.color] !== undefined) {
+        colorUsage[course.color]++;
+      }
+    });
+
+    // Find the minimum usage count
+    let minUsage = Number.MAX_SAFE_INTEGER;
+    Object.values(colorUsage).forEach(count => {
+      if (count < minUsage) {
+        minUsage = count;
+      }
+    });
+
+    // Get all colors with minimum usage
+    const candidateColors = COURSE_COLORS.filter(color =>
+      colorUsage[color] === minUsage
+    );
+
+    // Select a random color from candidates
+    const randomIndex = Math.floor(Math.random() * candidateColors.length);
+    return candidateColors[randomIndex];
+  } catch (error) {
+    console.error("Error selecting course color:", error);
+    // Fallback to a random color if there's an error
+    const COURSE_COLORS = [
+      '#911DD2', '#7310A8', '#FF5F68', '#D94D54', '#4DBEFF', 
+      '#3A9BD4', '#18BF69', '#139954', '#FBC14E', '#D9A53F', 
+      '#D21D91', '#5FFFC8', '#FF944D', '#BF181D', '#4E9CFB'
+    ];
+    const randomIndex = Math.floor(Math.random() * COURSE_COLORS.length);
+    return COURSE_COLORS[randomIndex];
+  }
+};
+
+
 const COURSE_COLORS = [
   '#911DD2', // Purple Base
   '#A94FE0', // Purple Light

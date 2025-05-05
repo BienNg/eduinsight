@@ -5,8 +5,7 @@ import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { validateExcelFile, processB1CourseFileWithColors } from '../import/services/dataProcessing';
 import { logDatabaseChange } from '../firebase/changelog';
-
-
+// In ImportContext.jsx, update the import statement
 
 // Create a custom event for focusing the import tab
 export const FOCUS_IMPORT_TAB_EVENT = 'focusImportTab';
