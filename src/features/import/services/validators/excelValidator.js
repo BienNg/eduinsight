@@ -1,9 +1,16 @@
 // src/features/import/services/validators/excelValidator.js
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
-import { findColumnIndex, excelDateToJSDate, isDateBefore2020 } from '../helpers/excelHelpers';
+import { findColumnIndex } from '../helpers/columnFinder';
+import { excelDateToJSDate, isDateBefore2020, isFutureDate } from '../formatters/dateFormatter';
 
-// Extracted from original validateExcelFile function
+/**
+ * Validate sessions before processing
+ * @param {Array} jsonData - The Excel data as JSON
+ * @param {number} headerRowIndex - Index of the header row
+ * @param {Object} columnIndices - Mapping of column types to indices
+ * @returns {Array} List of validation errors
+ */
 const validateSessionsBeforeProcessing = (jsonData, headerRowIndex, columnIndices) => {
   const errors = [];
   const today = new Date();
@@ -30,18 +37,18 @@ const validateSessionsBeforeProcessing = (jsonData, headerRowIndex, columnIndice
       // Check for completed sessions without teachers
       if (dateValue) {
         let formattedDate = '';
-        let isFutureDate = false;
+        let isFuture = false;
 
         // Format date and check if it's in the future
         if (typeof dateValue === 'string' && dateValue.includes('.')) {
           formattedDate = dateValue;
           const [day, month, year] = dateValue.split('.').map(Number);
           const sessionDate = new Date(year, month - 1, day);
-          isFutureDate = sessionDate > today;
+          isFuture = sessionDate > today;
         } else if (typeof dateValue === 'number') {
           const jsDate = excelDateToJSDate(dateValue);
           if (jsDate) {
-            isFutureDate = jsDate > today;
+            isFuture = jsDate > today;
             const day = jsDate.getDate().toString().padStart(2, '0');
             const month = (jsDate.getMonth() + 1).toString().padStart(2, '0');
             const year = jsDate.getFullYear();
@@ -50,7 +57,7 @@ const validateSessionsBeforeProcessing = (jsonData, headerRowIndex, columnIndice
         }
 
         // If it's a completed session (not in the future) and has no teacher, that's an error
-        if (!isFutureDate && (!teacherValue || teacherValue.toString().trim() === '')) {
+        if (!isFuture && (!teacherValue || teacherValue.toString().trim() === '')) {
           errors.push(`Session "${folienTitle}" on ${formattedDate || 'unknown date'} is completed but has no teacher assigned. All completed sessions must have a teacher.`);
         }
       }
@@ -60,6 +67,12 @@ const validateSessionsBeforeProcessing = (jsonData, headerRowIndex, columnIndice
   return errors;
 };
 
+/**
+ * Validate an Excel file for course import
+ * @param {ArrayBuffer} arrayBuffer - Excel file as array buffer
+ * @param {string} filename - Name of the file
+ * @returns {Object} Validation results including errors and flags
+ */
 export const validateExcelFile = async (arrayBuffer, filename) => {
   const errors = [];
   let missingTimeColumns = false;
@@ -198,4 +211,8 @@ export const validateExcelFile = async (arrayBuffer, filename) => {
     errors.push(`Error processing Excel file: ${error.message}`);
     return { errors, missingTimeColumns, hasOnlyTimeErrors: false };
   }
+};
+
+export default {
+  validateExcelFile
 };

@@ -1,7 +1,7 @@
 // src/features/import/services/processors/attendanceProcessor.js
 import { ref, get, update } from "firebase/database";
 import { database } from "../../../firebase/config";
-import { isGreenColor, isRedColor } from '../helpers/excelHelpers';
+import { isGreenColor, isRedColor } from '../helpers/colorUtils';
 
 export const processAttendanceData = (row, excelRow, students, currentSession) => {
   for (const student of students) {
@@ -90,4 +90,8 @@ const parseDate = (dateString) => {
   if (!dateString) return null;
   const [day, month, year] = dateString.split('.').map(Number);
   return new Date(year, month - 1, day);
+};
+
+export default {
+  processAttendanceData
 };

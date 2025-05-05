@@ -3,8 +3,9 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import TimeColumnsModal from '../import/TimeColumnsModal';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { validateExcelFile, processB1CourseFileWithColors } from '../import/services/dataProcessing';
 import { logDatabaseChange } from '../firebase/changelog';
+import { validateExcelFile, processB1CourseFileWithColors } from '../import/services/dataProcessing';
+
 // In ImportContext.jsx, update the import statement
 
 // Create a custom event for focusing the import tab

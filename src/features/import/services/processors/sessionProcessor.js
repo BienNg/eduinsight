@@ -4,9 +4,11 @@ import { createTeacherRecord, getOrCreateMonthRecord } from '../firebaseService'
 import { calculateSessionDuration, isLongSession } from '../../../utils/sessionUtils';
 import { ref, get, update } from "firebase/database";
 import { database } from "../../../firebase/config";
-// Fix the duplicate imports by combining them
-import { findColumnIndex, formatDate, formatTime, excelDateToJSDate } from '../helpers/excelHelpers';
+import { findColumnIndex } from '../helpers/columnFinder';
+import { formatDate, excelDateToJSDate, isFutureDate } from '../formatters/dateFormatter';
 import { processAttendanceData } from './attendanceProcessor';
+import { formatTime } from '../formatters/timeFormatter';
+
 
 export const processSessionData = async (
   jsonData,
@@ -45,9 +47,6 @@ export const processSessionData = async (
   let lastKnownDate = null;
   let isFirstSession = true;
   let sessionOrderCounter = 0;
-
-  // Get current date for comparison
-  const currentDate = new Date();
 
   // Process each row for sessions
   for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
@@ -99,7 +98,7 @@ export const processSessionData = async (
       if (folienTitle !== currentSessionTitle) {
         // Format date and determine if it's a future date
         let formattedDate = '';
-        let isFutureDate = false;
+        let isFutureSessionDate = false;
 
         if (dateValue) {
           // Format the date
@@ -114,11 +113,7 @@ export const processSessionData = async (
 
           // Check if it's a future date
           if (formattedDate) {
-            const [day, month, year] = formattedDate.split('.').map(Number);
-            const sessionDate = new Date(year, month - 1, day);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            isFutureDate = sessionDate > today;
+            isFutureSessionDate = isFutureDate(formattedDate);
           }
         }
 
@@ -141,7 +136,7 @@ export const processSessionData = async (
 
         // Get or create month record
         let monthId = null;
-        if (formattedDate && !isFutureDate) {
+        if (formattedDate && !isFutureSessionDate) {
           try {
             const monthRecord = await getOrCreateMonthRecord(formattedDate);
             if (monthRecord) {
@@ -161,13 +156,13 @@ export const processSessionData = async (
           title: folienTitle,
           content: contentValue || '',
           notes: notesValue || '',
-          date: isFutureDate ? '' : (formattedDate || ''),
-          startTime: isFutureDate ? '' : formattedStartTime,
-          endTime: isFutureDate ? '' : formattedEndTime,
+          date: isFutureSessionDate ? '' : (formattedDate || ''),
+          startTime: isFutureSessionDate ? '' : formattedStartTime,
+          endTime: isFutureSessionDate ? '' : formattedEndTime,
           teacherId: teacherId || '',
           contentItems: [],
           attendance: {},
-          monthId: isFutureDate ? null : monthId,
+          monthId: isFutureSessionDate ? null : monthId,
           sessionOrder: sessionOrderCounter++,
           duration: calculateSessionDuration(
             groupType,
@@ -289,4 +284,8 @@ const determineSessionStatus = (dateString) => {
   const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
   return sessionDate >= todayUTC ? 'ongoing' : 'completed';
+};
+
+export default {
+  processSessionData
 };

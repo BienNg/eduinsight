@@ -1,13 +1,15 @@
 // src/features/import/services/processors/courseProcessor.js
 import * as XLSX from 'xlsx';
-import ExcelJS from 'exceljs';
 import { createRecord, updateRecord } from '../../../firebase/database';
 import { getOrCreateGroupRecord, getNextCourseColor } from '../firebaseService';
 import { findExistingCourse } from '../firebaseService';
 import { detectWeekdayPatternWithOutliers } from '../../../utils/sessionUtils';
 import { processSessionData } from './sessionProcessor';
 import { extractStudentData } from './studentProcessor';
-import { parseExcelData, extractCourseInfo } from '../helpers/excelHelpers';
+import { 
+  parseExcelData, 
+  extractCourseInfo 
+} from '../parsers/excelParser';
 
 export const processCourseData = async (arrayBuffer, filename, options) => {
   // Parse Excel file data
@@ -115,4 +117,8 @@ const determineCourseStatus = (sessions) => {
   if (allSessionsCompleted) return 'completed';
   
   return 'ongoing';
+};
+
+export default {
+  processCourseData
 };
