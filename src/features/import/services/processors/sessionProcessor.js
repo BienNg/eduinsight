@@ -5,9 +5,13 @@ import { calculateSessionDuration, isLongSession } from '../../../utils/sessionU
 import { ref, get, update } from "firebase/database";
 import { database } from "../../../firebase/config";
 import { findColumnIndex } from '../helpers/columnFinder';
-import { formatDate, excelDateToJSDate, isFutureDate } from '../formatters/dateFormatter';
+import {
+  formatDate,
+  excelDateToJSDate,
+  isFutureDate,
+  formatTime
+} from '../../../utils/dateUtils';
 import { processAttendanceData } from './attendanceProcessor';
-import { formatTime } from '../formatters/timeFormatter';
 
 
 export const processSessionData = async (

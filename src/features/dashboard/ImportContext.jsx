@@ -1,18 +1,29 @@
-// In ImportContext.jsx - Updated toast implementation
+// src/contexts/ImportContext.jsx (or current location)
 import { createContext, useContext, useState, useEffect } from 'react';
 import TimeColumnsModal from '../import/TimeColumnsModal';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { logDatabaseChange } from '../firebase/changelog';
-import { validateExcelFile, processB1CourseFileWithColors } from '../import/services/dataProcessing';
 
-// In ImportContext.jsx, update the import statement
+// Import directly from the utils folder instead of "./ImportContent"
+import { validateExcelFile, processB1CourseFileWithColors } from '../import/services/dataProcessing';
 
 // Create a custom event for focusing the import tab
 export const FOCUS_IMPORT_TAB_EVENT = 'focusImportTab';
 
+// Create the context first
 const ImportContext = createContext(null);
 
+// Define the hook before the provider
+export const useImport = () => {
+  const context = useContext(ImportContext);
+  if (!context) {
+    throw new Error('useImport must be used within an ImportProvider');
+  }
+  return context;
+};
+
+// Then define the provider component
 export const ImportProvider = ({ children }) => {
   const [files, setFiles] = useState([]);
   const [processingQueue, setProcessingQueue] = useState([]);
@@ -26,6 +37,21 @@ export const ImportProvider = ({ children }) => {
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
 
+  // Helper function for navigating to import tab
+  const navigateToImport = () => {
+    // If we're already on the import page, dispatch a custom event to focus the tab
+    if (location.pathname === '/import') {
+      window.dispatchEvent(new CustomEvent(FOCUS_IMPORT_TAB_EVENT));
+    } else {
+      // Otherwise navigate to the import page
+      navigate('/import');
+
+      // After navigation, dispatch the event after a small delay to ensure components are mounted
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent(FOCUS_IMPORT_TAB_EVENT));
+      }, 100);
+    }
+  };
 
   const addGoogleSheetToQueue = async (arrayBuffer, filename) => {
     const sheetWithMeta = {
@@ -45,22 +71,6 @@ export const ImportProvider = ({ children }) => {
     });
 
     setProcessingQueue(prev => [...prev, sheetWithMeta]);
-  };
-
-  // Helper function for navigating to import tab
-  const navigateToImport = () => {
-    // If we're already on the import page, dispatch a custom event to focus the tab
-    if (location.pathname === '/import') {
-      window.dispatchEvent(new CustomEvent(FOCUS_IMPORT_TAB_EVENT));
-    } else {
-      // Otherwise navigate to the import page
-      navigate('/import');
-
-      // After navigation, dispatch the event after a small delay to ensure components are mounted
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent(FOCUS_IMPORT_TAB_EVENT));
-      }, 100);
-    }
   };
 
   // Process files sequentially when the queue changes
@@ -91,8 +101,8 @@ export const ImportProvider = ({ children }) => {
             // Process Google Sheet data that was already fetched
             updateProgress(30);
 
-            // Import necessary function
-            const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
+            // CHANGE: Use the imported functions directly instead of dynamic imports
+            // const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
 
             // Validate the data
             const validationResult = await validateExcelFile(currentFile.arrayBuffer, currentFile.name);
@@ -175,7 +185,6 @@ export const ImportProvider = ({ children }) => {
     processNextFile();
   }, [processingQueue, loading, navigate, location.pathname]);
 
-
   const updateProgress = (progress) => {
     if (processingQueue.length > 0) {
       const currentFile = processingQueue[0];
@@ -253,6 +262,7 @@ export const ImportProvider = ({ children }) => {
       ]);
     }
   };
+
   const clearCompletedFiles = () => {
     setCompletedFiles([]);
   };
@@ -262,92 +272,91 @@ export const ImportProvider = ({ children }) => {
   };
 
   // Process file with improved time column handling
-  // Process file with improved time column handling
-const processFile = async (file) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const reader = new FileReader();
+  const processFile = async (file) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const reader = new FileReader();
 
-      reader.onload = async (e) => {
-        try {
-          const arrayBuffer = e.target.result;
+        reader.onload = async (e) => {
+          try {
+            const arrayBuffer = e.target.result;
 
-          // Simulating progress updates during validation
-          updateProgress(10);
+            // Simulating progress updates during validation
+            updateProgress(10);
 
-          // Import these functions from your ImportContent file
-          const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
+            // CHANGE: Use the imported functions directly instead of dynamic imports
+            // const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
 
-          // Validate the file
-          const validationResult = await validateExcelFile(arrayBuffer, file.name);
+            // Validate the file
+            const validationResult = await validateExcelFile(arrayBuffer, file.name);
 
-          console.log('Validation result:', validationResult); // Debug log
-          updateProgress(30);
+            console.log('Validation result:', validationResult); // Debug log
+            updateProgress(30);
 
-          // Simplified check for time-only errors using the new flag
-          if (validationResult.missingTimeColumns && validationResult.hasOnlyTimeErrors) {
-            console.log('Showing time columns modal for file:', file.name); // Debug log
+            // Simplified check for time-only errors using the new flag
+            if (validationResult.missingTimeColumns && validationResult.hasOnlyTimeErrors) {
+              console.log('Showing time columns modal for file:', file.name); // Debug log
 
-            // Make sure we don't already have this file pending
-            if (!pendingFile || pendingFile.name !== file.name) {
-              // Set pending file and show modal
-              setPendingFile({
-                file,
-                arrayBuffer,
-                name: file.name
-              });
-              setShowTimeModal(true);
+              // Make sure we don't already have this file pending
+              if (!pendingFile || pendingFile.name !== file.name) {
+                // Set pending file and show modal
+                setPendingFile({
+                  file,
+                  arrayBuffer,
+                  name: file.name
+                });
+                setShowTimeModal(true);
+              }
+
+              // Remove from processing queue as we'll handle it separately
+              setProcessingQueue(prev => prev.slice(1));
+              setLoading(false);
+              resolve();
+              return;
             }
 
-            // Remove from processing queue as we'll handle it separately
-            setProcessingQueue(prev => prev.slice(1));
-            setLoading(false);
+            // Handle other validation errors
+            if (validationResult.errors && validationResult.errors.length > 0) {
+              throw new Error(
+                `Validation failed: ${validationResult.errors.join(', ')}`
+              );
+            }
+
+            updateProgress(50);
+
+            // Process the file with the existing function
+            const result = await processB1CourseFileWithColors(arrayBuffer, file.name, {});
+            
+            // Log the database changes
+            await logDatabaseChange({
+              filename: file.name,
+              coursesAdded: 1,
+              sessionsAdded: result.sessionCount || 0,
+              monthsAffected: result.monthIds ? Array.from(result.monthIds) : [],
+              studentsAdded: result.studentIds ? result.studentIds.length : 0,
+              teachersAdded: result.teacherIds ? result.teacherIds.length : 0,
+              type: 'import'
+            });
+
+            updateProgress(90);
+
             resolve();
-            return;
+          } catch (error) {
+            console.error('Error in file processing:', error); // Debug log
+            reject(error);
           }
+        };
 
-          // Handle other validation errors
-          if (validationResult.errors && validationResult.errors.length > 0) {
-            throw new Error(
-              `Validation failed: ${validationResult.errors.join(', ')}`
-            );
-          }
+        reader.onerror = (error) => {
+          reject(new Error(`Error reading file: ${error}`));
+        };
 
-          updateProgress(50);
-
-          // Process the file with the existing function
-          const result = await processB1CourseFileWithColors(arrayBuffer, file.name, {});
-          
-          // Log the database changes
-          await logDatabaseChange({
-            filename: file.name,
-            coursesAdded: 1,
-            sessionsAdded: result.sessionCount || 0,
-            monthsAffected: result.monthIds ? Array.from(result.monthIds) : [],
-            studentsAdded: result.studentIds ? result.studentIds.length : 0,
-            teachersAdded: result.teacherIds ? result.teacherIds.length : 0,
-            type: 'import'
-          });
-
-          updateProgress(90);
-
-          resolve();
-        } catch (error) {
-          console.error('Error in file processing:', error); // Debug log
-          reject(error);
-        }
-      };
-
-      reader.onerror = (error) => {
-        reject(new Error(`Error reading file: ${error}`));
-      };
-
-      reader.readAsArrayBuffer(file);
-    } catch (error) {
-      reject(error);
-    }
-  });
-};
+        reader.readAsArrayBuffer(file);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
 
   // Add handlers for modal actions
   const handleCancelImport = () => {
@@ -394,8 +403,8 @@ const processFile = async (file) => {
     setPendingFile(null);
 
     try {
-      // Import necessary function
-      const { processB1CourseFileWithColors } = await import('./ImportContent');
+      // CHANGE: Use the imported function directly instead of dynamic import
+      // const { processB1CourseFileWithColors } = await import('./ImportContent');
 
       // Process the file with missing time columns
       await processB1CourseFileWithColors(
@@ -444,7 +453,7 @@ const processFile = async (file) => {
         failedFiles,
         loading,
         addFilesToQueue,
-        addGoogleSheetToQueue, // Add this new function
+        addGoogleSheetToQueue,
         clearCompletedFiles,
         clearFailedFiles
       }}
@@ -460,10 +469,4 @@ const processFile = async (file) => {
   );
 };
 
-export const useImport = () => {
-  const context = useContext(ImportContext);
-  if (!context) {
-    throw new Error('useImport must be used within an ImportProvider');
-  }
-  return context;
-};
+export default ImportContext;
