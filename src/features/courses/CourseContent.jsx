@@ -155,8 +155,9 @@ const CourseContent = () => {
     const query = searchQuery.toLowerCase();
     return processedGroups.filter(group => {
       return (
-        group.name.toLowerCase().includes(query) ||
-        group.teachers.some(teacher => teacher.toLowerCase().includes(query))
+        (group.name && group.name.toLowerCase().includes(query)) ||
+        (group.teachers && Array.isArray(group.teachers) &&
+          group.teachers.some(teacher => teacher && teacher.toLowerCase().includes(query)))
       );
     });
   }, [processedGroups, searchQuery]);

@@ -39,6 +39,7 @@ export const getAllRecords = async (path) => {
 // Update a record in any collection
 export const updateRecord = async (path, id, data) => {
   try {
+    // This should only update the specified fields, not replace the entire document
     await update(ref(database, `${path}/${id}`), data);
     return { id, ...data };
   } catch (error) {
@@ -46,6 +47,7 @@ export const updateRecord = async (path, id, data) => {
     throw error;
   }
 };
+
 
 // Delete a record with cascade cleanup
 export const deleteRecord = async (path, id) => {
@@ -55,10 +57,10 @@ export const deleteRecord = async (path, id) => {
     if (path === 'courses') {
       recordToDelete = await getRecordById(path, id);
     }
-    
+
     // Perform the standard deletion
     await remove(ref(database, `${path}/${id}`));
-    
+
     // If we deleted a course, update student relationships
     if (path === 'courses' && recordToDelete && recordToDelete.studentIds) {
       // Update each student's courseIds list
@@ -69,7 +71,7 @@ export const deleteRecord = async (path, id) => {
           await updateRecord('students', studentId, { courseIds: updatedCourseIds });
         }
       }
-      
+
       // After updating students, run the cleanup
       await cleanupOrphanedStudents();
     }
@@ -78,12 +80,12 @@ export const deleteRecord = async (path, id) => {
     if (path === 'courses' && recordToDelete && recordToDelete.teacherIds) {
       await cleanupOrphanTeachers(recordToDelete.teacherIds);
     }
-    
+
     // If we're deleting a session or course, check for empty months
     if (path === 'sessions' || path === 'courses') {
       await cleanupEmptyMonths();
     }
-    
+
     return true;
   } catch (error) {
     console.error("Error deleting record:", error);
@@ -202,7 +204,7 @@ export const cleanupEmptyGroups = async () => {
         await remove(ref(database, `groups/${group.id}`));
       }
     }
-    
+
     console.log("Completed empty group cleanup");
   } catch (error) {
     console.error("Error cleaning up empty groups:", error);
@@ -266,33 +268,33 @@ export const queryRecordsByField = async (path, field, value) => {
 export const mergeStudents = async (primaryStudentId, secondaryStudentId) => {
   try {
     console.log(`Starting merge of student ${secondaryStudentId} into ${primaryStudentId}`);
-    
+
     // Get both student records
     const primaryStudent = await getRecordById('students', primaryStudentId);
     const secondaryStudent = await getRecordById('students', secondaryStudentId);
-    
+
     if (!primaryStudent || !secondaryStudent) {
       throw new Error("One or both students not found");
     }
-    
+
     // 1. Merge course IDs
     const primaryCourseIds = primaryStudent.courseIds || [];
     const secondaryCourseIds = secondaryStudent.courseIds || [];
     const mergedCourseIds = [...new Set([...primaryCourseIds, ...secondaryCourseIds])];
-    
+
     // 2. Update primary student with merged data
     await updateRecord('students', primaryStudentId, {
       courseIds: mergedCourseIds,
       // Merge join dates
       joinDates: { ...(primaryStudent.joinDates || {}), ...(secondaryStudent.joinDates || {}) },
       // Keep notes from both students if they exist
-      notes: primaryStudent.notes ? 
-        (secondaryStudent.notes ? 
-          `${primaryStudent.notes}\n\nMerged notes from ${secondaryStudent.name}:\n${secondaryStudent.notes}` : 
-          primaryStudent.notes) : 
+      notes: primaryStudent.notes ?
+        (secondaryStudent.notes ?
+          `${primaryStudent.notes}\n\nMerged notes from ${secondaryStudent.name}:\n${secondaryStudent.notes}` :
+          primaryStudent.notes) :
         (secondaryStudent.notes || '')
     });
-    
+
     // 3. Update all sessions to replace secondaryStudentId with primaryStudentId in attendance
     const sessions = await getAllRecords('sessions');
     for (const session of sessions) {
@@ -301,12 +303,12 @@ export const mergeStudents = async (primaryStudentId, secondaryStudentId) => {
         const updatedAttendance = { ...session.attendance };
         updatedAttendance[primaryStudentId] = updatedAttendance[secondaryStudentId];
         delete updatedAttendance[secondaryStudentId];
-        
+
         // Update the session record
         await updateRecord('sessions', session.id, { attendance: updatedAttendance });
       }
     }
-    
+
     // 4. Update all courses to replace secondaryStudentId with primaryStudentId
     for (const courseId of secondaryCourseIds) {
       const course = await getRecordById('courses', courseId);
@@ -318,15 +320,15 @@ export const mergeStudents = async (primaryStudentId, secondaryStudentId) => {
         }
         // Remove secondary student
         const updatedStudentIds = studentIds.filter(id => id !== secondaryStudentId);
-        
+
         // Update the course record
         await updateRecord('courses', courseId, { studentIds: updatedStudentIds });
       }
     }
-    
+
     // 5. Delete the secondary student
     await deleteRecord('students', secondaryStudentId);
-    
+
     console.log(`Successfully merged student ${secondaryStudentId} into ${primaryStudentId}`);
     return true;
   } catch (error) {

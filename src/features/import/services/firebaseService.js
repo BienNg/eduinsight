@@ -72,8 +72,8 @@ export const getNextCourseColor = async () => {
     console.error("Error selecting course color:", error);
     // Fallback to a random color if there's an error
     const COURSE_COLORS = [
-      '#911DD2', '#7310A8', '#FF5F68', '#D94D54', '#4DBEFF', 
-      '#3A9BD4', '#18BF69', '#139954', '#FBC14E', '#D9A53F', 
+      '#911DD2', '#7310A8', '#FF5F68', '#D94D54', '#4DBEFF',
+      '#3A9BD4', '#18BF69', '#139954', '#FBC14E', '#D9A53F',
       '#D21D91', '#5FFFC8', '#FF944D', '#BF181D', '#4E9CFB'
     ];
     const randomIndex = Math.floor(Math.random() * COURSE_COLORS.length);
@@ -176,7 +176,6 @@ export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
       throw new Error("Group name is empty or null. Import cannot proceed without a valid group name (e.g., G1, A2, etc.)");
     }
 
-    // Rest of your function remains the same...
     // Clean up and normalize the group name
     const normalizedGroupName = groupName.trim();
 
@@ -185,6 +184,7 @@ export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
     const existingGroup = groups.find(g => g.name === normalizedGroupName);
 
     if (existingGroup) {
+      console.log(`Found existing group: ${existingGroup.name} with ID ${existingGroup.id}`);
       return existingGroup;
     }
 
@@ -212,28 +212,23 @@ export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
     const groupColor = await getNextGroupColor();
 
     // Create new group record with color and type
-    const newGroup = await createRecord('groups', {
+    const newGroupData = {
       name: normalizedGroupName,
       courseIds: [],
       color: groupColor,
       mode: mode,
-      type: groupType, // Add the new type property
+      type: groupType,
       createdAt: new Date().toISOString()
-    });
+    };
+
+    console.log(`Creating new group with data:`, newGroupData);
+    const newGroup = await createRecord('groups', newGroupData);
+    console.log(`Created new group: ${newGroup.name} with ID ${newGroup.id}`);
 
     return newGroup;
   } catch (error) {
     console.error("Error creating group record:", error);
-    // Even if there's an error, try to return a valid group object
-    console.log("Creating fallback group due to error");
-    return await createRecord('groups', {
-      name: "Error Group",
-      courseIds: [],
-      color: COURSE_COLORS[0], // Use the first color as fallback
-      mode: mode,
-      type: 'G', // Default type
-      createdAt: new Date().toISOString()
-    });
+    throw error; // Instead of creating a fallback group, throw the error
   }
 };
 
