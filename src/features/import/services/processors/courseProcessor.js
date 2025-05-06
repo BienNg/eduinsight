@@ -10,6 +10,9 @@ import {
   parseExcelData,
   extractCourseInfo
 } from '../parsers/excelParser';
+import { findColumnIndex } from '../helpers/columnFinder';
+import { excelDateToJSDate, formatDate, formatTime } from '../../../utils/dateUtils';
+
 
 const updateExistingCourseWithNewSessions = async (
   existingCourse,
@@ -33,115 +36,240 @@ const updateExistingCourseWithNewSessions = async (
     throw new Error(`Could not find group record for course ${existingCourse.name}`);
   }
 
-  // Get the students for this course
-  const students = [];
-  for (const studentId of existingCourse.studentIds) {
-    const student = await getRecordById('students', studentId);
-    if (student) {
-      students.push({
-        id: student.id,
-        name: student.name,
-        columnIndex: -1 // We don't know the column index from the DB
-      });
-    }
-  }
-
   // Process header row to find column indices
   const headerRow = jsonData[headerRowIndex];
+  const columnIndices = {
+    folien: findColumnIndex(headerRow, ["Folien", "Canva"]),
+    date: findColumnIndex(headerRow, ["Unterrichtstag", "Datum", "Tag", "Date", "Day"]),
+    teacher: findColumnIndex(headerRow, ["Lehrer"]),
+    startTime: findColumnIndex(headerRow, ["von"]),
+    endTime: findColumnIndex(headerRow, ["bis"])
+  };
 
-  // Map student names to column indices
-  for (let j = 10; j < headerRow.length; j++) {
-    const studentName = headerRow[j];
-    if (studentName && typeof studentName === 'string' && studentName.trim() !== '') {
-      // Skip column headers
-      if (studentName === "Anwesenheitsliste" ||
-        studentName.includes("Nachrichten von/ für")) {
-        continue;
+  // Track sessions from the Excel file
+  const excelSessions = [];
+  let currentSessionTitle = null;
+  let currentSession = null;
+  
+  // First, extract all session data from the Excel file
+  for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
+    
+    // Skip empty rows
+    if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+      continue;
+    }
+    
+    // Extract values
+    const getValue = (index) => index !== -1 && index < row.length ? row[index] : null;
+    
+    const folienTitle = getValue(columnIndices.folien);
+    const dateValue = getValue(columnIndices.date);
+    const teacherValue = getValue(columnIndices.teacher);
+    const startTimeValue = getValue(columnIndices.startTime);
+    const endTimeValue = getValue(columnIndices.endTime);
+    
+    // If this is a new session title
+    if (folienTitle && folienTitle.toString().trim() !== '') {
+      // Save previous session if we have one
+      if (currentSession) {
+        excelSessions.push(currentSession);
       }
-
-      // Match student name to our existing students
-      for (const student of students) {
-        if (studentName.trim().toLowerCase() === student.name.trim().toLowerCase()) {
-          student.columnIndex = j;
-          break;
+      
+      // Format date 
+      let formattedDate = '';
+      if (dateValue) {
+        // Format the date
+        if (typeof dateValue === 'string' && dateValue.includes('.')) {
+          formattedDate = dateValue;
+        } else if (typeof dateValue === 'number') {
+          const jsDate = excelDateToJSDate(dateValue);
+          if (jsDate) {
+            formattedDate = formatDate(jsDate);
+          }
         }
+      }
+      
+      // Format times if available
+      const formattedStartTime = formatTime(startTimeValue);
+      const formattedEndTime = formatTime(endTimeValue);
+      
+      // Extract teacher ID if available
+      let teacherId = '';
+      if (teacherValue) {
+        teacherId = teacherValue.toString().trim();
+      }
+      
+      // Create new session object (not a DB record)
+      currentSessionTitle = folienTitle;
+      currentSession = {
+        title: folienTitle,
+        date: formattedDate || '',
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        teacherId: teacherId,
+        hasTeacher: !!teacherId,
+        isComplete: !!formattedDate && !!formattedStartTime && !!formattedEndTime && !!teacherId
+      };
+    }
+  }
+  
+  // Add the last session if we have one
+  if (currentSession) {
+    excelSessions.push(currentSession);
+  }
+  
+  // Now, update existing sessions that need updating
+  const updatedSessions = [];
+  const updatedSessionTitles = [];
+  
+  for (const existingSession of existingSessions) {
+    // Find matching session in Excel data
+    const matchingExcelSession = excelSessions.find(session => 
+      session.title === existingSession.title && 
+      session.date === existingSession.date
+    );
+    
+    if (matchingExcelSession && matchingExcelSession.isComplete) {
+      // Check if the existing session needs updating
+      const needsUpdate = existingSession.status !== 'completed' || 
+                        !existingSession.teacherId || 
+                        !existingSession.startTime || 
+                        !existingSession.endTime;
+      
+      if (needsUpdate) {
+        // Create update object with only the fields that need updating
+        const updates = {
+          status: 'completed'
+        };
+        
+        if (matchingExcelSession.teacherId && matchingExcelSession.teacherId !== existingSession.teacherId) {
+          updates.teacherId = matchingExcelSession.teacherId;
+        }
+        
+        if (matchingExcelSession.startTime && matchingExcelSession.startTime !== existingSession.startTime) {
+          updates.startTime = matchingExcelSession.startTime;
+        }
+        
+        if (matchingExcelSession.endTime && matchingExcelSession.endTime !== existingSession.endTime) {
+          updates.endTime = matchingExcelSession.endTime;
+        }
+        
+        // Update the session in the database
+        await updateRecord('sessions', existingSession.id, updates);
+        
+        updatedSessions.push({
+          ...existingSession,
+          ...updates
+        });
+        
+        updatedSessionTitles.push(existingSession.title);
       }
     }
   }
-
-  // Process the new sessions from the Excel file
-  const { sessions: newSessionsData } = await processSessionData(
-    jsonData,
-    excelWorksheet,
-    headerRowIndex,
-    { ...existingCourse, sessionIds: [] }, // Create a copy with empty sessionIds to avoid duplicates
-    groupRecord,
-    students,
-    options
-  );
-
-  // Filter to only keep completed sessions that are not already in the database
-  const newCompletedSessions = newSessionsData.filter(newSession => {
-    // Check if this is a completed session
-    if (newSession.status !== 'completed') return false;
-
-    // Check if we already have this session by matching title and date
-    const existingSession = existingSessions.find(
-      existing => existing.title === newSession.title && existing.date === newSession.date
-    );
-
-    // It's a new session if it doesn't exist or was previously not completed
-    return !existingSession || existingSession.status !== 'completed';
-  });
-
-  if (newCompletedSessions.length === 0) {
+  
+  if (updatedSessions.length === 0) {
     throw new Error(
-      `No new completed sessions found for course "${existingCourse.name}". ` +
+      `No sessions were updated for course "${existingCourse.name}". ` +
       `The course already exists with ${existingSessions.length} sessions. ` +
       `The latest session recorded is on ${existingCourse.latestSessionDate || 'unknown date'}.`
     );
   }
+  
+  // Create a success message with the updated session details
+  const updateMessage = `Updated ${updatedSessions.length} sessions in course "${existingCourse.name}": ${updatedSessionTitles.join(', ')}`;
+  
+  return {
+    ...existingCourse,
+    updatedSessionsCount: updatedSessions.length,
+    updatedSessionTitles: updatedSessionTitles,
+    updateMessage
+  };
+};
 
-  // Add the new sessions to the existing course
-  const updatedSessionIds = [...existingCourse.sessionIds];
-  const updatedTeacherIds = new Set(existingCourse.teacherIds || []);
-  const updatedMonthIds = new Set(existingCourse.monthIds || []);
-  const updatedSessionTitles = [];
+const determineSessionStatus = (dateString) => {
+  if (!dateString) return 'ongoing';
 
-  for (const session of newCompletedSessions) {
-    updatedSessionIds.push(session.id);
-    updatedSessionTitles.push(session.title);
+  const [day, month, year] = dateString.split('.').map(Number);
+  // Create date objects with consistent timezone handling
+  const sessionDate = new Date(Date.UTC(year, month - 1, day));
+  const today = new Date();
+  // Convert today to UTC midnight
+  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
-    if (session.teacherId) {
-      updatedTeacherIds.add(session.teacherId);
+  return sessionDate >= todayUTC ? 'ongoing' : 'completed';
+};
+
+
+// Helper function to extract session data from Excel without creating DB records
+const extractExcelSessionsData = (jsonData, excelWorksheet, headerRowIndex, columnIndices) => {
+  const headerRow = jsonData[headerRowIndex];
+  const excelSessions = [];
+  let currentSessionTitle = null;
+  let currentSession = null;
+
+  // Process each row for sessions
+  for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+    const row = jsonData[i];
+
+    // Skip empty rows
+    if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
+      continue;
     }
 
-    if (session.monthId) {
-      updatedMonthIds.add(session.monthId);
+    // Extract values
+    const getValue = (index) => index !== -1 && index < row.length ? row[index] : null;
+
+    const folienTitle = getValue(columnIndices.folien);
+    const dateValue = getValue(columnIndices.date);
+    const teacherValue = getValue(columnIndices.teacher);
+    const startTimeValue = getValue(columnIndices.startTime);
+    const endTimeValue = getValue(columnIndices.endTime);
+
+    // If this is a new session title
+    if (folienTitle && folienTitle.toString().trim() !== '') {
+      // Save previous session if we have one
+      if (currentSession) {
+        excelSessions.push(currentSession);
+      }
+
+      // Format date 
+      let formattedDate = '';
+      if (dateValue) {
+        // Format the date
+        if (typeof dateValue === 'string' && dateValue.includes('.')) {
+          formattedDate = dateValue;
+        } else if (typeof dateValue === 'number') {
+          const jsDate = excelDateToJSDate(dateValue);
+          if (jsDate) {
+            formattedDate = formatDate(jsDate);
+          }
+        }
+      }
+
+      // Format times if available
+      const formattedStartTime = formatTime(startTimeValue);
+      const formattedEndTime = formatTime(endTimeValue);
+
+      // Create new session object (without creating a DB record)
+      currentSessionTitle = folienTitle;
+      currentSession = {
+        title: folienTitle,
+        date: formattedDate || '',
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        teacherId: teacherValue ? teacherValue.toString().trim() : '',
+        status: determineSessionStatus(formattedDate)
+      };
     }
   }
 
-  // Update the course record with new session IDs and other updated data
-  await updateRecord('courses', existingCourse.id, {
-    sessionIds: updatedSessionIds,
-    teacherIds: Array.from(updatedTeacherIds),
-    monthIds: Array.from(updatedMonthIds)
-  });
+  // Add the last session if we have one
+  if (currentSession) {
+    excelSessions.push(currentSession);
+  }
 
-  // Create a success message with the updated session details
-  const updateMessage = `Updated existing course "${existingCourse.name}" with ${newCompletedSessions.length} new completed sessions: ${updatedSessionTitles.join(', ')}`;
-
-  return {
-    ...existingCourse,
-    sessionIds: updatedSessionIds,
-    teacherIds: Array.from(updatedTeacherIds),
-    monthIds: Array.from(updatedMonthIds),
-    sessionCount: updatedSessionIds.length,
-    updatedSessionsCount: newCompletedSessions.length,
-    updatedSessionTitles: updatedSessionTitles,
-    updateMessage: `Updated existing course "${existingCourse.name}" with ${newCompletedSessions.length} new completed sessions: ${updatedSessionTitles.join(', ')}`
-  };
-
+  return excelSessions;
 };
 
 export const processCourseData = async (arrayBuffer, filename, options) => {
