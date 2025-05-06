@@ -3,27 +3,31 @@ import { validateExcelFile } from './validators/excelValidator';
 import { processCourseData } from './processors/courseProcessor';
 import { logDatabaseChange } from '../../firebase/changelog';
 
-// Re-export the validator for direct imports
+// Make sure to export validateExcelFile
 export { validateExcelFile };
 
 export const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => {
   const { ignoreMissingTimeColumns = false } = options || {};
   
   try {
-    // Process the course data using the modular processors
+    // Process the course data
     const courseRecord = await processCourseData(arrayBuffer, filename, {
-      ignoreMissingTimeColumns
+      ignoreMissingTimeColumns,
+      filename
     });
     
-    // Log the database change
+    // Check if this was an update (presence of updateMessage indicates an update)
+    const isUpdate = !!courseRecord.updateMessage;
+    
+    // Now handle changelog logging based on whether it was an update or a new course
     await logDatabaseChange({
       filename,
-      coursesAdded: 1,
-      sessionsAdded: courseRecord.sessionIds ? courseRecord.sessionIds.length : 0,
+      coursesAdded: isUpdate ? 0 : 1,
+      sessionsAdded: isUpdate ? courseRecord.updatedSessionsCount || 0 : (courseRecord.sessionIds ? courseRecord.sessionIds.length : 0),
       monthsAffected: courseRecord.monthIds ? Array.from(courseRecord.monthIds) : [],
-      studentsAdded: courseRecord.studentIds ? courseRecord.studentIds.length : 0,
-      teachersAdded: courseRecord.teacherIds ? courseRecord.teacherIds.length : 0,
-      type: 'import'
+      studentsAdded: isUpdate ? 0 : (courseRecord.studentIds ? courseRecord.studentIds.length : 0),
+      teachersAdded: isUpdate ? 0 : (courseRecord.teacherIds ? courseRecord.teacherIds.length : 0),
+      type: isUpdate ? 'update' : 'import'
     });
 
     return {

@@ -280,6 +280,8 @@ export const ImportProvider = ({ children }) => {
         reader.onload = async (e) => {
           try {
             const arrayBuffer = e.target.result;
+            // Create a toast ID for tracking this specific file processing
+            const toastId = `import-${Date.now()}`;
 
             // Simulating progress updates during validation
             updateProgress(10);
@@ -324,22 +326,29 @@ export const ImportProvider = ({ children }) => {
 
             updateProgress(50);
 
-            // Process the file with the existing function
+            // Process the file
             const result = await processB1CourseFileWithColors(arrayBuffer, file.name, {});
-            
-            // Log the database changes
-            await logDatabaseChange({
-              filename: file.name,
-              coursesAdded: 1,
-              sessionsAdded: result.sessionCount || 0,
-              monthsAffected: result.monthIds ? Array.from(result.monthIds) : [],
-              studentsAdded: result.studentIds ? result.studentIds.length : 0,
-              teachersAdded: result.teacherIds ? result.teacherIds.length : 0,
-              type: 'import'
+
+            // Show appropriate success message based on whether it was an update or new import
+            const successMessage = result.updateMessage || `Successfully imported ${file.name}`;
+
+            // Update toast to success with the appropriate message
+            toast.success(successMessage, {
+              id: toastId,
+              duration: 5000,
+              onClick: () => navigateToImport()
             });
 
-            updateProgress(90);
+            // Add to completed files with the file information we already have
+            setCompletedFiles(prev => [...prev, {
+              id: Date.now() + Math.random().toString(36).substr(2, 9),
+              name: file.name,
+              status: 'completed',
+              progress: 100,
+              message: successMessage // Store the message for display
+            }]);
 
+            updateProgress(90);
             resolve();
           } catch (error) {
             console.error('Error in file processing:', error); // Debug log
