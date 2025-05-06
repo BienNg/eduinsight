@@ -12,6 +12,7 @@ import {
 } from '../parsers/excelParser';
 import { findColumnIndex } from '../helpers/columnFinder';
 import { excelDateToJSDate, formatDate, formatTime } from '../../../utils/dateUtils';
+import { createTeacherRecord, getOrCreateMonthRecord } from '../firebaseService';
 
 
 const updateExistingCourseWithNewSessions = async (
@@ -21,6 +22,9 @@ const updateExistingCourseWithNewSessions = async (
   headerRowIndex,
   options
 ) => {
+
+  const monthIds = new Set();
+
   // Get the existing sessions for this course
   const existingSessions = [];
   for (const sessionId of existingCourse.sessionIds) {
@@ -50,32 +54,32 @@ const updateExistingCourseWithNewSessions = async (
   const excelSessions = [];
   let currentSessionTitle = null;
   let currentSession = null;
-  
+
   // First, extract all session data from the Excel file
   for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
     const row = jsonData[i];
-    
+
     // Skip empty rows
     if (!row || row.length === 0 || (row.length === 1 && !row[0])) {
       continue;
     }
-    
+
     // Extract values
     const getValue = (index) => index !== -1 && index < row.length ? row[index] : null;
-    
+
     const folienTitle = getValue(columnIndices.folien);
     const dateValue = getValue(columnIndices.date);
     const teacherValue = getValue(columnIndices.teacher);
     const startTimeValue = getValue(columnIndices.startTime);
     const endTimeValue = getValue(columnIndices.endTime);
-    
+
     // If this is a new session title
     if (folienTitle && folienTitle.toString().trim() !== '') {
       // Save previous session if we have one
       if (currentSession) {
         excelSessions.push(currentSession);
       }
-      
+
       // Format date 
       let formattedDate = '';
       if (dateValue) {
@@ -89,17 +93,17 @@ const updateExistingCourseWithNewSessions = async (
           }
         }
       }
-      
+
       // Format times if available
       const formattedStartTime = formatTime(startTimeValue);
       const formattedEndTime = formatTime(endTimeValue);
-      
+
       // Extract teacher ID if available
       let teacherId = '';
       if (teacherValue) {
         teacherId = teacherValue.toString().trim();
       }
-      
+
       // Create new session object (not a DB record)
       currentSessionTitle = folienTitle;
       currentSession = {
@@ -113,61 +117,99 @@ const updateExistingCourseWithNewSessions = async (
       };
     }
   }
-  
+
   // Add the last session if we have one
   if (currentSession) {
     excelSessions.push(currentSession);
   }
-  
+
   // Now, update existing sessions that need updating
   const updatedSessions = [];
   const updatedSessionTitles = [];
-  
+
   for (const existingSession of existingSessions) {
-    // Find matching session in Excel data
-    const matchingExcelSession = excelSessions.find(session => 
-      session.title === existingSession.title && 
-      session.date === existingSession.date
+    // Find matching session in Excel data by title only
+    const matchingExcelSession = excelSessions.find(session =>
+      session.title === existingSession.title
     );
-    
+
     if (matchingExcelSession && matchingExcelSession.isComplete) {
       // Check if the existing session needs updating
-      const needsUpdate = existingSession.status !== 'completed' || 
-                        !existingSession.teacherId || 
-                        !existingSession.startTime || 
-                        !existingSession.endTime;
-      
+      let needsUpdate = existingSession.status !== 'completed' ||
+        !existingSession.teacherId ||
+        !existingSession.startTime ||
+        !existingSession.endTime;
+
+      // Also check if date needs updating
+      const dateNeedsUpdate = matchingExcelSession.date &&
+        matchingExcelSession.date !== existingSession.date;
+
+      needsUpdate = needsUpdate || dateNeedsUpdate;
+
       if (needsUpdate) {
         // Create update object with only the fields that need updating
         const updates = {
           status: 'completed'
         };
-        
-        if (matchingExcelSession.teacherId && matchingExcelSession.teacherId !== existingSession.teacherId) {
-          updates.teacherId = matchingExcelSession.teacherId;
+
+        // Handle teacher ID properly
+        if (matchingExcelSession.teacherId) {
+          // Get the proper teacher record from the database using the teacher name
+          const teacherName = matchingExcelSession.teacherId; // This is actually the teacher name from Excel
+          const teacherRecord = await createTeacherRecord(teacherName);
+
+          // Now use the actual teacher ID from the database
+          if (teacherRecord && teacherRecord.id !== existingSession.teacherId) {
+            updates.teacherId = teacherRecord.id;
+          }
         }
-        
+
+        // Handle date update and monthId update if needed
+        if (dateNeedsUpdate) {
+          updates.date = matchingExcelSession.date;
+
+          // If the date changes, we need to update the monthId
+          if (matchingExcelSession.date) {
+            // Get or create the month record for the new date
+            const monthRecord = await getOrCreateMonthRecord(matchingExcelSession.date);
+            if (monthRecord) {
+              updates.monthId = monthRecord.id;
+
+              // Track this month ID for course updates
+              monthIds.add(monthRecord.id);
+            }
+
+            // If session had a previous month, we should also decrement that month's count
+            // This would require additional code to manage the month records
+          }
+        }
+
+        // Rest of updates remain the same
         if (matchingExcelSession.startTime && matchingExcelSession.startTime !== existingSession.startTime) {
           updates.startTime = matchingExcelSession.startTime;
         }
-        
+
         if (matchingExcelSession.endTime && matchingExcelSession.endTime !== existingSession.endTime) {
           updates.endTime = matchingExcelSession.endTime;
         }
-        
-        // Update the session in the database
-        await updateRecord('sessions', existingSession.id, updates);
-        
-        updatedSessions.push({
-          ...existingSession,
-          ...updates
-        });
-        
-        updatedSessionTitles.push(existingSession.title);
+
+        // Only update if we have actual changes
+        if (Object.keys(updates).length > 1) { // More than just status
+          // Update the session in the database
+          await updateRecord('sessions', existingSession.id, updates);
+
+          updatedSessions.push({
+            ...existingSession,
+            ...updates
+          });
+
+          updatedSessionTitles.push(existingSession.title);
+        }
       }
     }
   }
-  
+
+
   if (updatedSessions.length === 0) {
     throw new Error(
       `No sessions were updated for course "${existingCourse.name}". ` +
@@ -175,15 +217,16 @@ const updateExistingCourseWithNewSessions = async (
       `The latest session recorded is on ${existingCourse.latestSessionDate || 'unknown date'}.`
     );
   }
-  
+
   // Create a success message with the updated session details
   const updateMessage = `Updated ${updatedSessions.length} sessions in course "${existingCourse.name}": ${updatedSessionTitles.join(', ')}`;
-  
+
   return {
     ...existingCourse,
     updatedSessionsCount: updatedSessions.length,
     updatedSessionTitles: updatedSessionTitles,
-    updateMessage
+    updateMessage,
+    monthIds: Array.from(monthIds)
   };
 };
 
