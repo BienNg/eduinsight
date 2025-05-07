@@ -133,7 +133,8 @@ export const ImportProvider = ({ children }) => {
               mode: groupInfo.mode,
               language: groupInfo.language,
               level,
-              sheetName
+              sheetName,
+              sourceUrl: googleSheetUrl
             }
           };
 
@@ -172,7 +173,8 @@ export const ImportProvider = ({ children }) => {
             groupName: groupInfo.groupName,
             mode: groupInfo.mode,
             language: groupInfo.language,
-            level
+            level,
+            sourceUrl: googleSheetUrl
           }
         };
 

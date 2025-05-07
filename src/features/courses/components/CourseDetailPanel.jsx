@@ -11,7 +11,8 @@ import {
   faMapMarkerAlt,
   faClock,
   faEllipsisV,
-  faTrash
+  faTrash,
+  faLink
 } from '@fortawesome/free-solid-svg-icons';
 import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
 import { calculateTotalHours } from '../../utils/timeUtils';
@@ -241,6 +242,21 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
               {calculateTotalHours(sessions)} Stunden
             </span>
           </div>
+          {course.sourceUrl && (
+            <div className="course-detail-panel-info-item">
+              <span className="course-detail-panel-info-value">
+                <FontAwesomeIcon icon={faLink} className="course-detail-panel-icon" />
+                <a 
+                  href={course.sourceUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="course-detail-panel-link"
+                >
+                  Google Sheet
+                </a>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

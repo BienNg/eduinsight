@@ -334,7 +334,7 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
       mode: options.metadata.mode || 'Unknown',
       language: options.metadata.language || ''
     };
-    
+
     // Add validation here for metadata-based processing
     if (!courseInfo.level && courseInfo.groupName.charAt(0).toUpperCase() !== 'A') {
       throw new Error(`Level information (e.g., A1, B2.1) is missing for ${courseInfo.groupName}. This is required for non-A type courses.`);
@@ -352,7 +352,7 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
 
   // Create or get group record - PASS THE MODE CORRECTLY
   const groupRecord = await getOrCreateGroupRecord(courseInfo.groupName, courseInfo.mode);
-  
+
 
   // Get color for the course
   const courseColor = await getNextCourseColor();
@@ -369,7 +369,8 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
     studentIds: [],
     teacherIds: [],
     status: 'ongoing',
-    color: courseColor
+    color: courseColor,
+    sourceUrl: options?.metadata?.sourceUrl || ''
   });
 
   // Update group with course ID
