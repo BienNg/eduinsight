@@ -319,33 +319,30 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
   // Parse Excel file data
   const { workbook, jsonData, excelWorksheet, headerRowIndex } = await parseExcelData(arrayBuffer);
 
-  // Check if we have metadata from multi-sheet processing
-  const { metadata } = options || {};
+  // Log the options to debug
+  console.log("processCourseData received options:", options);
 
   // Extract course info (group, level, mode) - use metadata if available
   let courseInfo;
-  if (metadata) {
+
+  // Check if options contains metadata with groupName
+  if (options && options.metadata && options.metadata.groupName) {
+    console.log("Using metadata from options:", options.metadata);
     courseInfo = {
-      groupName: metadata.groupName,
-      level: metadata.level,
-      mode: metadata.mode,
-      language: metadata.language
+      groupName: options.metadata.groupName,
+      level: options.metadata.level || '',
+      mode: options.metadata.mode || 'Unknown',
+      language: options.metadata.language || ''
     };
   } else {
+    // Fall back to extracting from filename
+    console.log("No metadata found, extracting from filename");
     courseInfo = extractCourseInfo(filename, jsonData, workbook.SheetNames[0]);
   }
 
+
   // Check if course already exists
   const existingCourse = await findExistingCourse(courseInfo.groupName, courseInfo.level);
-  if (existingCourse) {
-    return await updateExistingCourseWithNewSessions(
-      existingCourse,
-      jsonData,
-      excelWorksheet,
-      headerRowIndex,
-      options
-    );
-  }
 
   // Create or get group record
   const groupRecord = await getOrCreateGroupRecord(courseInfo.groupName, courseInfo.mode);

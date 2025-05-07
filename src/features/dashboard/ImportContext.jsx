@@ -79,9 +79,13 @@ export const ImportProvider = ({ children }) => {
 
         // Get the Google Sheet title for group information
         const googleSheetTitle = await fetchGoogleSheetTitle(sheetData.sheetId);
+        console.log("Google Sheet title:", googleSheetTitle); // Debug log
 
         // Extract group info from the Google Sheet title
-        const groupInfo = extractGroupInfoFromTitle(googleSheetTitle);
+        const groupInfo = extractGroupInfoFromTitle(googleSheetTitle || '');
+
+        // Add more debug logging to trace the extraction
+        console.log("Extracted group info:", groupInfo);
 
         // Process each sheet as a separate course
         for (const sheetName of sheetData.sheetNames) {
@@ -130,6 +134,13 @@ export const ImportProvider = ({ children }) => {
         }
       } else {
         // Single sheet - process as before
+        // Get the Google Sheet title for single sheet case
+        const googleSheetTitle = await fetchGoogleSheetTitle(sheetData.sheetId);
+        console.log("Single sheet Google Sheet title:", googleSheetTitle); // Debug log
+        const groupInfo = extractGroupInfoFromTitle(googleSheetTitle || '');
+        console.log("Single sheet group info:", groupInfo); // Debug log
+        const level = extractLevelFromSheetName(sheetData.sheetNames[0] || '');
+
         const sheetWithMeta = {
           id: Date.now() + Math.random().toString(36).substr(2, 9),
           name: sheetData.filename,
@@ -137,8 +148,17 @@ export const ImportProvider = ({ children }) => {
           progress: 0,
           error: null,
           isGoogleSheet: true,
-          arrayBuffer: sheetData.arrayBuffer
+          arrayBuffer: sheetData.arrayBuffer,
+          // Add metadata for single sheet case with robust logging
+          metadata: {
+            groupName: groupInfo.groupName,
+            mode: groupInfo.mode,
+            language: groupInfo.language,
+            level
+          }
         };
+
+        console.log("Sheet metadata:", sheetWithMeta.metadata);
 
         // Show toast notification
         toast.info(`Added Google Sheet to queue`, {
@@ -494,6 +514,9 @@ export const ImportProvider = ({ children }) => {
     // Store the pending file info locally to use after clearing state
     const currentPendingFile = { ...pendingFile };
 
+    // Log what metadata we're passing
+    console.log("Passing metadata to processB1CourseFileWithColors:", currentPendingFile.metadata);
+
     // Close modal and reset pending file immediately
     setShowTimeModal(false);
     setPendingFile(null);
@@ -505,9 +528,10 @@ export const ImportProvider = ({ children }) => {
         currentPendingFile.name,
         {
           ignoreMissingTimeColumns: true,
-          metadata: currentPendingFile.metadata // Pass metadata if available
+          metadata: currentPendingFile.metadata // Make sure metadata is passed
         }
       );
+
 
       // Add to completed files
       setCompletedFiles(prev => [

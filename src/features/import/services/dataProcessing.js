@@ -7,18 +7,19 @@ import { logDatabaseChange } from '../../firebase/changelog';
 export { validateExcelFile };
 
 export const processB1CourseFileWithColors = async (arrayBuffer, filename, options) => {
-  const { ignoreMissingTimeColumns = false } = options || {};
-  
+  const { ignoreMissingTimeColumns = false, metadata } = options || {};
+
   try {
-    // Process the course data
+    // Process the course data - pass metadata to processCourseData
     const courseRecord = await processCourseData(arrayBuffer, filename, {
       ignoreMissingTimeColumns,
-      filename
+      filename,
+      metadata  // Pass metadata through
     });
-    
+
     // Check if this was an update (presence of updateMessage indicates an update)
     const isUpdate = !!courseRecord.updateMessage;
-    
+
     // Now handle changelog logging based on whether it was an update or a new course
     await logDatabaseChange({
       filename,

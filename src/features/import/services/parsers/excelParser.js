@@ -14,11 +14,11 @@ export const parseExcelData = async (arrayBuffer) => {
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-  
+
   const excelWorkbook = new ExcelJS.Workbook();
   await excelWorkbook.xlsx.load(arrayBuffer);
   const excelWorksheet = excelWorkbook.worksheets[0];
-  
+
   // Find the header row with "Folien"
   let headerRowIndex = -1;
   for (let i = 0; i < jsonData.length && i < 30; i++) {
@@ -27,12 +27,12 @@ export const parseExcelData = async (arrayBuffer) => {
       break;
     }
   }
-  
+
   if (headerRowIndex === -1) {
     console.error("Could not find header row with 'Folien'");
     headerRowIndex = 3; // Fallback
   }
-  
+
   return {
     workbook,
     jsonData,
@@ -52,29 +52,34 @@ export const extractCourseInfo = (filename, jsonData, sheetName) => {
   let groupName = '';
   let level = '';
   let mode = 'Unknown';
-  
+
+  console.log("Extracting course info from:", filename); // Debug log
+
   // 1. Try to get group from filename first (standard approach)
   const filenameGroupMatch = filename.match(/([GAMP]\d+)/i);
   if (filenameGroupMatch) {
     groupName = filenameGroupMatch[1];
+    console.log("Found group in filename:", groupName); // Debug log
   }
-  
+
   // If no group found, check sheet name as last resort
   if (!groupName && sheetName) {
     const sheetNameGroupMatch = sheetName.match(/([GAMP]\d+)/i);
     if (sheetNameGroupMatch) {
       groupName = sheetNameGroupMatch[1];
+      console.log("Found group in sheet name:", groupName); // Debug log
     }
   }
-  
+
   // If still no group found, throw error
   if (!groupName) {
     throw new Error("Group name (e.g., G1, A2, M3, P4) not found in the filename or sheet. Please rename your file to include a valid group code.");
   }
-  
+
+
   // Extract the group type
   const courseType = groupName.charAt(0).toUpperCase();
-  
+
   // Level detection
   if (courseType === 'A') {
     // Leave level empty for type A courses
@@ -87,29 +92,29 @@ export const extractCourseInfo = (filename, jsonData, sheetName) => {
     // For other course types, detect detailed levels (A1.1, A2.2, etc.)
     const detailedLevelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
     level = detailedLevelMatch ? detailedLevelMatch[0] : '';
-    
+
     // If detailed level not found, fall back to simple level
     if (!level) {
       const fallbackLevel = filename.match(/[AB][0-9]/i);
       level = fallbackLevel ? fallbackLevel[0] : '';
     }
   }
-  
+
   // Validate level for non-A course types
   if (courseType !== 'A' && !level) {
     throw new Error(`Level information (e.g., A1, B2.1) not found for ${groupName}. Please include level information in the filename.`);
   }
-  
+
   // Extract online/offline status
   const onlineMatch = filename.match(/online/i) || sheetName.match(/online/i);
   const offlineMatch = filename.match(/offline/i) || sheetName.match(/offline/i);
   mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
-  
+
   // Validate mode
   if (mode === 'Unknown') {
     throw new Error(`Course mode (Online/Offline) not specified for ${groupName}. Please include 'Online' or 'Offline' in the filename.`);
   }
-  
+
   return {
     groupName,
     level,
