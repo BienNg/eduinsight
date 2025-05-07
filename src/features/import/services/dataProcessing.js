@@ -37,6 +37,7 @@ export const processB1CourseFileWithColors = async (arrayBuffer, filename, optio
     };
   } catch (error) {
     console.error("Error processing course file:", error);
+    // Make sure the error is not swallowed
     throw error;
   }
 };

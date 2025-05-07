@@ -89,8 +89,16 @@ export const ImportProvider = ({ children }) => {
 
         // Process each sheet as a separate course
         for (const sheetName of sheetData.sheetNames) {
-          // Extract level from sheet name
-          const level = extractLevelFromSheetName(sheetName);
+          // Extract level from sheet name AND Google Sheet title
+          const level = extractLevelFromSheetName(sheetName, googleSheetTitle);
+
+          // For G-type courses, enforce level requirement
+          if (groupInfo.groupName && groupInfo.groupName.startsWith('G') && !level) {
+            toast.error(`Cannot import sheet "${sheetName}": Level information (A1, B1.2, etc.) not found for ${groupInfo.groupName}`, {
+              duration: 5000
+            });
+            continue; // Skip this sheet and process the next one
+          }
 
           // Create a course name from group and sheet
           const courseName = createCourseName(groupInfo.groupName, sheetName, level);
@@ -139,7 +147,17 @@ export const ImportProvider = ({ children }) => {
         console.log("Single sheet Google Sheet title:", googleSheetTitle); // Debug log
         const groupInfo = extractGroupInfoFromTitle(googleSheetTitle || '');
         console.log("Single sheet group info:", groupInfo); // Debug log
-        const level = extractLevelFromSheetName(sheetData.sheetNames[0] || '');
+
+        // Extract level from both sheet name and Google Sheet title
+        const level = extractLevelFromSheetName(sheetData.sheetNames[0] || '', googleSheetTitle);
+
+        // For G-type courses, enforce level requirement
+        if (groupInfo.groupName && groupInfo.groupName.startsWith('G') && !level) {
+          toast.error(`Cannot import: Level information (A1, B1.2, etc.) not found for ${groupInfo.groupName}. Please rename your Google Sheet to include level information.`, {
+            duration: 5000
+          });
+          return; // Don't add to queue
+        }
 
         const sheetWithMeta = {
           id: Date.now() + Math.random().toString(36).substr(2, 9),
@@ -369,6 +387,7 @@ export const ImportProvider = ({ children }) => {
       ]);
     }
   };
+
 
   const clearCompletedFiles = () => {
     setCompletedFiles([]);

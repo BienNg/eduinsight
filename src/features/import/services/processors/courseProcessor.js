@@ -334,15 +334,25 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
       mode: options.metadata.mode || 'Unknown',
       language: options.metadata.language || ''
     };
+    
+    // Add validation here for metadata-based processing
+    if (!courseInfo.level && courseInfo.groupName.charAt(0).toUpperCase() !== 'A') {
+      throw new Error(`Level information (e.g., A1, B2.1) is missing for ${courseInfo.groupName}. This is required for non-A type courses.`);
+    }
   } else {
     // Fall back to extracting from filename
     console.log("No metadata found, extracting from filename");
     courseInfo = extractCourseInfo(filename, jsonData, workbook.SheetNames[0]);
   }
 
+  // Additional validation to ensure level is detected for non-A courses
+  if (courseInfo.groupName.charAt(0).toUpperCase() !== 'A' && !courseInfo.level) {
+    throw new Error(`Level information (e.g., A1, B2.1) not found for ${courseInfo.groupName}. Please include level information in the filename.`);
+  }
+
   // Create or get group record - PASS THE MODE CORRECTLY
   const groupRecord = await getOrCreateGroupRecord(courseInfo.groupName, courseInfo.mode);
-
+  
 
   // Get color for the course
   const courseColor = await getNextCourseColor();

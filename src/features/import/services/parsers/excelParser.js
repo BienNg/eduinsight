@@ -55,8 +55,6 @@ export const extractCourseInfo = (filename, jsonData, sheetName) => {
   let level = '';
   let mode = 'Unknown';
 
-  console.log("Extracting course info from:", filename); // Debug log
-
   // 1. Try to get group from filename first (standard approach)
   const filenameGroupMatch = filename.match(/([GAMP]\d+)/i);
   if (filenameGroupMatch) {
@@ -78,57 +76,95 @@ export const extractCourseInfo = (filename, jsonData, sheetName) => {
     throw new Error("Group name (e.g., G1, A2, M3, P4) not found in the filename or sheet. Please rename your file to include a valid group code.");
   }
 
-
   // Extract the group type
   const courseType = groupName.charAt(0).toUpperCase();
 
-  // Level detection
+  // Level detection with improved patterns to handle your specific format
+  console.log("Starting level detection for group type:", courseType);
+  console.log("Filename for level detection:", filename);
+
+  // Level detection based on course type
   if (courseType === 'A') {
     // Leave level empty for type A courses
     level = '';
-  } else if (courseType === 'M') {
-    // For M-type courses, detect simple levels (A1, A2, B1)
-    const simpleLevelMatch = filename.match(/[AB][0-9]/i);
-    level = simpleLevelMatch ? simpleLevelMatch[0] : '';
+    console.log("A-type course, level detection skipped");
   } else {
-    // For other course types, detect detailed levels (A1.1, A2.2, etc.)
-    const detailedLevelMatch = filename.match(/[AB][0-9]\.[0-9]/i);
-    level = detailedLevelMatch ? detailedLevelMatch[0] : '';
+    // For your specific format: "G42 - A1.2_Online_VN"
+    // Look for patterns with dashes or other separators
 
-    // If detailed level not found, fall back to simple level
+    // Pattern that matches level after a dash or space
+    let detailedLevelMatch = filename.match(/[- _]([AB][12]\.[12])/i);
+    if (detailedLevelMatch) {
+      level = detailedLevelMatch[1].toUpperCase();
+      console.log("Found detailed level after separator:", level);
+    }
+    // If not found with separator, try standard pattern
+    else {
+      detailedLevelMatch = filename.match(/([AB][12]\.[12])/i);
+      if (detailedLevelMatch) {
+        level = detailedLevelMatch[1].toUpperCase();
+        console.log("Found detailed level with standard pattern:", level);
+      }
+    }
+
+    // If detailed level not found, try simple level with separators
     if (!level) {
-      const fallbackLevel = filename.match(/[AB][0-9]/i);
-      level = fallbackLevel ? fallbackLevel[0] : '';
+      let simpleLevelMatch = filename.match(/[- _]([AB][12])(?!\.[12])/i);
+      if (simpleLevelMatch) {
+        level = simpleLevelMatch[1].toUpperCase();
+        console.log("Found simple level after separator:", level);
+      }
+      // If not found with separator, try standard pattern
+      else {
+        simpleLevelMatch = filename.match(/([AB][12])(?!\.[12])/i);
+        if (simpleLevelMatch) {
+          level = simpleLevelMatch[1].toUpperCase();
+          console.log("Found simple level with standard pattern:", level);
+        }
+      }
+    }
+
+    // Check sheet name if level not found in filename
+    if (!level && sheetName) {
+      let sheetLevelMatch = sheetName.match(/([AB][12](?:\.[12])?)/i);
+      if (sheetLevelMatch) {
+        level = sheetLevelMatch[1].toUpperCase();
+        console.log("Found level in sheet name:", level);
+      }
+    }
+
+    // Log if no level found
+    if (!level) {
+      console.error("No level found for non-A type course:", courseType);
+      throw new Error(`Level information (e.g., A1, B2.1) not found for ${groupName}. Please include level information in the filename or rename the file to include the level (e.g., ${groupName}_A1_Online.xlsx).`);
     }
   }
 
-  // Validate level for non-A course types
-  if (courseType !== 'A' && !level) {
-    throw new Error(`Level information (e.g., A1, B2.1) not found for ${groupName}. Please include level information in the filename.`);
-  }
-
   // Extract online/offline status
-  const onlineMatch = filename.match(/online/i) || sheetName.match(/online/i);
-  const offlineMatch = filename.match(/offline/i) || sheetName.match(/offline/i);
-  if (onlineMatch) {
-    mode = 'Online';
-  } else if (offlineMatch) {
-    mode = 'Offline';
-  } else {
-    // If not specified, default to "Unknown" but log for debugging
-    console.log(`Mode not detected in filename "${filename}" or sheet "${sheetName}"`);
-    mode = 'Unknown';
-  }
+  console.log("Starting mode detection");
 
+  if (filename.toLowerCase().includes('online')) {
+    mode = 'Online';
+    console.log("Found 'Online' in filename");
+  } else if (filename.toLowerCase().includes('offline')) {
+    mode = 'Offline';
+    console.log("Found 'Offline' in filename");
+  } else if (sheetName && sheetName.toLowerCase().includes('online')) {
+    mode = 'Online';
+    console.log("Found 'Online' in sheet name");
+  } else if (sheetName && sheetName.toLowerCase().includes('offline')) {
+    mode = 'Offline';
+    console.log("Found 'Offline' in sheet name");
+  }
 
   // Validate mode
   if (mode === 'Unknown') {
+    console.error("Mode not detected in filename or sheet name");
     throw new Error(`Course mode (Online/Offline) not specified for ${groupName}. Please include 'Online' or 'Offline' in the filename. For example: "${groupName}_${level}_Online.xlsx"`);
   }
-  console.log("Extracted mode:", mode, "from patterns:", {
-    onlineMatch: !!onlineMatch,
-    offlineMatch: !!offlineMatch
-  });
+
+  console.log("Final extracted course info:", { groupName, level, mode, courseType });
+
   return {
     groupName,
     level,
@@ -136,6 +172,10 @@ export const extractCourseInfo = (filename, jsonData, sheetName) => {
     courseType
   };
 };
+
+
+
+
 
 export default {
   parseExcelData,
