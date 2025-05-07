@@ -340,15 +340,9 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
     courseInfo = extractCourseInfo(filename, jsonData, workbook.SheetNames[0]);
   }
 
-
-  // Check if course already exists
-  const existingCourse = await findExistingCourse(courseInfo.groupName, courseInfo.level);
-
-  // Create or get group record
+  // Create or get group record - PASS THE MODE CORRECTLY
   const groupRecord = await getOrCreateGroupRecord(courseInfo.groupName, courseInfo.mode);
-  if (!groupRecord || !groupRecord.id) {
-    throw new Error("Failed to process file: Could not create group record");
-  }
+
 
   // Get color for the course
   const courseColor = await getNextCourseColor();

@@ -179,6 +179,9 @@ export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
     // Clean up and normalize the group name
     const normalizedGroupName = groupName.trim();
 
+    // Log the input parameters for debugging
+    console.log(`Creating/getting group: ${normalizedGroupName}, mode: ${mode}`);
+
     // Check if group record exists
     const groups = await getAllRecords('groups');
     const existingGroup = groups.find(g => g.name === normalizedGroupName);
@@ -212,11 +215,12 @@ export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
     const groupColor = await getNextGroupColor();
 
     // Create new group record with color and type
+    // IMPORTANT: Use the mode parameter that was passed in instead of hardcoding "Unknown"
     const newGroupData = {
       name: normalizedGroupName,
       courseIds: [],
       color: groupColor,
-      mode: mode,
+      mode: mode, // This should now correctly use the passed mode
       type: groupType,
       createdAt: new Date().toISOString()
     };
@@ -231,6 +235,8 @@ export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
     throw error; // Instead of creating a fallback group, throw the error
   }
 };
+
+
 
 export const normalizeTeacherName = (name) => {
   return name

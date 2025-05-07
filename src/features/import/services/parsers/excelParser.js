@@ -49,6 +49,8 @@ export const parseExcelData = async (arrayBuffer) => {
  * @returns {Object} Extracted course information
  */
 export const extractCourseInfo = (filename, jsonData, sheetName) => {
+  console.log("Extracting course info from:", filename); // Debug log
+
   let groupName = '';
   let level = '';
   let mode = 'Unknown';
@@ -108,13 +110,25 @@ export const extractCourseInfo = (filename, jsonData, sheetName) => {
   // Extract online/offline status
   const onlineMatch = filename.match(/online/i) || sheetName.match(/online/i);
   const offlineMatch = filename.match(/offline/i) || sheetName.match(/offline/i);
-  mode = onlineMatch ? 'Online' : (offlineMatch ? 'Offline' : 'Unknown');
+  if (onlineMatch) {
+    mode = 'Online';
+  } else if (offlineMatch) {
+    mode = 'Offline';
+  } else {
+    // If not specified, default to "Unknown" but log for debugging
+    console.log(`Mode not detected in filename "${filename}" or sheet "${sheetName}"`);
+    mode = 'Unknown';
+  }
+
 
   // Validate mode
   if (mode === 'Unknown') {
-    throw new Error(`Course mode (Online/Offline) not specified for ${groupName}. Please include 'Online' or 'Offline' in the filename.`);
+    throw new Error(`Course mode (Online/Offline) not specified for ${groupName}. Please include 'Online' or 'Offline' in the filename. For example: "${groupName}_${level}_Online.xlsx"`);
   }
-
+  console.log("Extracted mode:", mode, "from patterns:", {
+    onlineMatch: !!onlineMatch,
+    offlineMatch: !!offlineMatch
+  });
   return {
     groupName,
     level,
