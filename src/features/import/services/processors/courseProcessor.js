@@ -319,8 +319,21 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
   // Parse Excel file data
   const { workbook, jsonData, excelWorksheet, headerRowIndex } = await parseExcelData(arrayBuffer);
 
-  // Extract course info (group, level, mode)
-  const courseInfo = extractCourseInfo(filename, jsonData, workbook.SheetNames[0]);
+  // Check if we have metadata from multi-sheet processing
+  const { metadata } = options || {};
+
+  // Extract course info (group, level, mode) - use metadata if available
+  let courseInfo;
+  if (metadata) {
+    courseInfo = {
+      groupName: metadata.groupName,
+      level: metadata.level,
+      mode: metadata.mode,
+      language: metadata.language
+    };
+  } else {
+    courseInfo = extractCourseInfo(filename, jsonData, workbook.SheetNames[0]);
+  }
 
   // Check if course already exists
   const existingCourse = await findExistingCourse(courseInfo.groupName, courseInfo.level);

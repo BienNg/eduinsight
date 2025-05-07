@@ -1,157 +1,70 @@
 // src/features/import/components/GoogleSheetsImport.jsx
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 const GoogleSheetsImport = ({ onSheetSubmitted }) => {
-    const [sheetsUrl, setSheetsUrl] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState('');
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!url || !url.includes('docs.google.com/spreadsheets')) {
+      toast.error('Please enter a valid Google Sheets URL');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      await onSheetSubmitted(url);
+      setUrl('');
+      toast.success('Google Sheet added to queue');
+    } catch (error) {
+      toast.error(`Error adding Google Sheet: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (!sheetsUrl) {
-            setError('Please enter a Google Sheets URL');
-            return;
-        }
-
-        // Validate URL format
-        if (!isValidGoogleSheetsUrl(sheetsUrl)) {
-            setError('Please enter a valid Google Sheets URL');
-            return;
-        }
-
-        setError('');
-        setIsSubmitting(true);
-
-        try {
-            const sheetId = getSheetId(sheetsUrl);
-            let filename = `GoogleSheet_${sheetId}.xlsx`; // Default fallback
-            
-            try {
-                // Try to fetch the HTML page to extract the title
-                const htmlResponse = await fetch(sheetsUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'text/html',
-                    },
-                    // Required to avoid CORS issues
-                    mode: 'cors',
-                });
-                
-                if (htmlResponse.ok) {
-                    const htmlContent = await htmlResponse.text();
-                    // Extract title from HTML content
-                    const titleMatch = htmlContent.match(/<title>(.*?)<\/title>/i);
-                    if (titleMatch && titleMatch[1]) {
-                        // Clean up the title (remove " - Google Sheets" part)
-                        let sheetTitle = titleMatch[1].replace(/ - Google Sheets$/, '');
-                        // Ensure the filename ends with .xlsx
-                        filename = sheetTitle.endsWith('.xlsx') ? sheetTitle : `${sheetTitle}.xlsx`;
-                    }
-                }
-            } catch (titleError) {
-                // If title extraction fails, continue with the default filename
-                console.warn('Could not extract Google Sheet title:', titleError);
-            }
-
-            // Now fetch the actual sheet content
-            const exportUrl = getExportUrl(sheetsUrl);
-            const response = await fetch(exportUrl);
-
-            if (!response.ok) {
-                throw new Error('Unable to access this Google Sheet. Make sure it\'s shared with "Anyone with the link can view"');
-            }
-
-            // Get the array buffer from the response
-            const arrayBuffer = await response.arrayBuffer();
-
-            // Pass the data to parent component for processing
-            await onSheetSubmitted(arrayBuffer, filename);
-
-            setSheetsUrl('');
-        } catch (err) {
-            setError(err.message || 'Failed to import Google Sheet');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const isValidGoogleSheetsUrl = (url) => {
-        return /https:\/\/(docs\.google\.com\/spreadsheets|sheets\.google\.com)/.test(url);
-    };
-
-    const getSheetId = (url) => {
-        const regex = /\/d\/([a-zA-Z0-9-_]+)/;
-        const match = url.match(regex);
-        return match ? match[1] : '';
-    };
-
-    const getExportUrl = (url) => {
-        const sheetId = getSheetId(url);
-        return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`;
-    };
-
-    return (
-        <div style={{
-            marginTop: '20px',
-            padding: '15px',
-            border: '1px solid #e0e0e0',
+  return (
+    <div className="google-sheets-import" style={{ marginTop: '20px' }}>
+      <h4>Import from Google Sheets</h4>
+      <p>Enter a Google Sheets URL to import data directly.</p>
+      <p className="text-info">
+        <small>Note: For multiple sheets, the document name should include group info (e.g., "G1 Online DE")</small>
+      </p>
+      
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px' }}>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://docs.google.com/spreadsheets/d/..."
+          style={{ 
+            flex: 1, 
+            padding: '8px 12px', 
             borderRadius: '4px',
-            backgroundColor: '#f9f9f9'
-        }}>
-            <h4 style={{ marginTop: 0 }}>Import from Google Sheets</h4>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <input
-                        type="text"
-                        value={sheetsUrl}
-                        onChange={(e) => setSheetsUrl(e.target.value)}
-                        placeholder="Paste Google Sheets URL here"
-                        style={{
-                            flex: 1,
-                            padding: '10px',
-                            border: error ? '1px solid #c62828' : '1px solid #ccc',
-                            borderRadius: '4px',
-                            fontSize: '14px'
-                        }}
-                        disabled={isSubmitting}
-                    />
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        style={{
-                            marginLeft: '10px',
-                            padding: '10px 15px',
-                            backgroundColor: '#1e88e5',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                            fontSize: '14px'
-                        }}
-                    >
-                        {isSubmitting ? 'Importing...' : 'Import'}
-                    </button>
-                </div>
-                {error && (
-                    <p style={{ color: '#c62828', fontSize: '14px', marginTop: '5px' }}>
-                        {error}
-                    </p>
-                )}
-            </form>
-            <div style={{ fontSize: '13px', color: '#666', marginTop: '10px', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                <p style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>Instructions:</p>
-                <ol style={{ margin: '0', paddingLeft: '20px' }}>
-                    <li><strong>Important:</strong> Your Google Sheet must be named following the format: <code>G1 B1.2 Online</code></li>
-                    <li>Must include: Group code (G1, A2, etc.), Level (A1, B2.1, etc.), and Mode (Online/Offline)</li>
-                    <li>Open your Google Sheet</li>
-                    <li>Click "Share" in the top right corner</li>
-                    <li>Set access to "Anyone with the link can view"</li>
-                    <li>Copy the URL and paste it above</li>
-                </ol>
-            </div>
-        </div>
-    );
+            border: '1px solid #ccc' 
+          }}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '4px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            cursor: loading ? 'wait' : 'pointer'
+          }}
+        >
+          {loading ? 'Processing...' : 'Import'}
+        </button>
+      </form>
+    </div>
+  );
 };
 
 export default GoogleSheetsImport;

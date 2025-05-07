@@ -8,6 +8,17 @@ import { logDatabaseChange } from '../firebase/changelog';
 // Import directly from the utils folder instead of "./ImportContent"
 import { validateExcelFile, processB1CourseFileWithColors } from '../import/services/dataProcessing';
 
+import {
+  fetchGoogleSheet,
+  fetchGoogleSheetTitle
+} from '../import/services/googleSheetsService';
+import {
+  extractGroupInfoFromTitle,
+  extractLevelFromSheetName,
+  createCourseName
+} from '../import/services/helpers/multiSheetCourseExtractor';
+import * as XLSX from 'xlsx';
+
 // Create a custom event for focusing the import tab
 export const FOCUS_IMPORT_TAB_EVENT = 'focusImportTab';
 
@@ -53,24 +64,94 @@ export const ImportProvider = ({ children }) => {
     }
   };
 
-  const addGoogleSheetToQueue = async (arrayBuffer, filename) => {
-    const sheetWithMeta = {
-      id: Date.now() + Math.random().toString(36).substr(2, 9),
-      name: filename,
-      status: 'queued',
-      progress: 0,
-      error: null,
-      isGoogleSheet: true,
-      arrayBuffer
-    };
+  const addGoogleSheetToQueue = async (googleSheetUrl) => {
+    try {
+      // First, fetch the Google Sheet data
+      const sheetData = await fetchGoogleSheet(googleSheetUrl);
 
-    // Show toast notification
-    toast.info(`Added Google Sheet to queue`, {
-      description: filename.substring(0, 60) + (filename.length > 60 ? '...' : ''),
-      onClick: navigateToImport
-    });
+      // If it's a multi-sheet workbook, handle it differently
+      if (sheetData.isMultiSheet) {
+        // Show toast notification
+        toast.info(`Processing Google Sheet with ${sheetData.sheetNames.length} courses`, {
+          description: 'This may take a few minutes to process all courses',
+          onClick: navigateToImport
+        });
 
-    setProcessingQueue(prev => [...prev, sheetWithMeta]);
+        // Get the Google Sheet title for group information
+        const googleSheetTitle = await fetchGoogleSheetTitle(sheetData.sheetId);
+
+        // Extract group info from the Google Sheet title
+        const groupInfo = extractGroupInfoFromTitle(googleSheetTitle);
+
+        // Process each sheet as a separate course
+        for (const sheetName of sheetData.sheetNames) {
+          // Extract level from sheet name
+          const level = extractLevelFromSheetName(sheetName);
+
+          // Create a course name from group and sheet
+          const courseName = createCourseName(groupInfo.groupName, sheetName, level);
+
+          // Create a workbook with just this sheet
+          const workbook = XLSX.read(sheetData.arrayBuffer, { type: 'array' });
+          const singleSheetWorkbook = {
+            SheetNames: [sheetName],
+            Sheets: {
+              [sheetName]: workbook.Sheets[sheetName]
+            }
+          };
+
+          // Convert back to array buffer
+          const singleSheetBuffer = XLSX.write(singleSheetWorkbook, {
+            bookType: 'xlsx',
+            type: 'array'
+          });
+
+          // Create a file for import queue with the course name
+          const courseFile = {
+            id: Date.now() + Math.random().toString(36).substr(2, 9) + `-${sheetName}`,
+            name: courseName,
+            status: 'queued',
+            progress: 0,
+            error: null,
+            isGoogleSheet: true,
+            arrayBuffer: singleSheetBuffer,
+            // Include additional metadata to control processing
+            metadata: {
+              groupName: groupInfo.groupName,
+              mode: groupInfo.mode,
+              language: groupInfo.language,
+              level,
+              sheetName
+            }
+          };
+
+          // Add to processing queue
+          setProcessingQueue(prev => [...prev, courseFile]);
+        }
+      } else {
+        // Single sheet - process as before
+        const sheetWithMeta = {
+          id: Date.now() + Math.random().toString(36).substr(2, 9),
+          name: sheetData.filename,
+          status: 'queued',
+          progress: 0,
+          error: null,
+          isGoogleSheet: true,
+          arrayBuffer: sheetData.arrayBuffer
+        };
+
+        // Show toast notification
+        toast.info(`Added Google Sheet to queue`, {
+          description: sheetData.filename.substring(0, 60) + (sheetData.filename.length > 60 ? '...' : ''),
+          onClick: navigateToImport
+        });
+
+        setProcessingQueue(prev => [...prev, sheetWithMeta]);
+      }
+    } catch (error) {
+      // Handle error
+      toast.error(`Failed to fetch Google Sheet: ${error.message}`);
+    }
   };
 
   // Process files sequentially when the queue changes
@@ -101,9 +182,6 @@ export const ImportProvider = ({ children }) => {
             // Process Google Sheet data that was already fetched
             updateProgress(30);
 
-            // CHANGE: Use the imported functions directly instead of dynamic imports
-            // const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
-
             // Validate the data
             const validationResult = await validateExcelFile(currentFile.arrayBuffer, currentFile.name);
 
@@ -116,7 +194,8 @@ export const ImportProvider = ({ children }) => {
                 setPendingFile({
                   arrayBuffer: currentFile.arrayBuffer,
                   name: currentFile.name,
-                  isGoogleSheet: true
+                  isGoogleSheet: true,
+                  metadata: currentFile.metadata // Pass along metadata if it exists
                 });
                 setShowTimeModal(true);
 
@@ -130,8 +209,15 @@ export const ImportProvider = ({ children }) => {
             }
 
             try {
-              // Process the file
-              await processB1CourseFileWithColors(currentFile.arrayBuffer, currentFile.name, {});
+              // Process the file - pass metadata if available
+              await processB1CourseFileWithColors(
+                currentFile.arrayBuffer,
+                currentFile.name,
+                {
+                  ignoreMissingTimeColumns: false,
+                  metadata: currentFile.metadata // Pass the metadata
+                }
+              );
               updateProgress(100);
             } catch (processingError) {
               // If the error is about missing group info, provide a clearer message
@@ -184,6 +270,7 @@ export const ImportProvider = ({ children }) => {
 
     processNextFile();
   }, [processingQueue, loading, navigate, location.pathname]);
+
 
   const updateProgress = (progress) => {
     if (processingQueue.length > 0) {
@@ -412,14 +499,14 @@ export const ImportProvider = ({ children }) => {
     setPendingFile(null);
 
     try {
-      // CHANGE: Use the imported function directly instead of dynamic import
-      // const { processB1CourseFileWithColors } = await import('./ImportContent');
-
-      // Process the file with missing time columns
+      // Process the file with missing time columns - pass metadata if available
       await processB1CourseFileWithColors(
         currentPendingFile.arrayBuffer,
         currentPendingFile.name,
-        { ignoreMissingTimeColumns: true }
+        {
+          ignoreMissingTimeColumns: true,
+          metadata: currentPendingFile.metadata // Pass metadata if available
+        }
       );
 
       // Add to completed files
