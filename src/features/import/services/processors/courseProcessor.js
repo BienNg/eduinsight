@@ -22,6 +22,27 @@ const updateExistingCourseWithNewSessions = async (
   headerRowIndex,
   options
 ) => {
+  if (options?.metadata?.sourceUrl) {
+    const googleSheetsUrl = options.metadata.sourceUrl;
+
+    // Check if course doesn't have a sourceUrl yet
+    if (!existingCourse.sourceUrl) {
+      // Update the course with the Google Sheets URL
+      await updateRecord('courses', existingCourse.id, {
+        sourceUrl: googleSheetsUrl
+      });
+
+      // Update our local copy of existingCourse
+      existingCourse = {
+        ...existingCourse,
+        sourceUrl: googleSheetsUrl
+      };
+
+      console.log(`Updated course ${existingCourse.name} with Google Sheets URL: ${googleSheetsUrl}`);
+    } else {
+      console.log(`Course ${existingCourse.name} already has a Google Sheets URL: ${existingCourse.sourceUrl}`);
+    }
+  }
 
   const monthIds = new Set();
 
