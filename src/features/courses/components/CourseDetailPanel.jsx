@@ -1,5 +1,5 @@
 // src/features/courses/components/CourseDetailPanel.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef  } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBook,
@@ -12,11 +12,15 @@ import {
   faClock,
   faEllipsisV,
   faTrash,
-  faLink
+  faLink,
+  faSync // Add sync icon import
 } from '@fortawesome/free-solid-svg-icons';
 import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
 import { calculateTotalHours } from '../../utils/timeUtils';
 import { getRecordById } from '../../firebase/database';
+import { fetchGoogleSheet, fetchGoogleSheetTitle } from '../../import/services/googleSheetsService';
+import { processB1CourseFileWithColors } from '../../import/services/dataProcessing';
+import { toast } from 'sonner'; // Assuming you're using sonner for toast notifications
 import '../../styles/CourseDetailPanel.css';
 
 const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, group }) => {
@@ -25,6 +29,32 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
   const [error, setError] = useState(null);
   const [teacherName, setTeacherName] = useState('Nicht zugewiesen');
   const [sessionTeachers, setSessionTeachers] = useState({});
+  const [isSyncing, setIsSyncing] = useState(false);
+  // Track the current course ID to detect changes
+  const currentCourseId = useRef(course?.id);
+  // Track active toast ID
+  const toastId = useRef(null);
+
+  // Cleanup toast when component unmounts or course changes
+  useEffect(() => {
+    // If course ID changed and we have an active toast, dismiss it
+    if (currentCourseId.current !== course?.id && toastId.current) {
+      toast.dismiss(toastId.current);
+      toastId.current = null;
+      // Also reset syncing state if we switch courses during sync
+      setIsSyncing(false);
+    }
+
+    // Update ref with current course ID
+    currentCourseId.current = course?.id;
+
+    // Cleanup on unmount
+    return () => {
+      if (toastId.current) {
+        toast.dismiss(toastId.current);
+      }
+    };
+  }, [course?.id]);
 
   useEffect(() => {
     const fetchTeacherData = async () => {
@@ -51,16 +81,16 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
   useEffect(() => {
     const fetchSessionTeachers = async () => {
       if (!sessions || sessions.length === 0) return;
-      
+
       const teacherMap = {};
-      
+
       for (const session of sessions) {
         if (session.teacherId) {
           try {
             // Check if we already fetched this teacher
             if (!teacherMap[session.teacherId]) {
               const teacherRecord = await getRecordById('teachers', session.teacherId);
-              teacherMap[session.teacherId] = teacherRecord && teacherRecord.name ? 
+              teacherMap[session.teacherId] = teacherRecord && teacherRecord.name ?
                 teacherRecord.name : 'Nicht zugewiesen';
             }
           } catch (err) {
@@ -72,7 +102,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
           teacherMap[session.id] = teacherName;
         }
       }
-      
+
       setSessionTeachers(teacherMap);
     };
 
@@ -125,6 +155,84 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
     setShowDropdown(!showDropdown);
   };
 
+  // Updated handleSync function
+  const handleSync = async (e) => {
+    e.stopPropagation();
+
+    if (!course || !course.sourceUrl) return;
+
+    try {
+      setIsSyncing(true);
+
+      // Create a unique toast ID and store it in ref
+      toastId.current = `sync-${course.id}-${Date.now()}`;
+
+      // Show syncing toast
+      toast.loading(`Syncing ${course.name} with Google Sheet...`, {
+        id: toastId.current,
+        duration: Infinity
+      });
+
+      // Fetch the Google Sheet
+      const sheetData = await fetchGoogleSheet(course.sourceUrl);
+
+      // Get metadata from course
+      const metadata = {
+        groupName: group?.name,
+        mode: group?.mode,
+        level: course.level,
+        language: group?.language || '',
+        sourceUrl: course.sourceUrl
+      };
+
+      // Process the file with the existing course data
+      await processB1CourseFileWithColors(
+        sheetData.arrayBuffer,
+        `${course.name} (Sync)`,
+        {
+          metadata: metadata
+        }
+      );
+
+      // Only show success toast if we're still on the same course
+      if (currentCourseId.current === course.id) {
+        toast.success(`Successfully synced ${course.name}`, {
+          id: toastId.current,
+          duration: 5000
+        });
+      } else {
+        // If we've switched courses, just dismiss the toast
+        toast.dismiss(toastId.current);
+      }
+
+      // Clear the toast ID
+      toastId.current = null;
+
+    } catch (error) {
+      // Only show error toast if we're still on the same course
+      if (currentCourseId.current === course.id) {
+        toast.error(`Failed to sync ${course.name}`, {
+          id: toastId.current,
+          duration: 5000,
+          description: error.message.substring(0, 100) + (error.message.length > 100 ? '...' : '')
+        });
+
+        setError(`Failed to sync: ${error.message}`);
+      } else {
+        // If we've switched courses, just dismiss the toast
+        toast.dismiss(toastId.current);
+      }
+
+      // Clear the toast ID
+      toastId.current = null;
+    } finally {
+      // Only update state if we're still on the same course
+      if (currentCourseId.current === course.id) {
+        setIsSyncing(false);
+      }
+    }
+  };
+
   // Close dropdown when clicking outside
   React.useEffect(() => {
     const handleClickOutside = () => {
@@ -175,26 +283,45 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
 
   return (
     <div className="course-detail-panel">
+      {/* Course header section */}
       <div className="course-detail-panel-header">
         <h2 className="course-detail-panel-title">{course.name || 'Kursdetails'}</h2>
         <div className="course-detail-panel-actions">
           {deletingCourseId === course.id ? (
             <span className="course-detail-panel-deleting">Löschen...</span>
           ) : (
-            <div className="course-detail-panel-settings" onClick={toggleDropdown}>
-              <FontAwesomeIcon icon={faEllipsisV} />
-              {showDropdown && (
-                <div className="course-detail-panel-dropdown">
-                  <button className="course-detail-panel-dropdown-item" onClick={handleDelete}>
-                    <FontAwesomeIcon icon={faTrash} className="course-detail-panel-dropdown-icon" />
-                    Kurs löschen
-                  </button>
-                </div>
+            <>
+              {/* Sync button - only show if course has sourceUrl */}
+              {course && course.sourceUrl && (
+                <button
+                  className="course-detail-panel-sync-button"
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  title="Sync with Google Sheet"
+                >
+                  <FontAwesomeIcon
+                    icon={faSync}
+                    className={isSyncing ? "course-detail-panel-sync-icon spinning" : "course-detail-panel-sync-icon"}
+                  />
+                </button>
               )}
-            </div>
+
+              <div className="course-detail-panel-settings" onClick={toggleDropdown}>
+                <FontAwesomeIcon icon={faEllipsisV} />
+                {showDropdown && (
+                  <div className="course-detail-panel-dropdown">
+                    <button className="course-detail-panel-dropdown-item" onClick={handleDelete}>
+                      <FontAwesomeIcon icon={faTrash} className="course-detail-panel-dropdown-icon" />
+                      Kurs löschen
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
+
 
       {error && (
         <div className="course-detail-panel-error">{error}</div>
@@ -246,10 +373,10 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
             <div className="course-detail-panel-info-item">
               <span className="course-detail-panel-info-value">
                 <FontAwesomeIcon icon={faLink} className="course-detail-panel-icon" />
-                <a 
-                  href={course.sourceUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={course.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="course-detail-panel-link"
                 >
                   Google Sheet
