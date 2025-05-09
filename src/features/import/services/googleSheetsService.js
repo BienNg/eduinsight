@@ -41,16 +41,18 @@ export const fetchGoogleSheet = async (sheetsUrl) => {
     // Check if this is a multi-sheet workbook (more than one sheet)
     const isMultiSheet = sheetNames.length > 1;
 
-    // Extract Google Sheet title (for group naming)
-    // We'll need to get this from the document title
-    // This will be handled by a separate API call to get document metadata
+    // Get Google Sheet title
+    const sheetTitle = await fetchGoogleSheetTitle(sheetId);
 
+    // Return the full workbook for better handling
     return {
       arrayBuffer: response.data,
+      rawWorkbook: workbook, // Include the raw workbook object
       filename,
       isMultiSheet,
       sheetNames,
-      sheetId
+      sheetId,
+      sheetTitle
     };
   } catch (error) {
     if (error.response && error.response.status === 403) {
@@ -58,6 +60,27 @@ export const fetchGoogleSheet = async (sheetsUrl) => {
     }
     throw error;
   }
+};
+
+// Add a new helper function to extract an individual sheet
+export const extractSheetFromWorkbook = (workbook, sheetName) => {
+  if (!workbook || !workbook.Sheets || !workbook.Sheets[sheetName]) {
+    throw new Error(`Sheet "${sheetName}" not found in workbook`);
+  }
+
+  // Create a new workbook with just this sheet
+  const singleSheetWorkbook = {
+    SheetNames: [sheetName],
+    Sheets: {
+      [sheetName]: workbook.Sheets[sheetName]
+    }
+  };
+
+  // Convert back to array buffer
+  return XLSX.write(singleSheetWorkbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
 };
 
 // New function to fetch Google Sheet metadata (title)

@@ -1,5 +1,5 @@
 // src/features/courses/components/CourseDetailPanel.jsx
-import React, { useState, useEffect, useRef  } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBook,
@@ -18,7 +18,10 @@ import {
 import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
 import { calculateTotalHours } from '../../utils/timeUtils';
 import { getRecordById } from '../../firebase/database';
-import { fetchGoogleSheet, fetchGoogleSheetTitle } from '../../import/services/googleSheetsService';
+import {
+  fetchGoogleSheet, fetchGoogleSheetTitle,
+  extractSheetFromWorkbook
+} from '../../import/services/googleSheetsService';
 import { processB1CourseFileWithColors } from '../../import/services/dataProcessing';
 import { toast } from 'sonner'; // Assuming you're using sonner for toast notifications
 import '../../styles/CourseDetailPanel.css';
@@ -176,18 +179,39 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
       // Fetch the Google Sheet
       const sheetData = await fetchGoogleSheet(course.sourceUrl);
 
+      // Use the specific sheet associated with this course if available
+      let courseSheetData = sheetData.arrayBuffer;
+
+      // If course has sheetName property and it's a multi-sheet workbook
+      if (course.sheetName && sheetData.isMultiSheet) {
+        try {
+          // Try to extract the specific sheet
+          courseSheetData = extractSheetFromWorkbook(sheetData.rawWorkbook, course.sheetName);
+          console.log(`Using sheet "${course.sheetName}" for course "${course.name}"`);
+        } catch (sheetError) {
+          // If sheet not found, fall back to using the original workbook
+          console.error(`Sheet "${course.sheetName}" not found, using first sheet instead:`, sheetError);
+          // We'll continue with the full workbook - the processor will use the first sheet
+        }
+      } else if (sheetData.isMultiSheet) {
+        // If it's multi-sheet but course doesn't have sheetName, log a warning
+        console.warn(`Course "${course.name}" has no associated sheet name, using first sheet from workbook`);
+      }
+
       // Get metadata from course
       const metadata = {
         groupName: group?.name,
         mode: group?.mode,
         level: course.level,
         language: group?.language || '',
-        sourceUrl: course.sourceUrl
+        sourceUrl: course.sourceUrl,
+        sheetName: course.sheetName, // Include the sheet name in metadata
+        sheetIndex: course.sheetIndex // Include the sheet index in metadata
       };
 
       // Process the file with the existing course data
       await processB1CourseFileWithColors(
-        sheetData.arrayBuffer,
+        courseSheetData,
         `${course.name} (Sync)`,
         {
           metadata: metadata

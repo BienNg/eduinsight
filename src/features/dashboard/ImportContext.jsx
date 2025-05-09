@@ -10,7 +10,8 @@ import { validateExcelFile, processB1CourseFileWithColors } from '../import/serv
 
 import {
   fetchGoogleSheet,
-  fetchGoogleSheetTitle
+  fetchGoogleSheetTitle,
+  extractSheetFromWorkbook
 } from '../import/services/googleSheetsService';
 import {
   extractGroupInfoFromTitle,
@@ -78,17 +79,17 @@ export const ImportProvider = ({ children }) => {
         });
 
         // Get the Google Sheet title for group information
-        const googleSheetTitle = await fetchGoogleSheetTitle(sheetData.sheetId);
-        console.log("Google Sheet title:", googleSheetTitle); // Debug log
+        const googleSheetTitle = sheetData.sheetTitle || '';
+        console.log("Google Sheet title:", googleSheetTitle);
 
         // Extract group info from the Google Sheet title
         const groupInfo = extractGroupInfoFromTitle(googleSheetTitle || '');
-
-        // Add more debug logging to trace the extraction
         console.log("Extracted group info:", groupInfo);
 
         // Process each sheet as a separate course
-        for (const sheetName of sheetData.sheetNames) {
+        for (let i = 0; i < sheetData.sheetNames.length; i++) {
+          const sheetName = sheetData.sheetNames[i];
+
           // Extract level from sheet name AND Google Sheet title
           const level = extractLevelFromSheetName(sheetName, googleSheetTitle);
 
@@ -103,20 +104,8 @@ export const ImportProvider = ({ children }) => {
           // Create a course name from group and sheet
           const courseName = createCourseName(groupInfo.groupName, sheetName, level);
 
-          // Create a workbook with just this sheet
-          const workbook = XLSX.read(sheetData.arrayBuffer, { type: 'array' });
-          const singleSheetWorkbook = {
-            SheetNames: [sheetName],
-            Sheets: {
-              [sheetName]: workbook.Sheets[sheetName]
-            }
-          };
-
-          // Convert back to array buffer
-          const singleSheetBuffer = XLSX.write(singleSheetWorkbook, {
-            bookType: 'xlsx',
-            type: 'array'
-          });
+          // Extract just this sheet from the workbook
+          const singleSheetBuffer = extractSheetFromWorkbook(sheetData.rawWorkbook, sheetName);
 
           // Create a file for import queue with the course name
           const courseFile = {
@@ -133,7 +122,8 @@ export const ImportProvider = ({ children }) => {
               mode: groupInfo.mode,
               language: groupInfo.language,
               level,
-              sheetName,
+              sheetName, // Store the sheet name
+              sheetIndex: i, // Store the sheet index
               sourceUrl: googleSheetUrl
             }
           };
@@ -142,22 +132,18 @@ export const ImportProvider = ({ children }) => {
           setProcessingQueue(prev => [...prev, courseFile]);
         }
       } else {
-        // Single sheet - process as before
-        // Get the Google Sheet title for single sheet case
-        const googleSheetTitle = await fetchGoogleSheetTitle(sheetData.sheetId);
-        console.log("Single sheet Google Sheet title:", googleSheetTitle); // Debug log
+        // Single sheet handling (mostly unchanged)
+        const googleSheetTitle = sheetData.sheetTitle || '';
         const groupInfo = extractGroupInfoFromTitle(googleSheetTitle || '');
-        console.log("Single sheet group info:", groupInfo); // Debug log
+        const sheetName = sheetData.sheetNames[0]; // Get the sheet name
+        const level = extractLevelFromSheetName(sheetName, googleSheetTitle);
 
-        // Extract level from both sheet name and Google Sheet title
-        const level = extractLevelFromSheetName(sheetData.sheetNames[0] || '', googleSheetTitle);
-
-        // For G-type courses, enforce level requirement
+        // Level validation
         if (groupInfo.groupName && groupInfo.groupName.startsWith('G') && !level) {
-          toast.error(`Cannot import: Level information (A1, B1.2, etc.) not found for ${groupInfo.groupName}. Please rename your Google Sheet to include level information.`, {
+          toast.error(`Cannot import: Level information (A1, B1.2, etc.) not found for ${groupInfo.groupName}.`, {
             duration: 5000
           });
-          return; // Don't add to queue
+          return;
         }
 
         const sheetWithMeta = {
@@ -168,19 +154,17 @@ export const ImportProvider = ({ children }) => {
           error: null,
           isGoogleSheet: true,
           arrayBuffer: sheetData.arrayBuffer,
-          // Add metadata for single sheet case with robust logging
           metadata: {
             groupName: groupInfo.groupName,
             mode: groupInfo.mode,
             language: groupInfo.language,
             level,
+            sheetName, // Store the sheet name
+            sheetIndex: 0, // It's the first and only sheet
             sourceUrl: googleSheetUrl
           }
         };
 
-        console.log("Sheet metadata:", sheetWithMeta.metadata);
-
-        // Show toast notification
         toast.info(`Added Google Sheet to queue`, {
           description: sheetData.filename.substring(0, 60) + (sheetData.filename.length > 60 ? '...' : ''),
           onClick: navigateToImport
@@ -189,7 +173,6 @@ export const ImportProvider = ({ children }) => {
         setProcessingQueue(prev => [...prev, sheetWithMeta]);
       }
     } catch (error) {
-      // Handle error
       toast.error(`Failed to fetch Google Sheet: ${error.message}`);
     }
   };

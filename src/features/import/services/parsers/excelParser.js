@@ -8,16 +8,27 @@ import { findColumnIndex } from '../helpers/columnFinder';
  * @param {ArrayBuffer} arrayBuffer - Excel file buffer
  * @returns {Object} Parsed data and worksheet information
  */
-export const parseExcelData = async (arrayBuffer) => {
+export const parseExcelData = async (arrayBuffer, options = {}) => {
   // Use XLSX and ExcelJS to parse the file
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
+
+  // Use the specified sheet name if provided, otherwise use the first sheet
+  const sheetName = options.sheetName && workbook.SheetNames.includes(options.sheetName)
+    ? options.sheetName
+    : workbook.SheetNames[0];
+
+  console.log(`Parsing Excel data from sheet: "${sheetName}"`);
+
+  const worksheet = workbook.Sheets[sheetName];
   const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
   const excelWorkbook = new ExcelJS.Workbook();
   await excelWorkbook.xlsx.load(arrayBuffer);
-  const excelWorksheet = excelWorkbook.worksheets[0];
+
+  // Find the corresponding worksheet in ExcelJS workbook
+  // ExcelJS uses 1-based indexing for worksheets
+  const sheetIndex = workbook.SheetNames.indexOf(sheetName) + 1;
+  const excelWorksheet = excelWorkbook.worksheets[sheetIndex - 1];
 
   // Find the header row with "Folien"
   let headerRowIndex = -1;
@@ -29,7 +40,7 @@ export const parseExcelData = async (arrayBuffer) => {
   }
 
   if (headerRowIndex === -1) {
-    console.error("Could not find header row with 'Folien'");
+    console.error(`Could not find header row with 'Folien' in sheet "${sheetName}"`);
     headerRowIndex = 3; // Fallback
   }
 
@@ -37,7 +48,8 @@ export const parseExcelData = async (arrayBuffer) => {
     workbook,
     jsonData,
     excelWorksheet,
-    headerRowIndex
+    headerRowIndex,
+    sheetName // Include the sheet name in return value
   };
 };
 

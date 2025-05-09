@@ -26,16 +26,19 @@ const updateExistingCourseWithNewSessions = async (
     const googleSheetsUrl = options.metadata.sourceUrl;
 
     // Check if course doesn't have a sourceUrl yet
-    if (!existingCourse.sourceUrl) {
-      // Update the course with the Google Sheets URL
+    if (!existingCourse.sheetName && options.metadata.sheetName) {
       await updateRecord('courses', existingCourse.id, {
-        sourceUrl: googleSheetsUrl
+        sourceUrl: options.metadata.sourceUrl,
+        sheetName: options.metadata.sheetName,
+        sheetIndex: options.metadata.sheetIndex || 0
       });
 
-      // Update our local copy of existingCourse
+      // Update our local copy
       existingCourse = {
         ...existingCourse,
-        sourceUrl: googleSheetsUrl
+        sourceUrl: options.metadata.sourceUrl,
+        sheetName: options.metadata.sheetName,
+        sheetIndex: options.metadata.sheetIndex || 0
       };
 
       console.log(`Updated course ${existingCourse.name} with Google Sheets URL: ${googleSheetsUrl}`);
@@ -337,9 +340,11 @@ const extractExcelSessionsData = (jsonData, excelWorksheet, headerRowIndex, colu
 };
 
 export const processCourseData = async (arrayBuffer, filename, options) => {
-  // Parse Excel file data
-  const { workbook, jsonData, excelWorksheet, headerRowIndex } = await parseExcelData(arrayBuffer);
-
+  // Parse Excel file data with sheet name if available
+  const { workbook, jsonData, excelWorksheet, headerRowIndex, sheetName } =
+    await parseExcelData(arrayBuffer, {
+      sheetName: options?.metadata?.sheetName
+    });
   // Extract course info or use metadata
   let courseInfo;
   if (options && options.metadata && options.metadata.groupName) {
@@ -409,7 +414,9 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
     teacherIds: [],
     status: 'ongoing',
     color: courseColor,
-    sourceUrl: options?.metadata?.sourceUrl || ''
+    sourceUrl: options?.metadata?.sourceUrl || '',
+    sheetName: options?.metadata?.sheetName || '',
+    sheetIndex: options?.metadata?.sheetIndex || 0
   });
 
   // Update group with course ID
