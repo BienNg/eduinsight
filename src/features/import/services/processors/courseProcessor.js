@@ -319,15 +319,9 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
   // Parse Excel file data
   const { workbook, jsonData, excelWorksheet, headerRowIndex } = await parseExcelData(arrayBuffer);
 
-  // Log the options to debug
-  console.log("processCourseData received options:", options);
-
-  // Extract course info (group, level, mode) - use metadata if available
+  // Extract course info or use metadata
   let courseInfo;
-
-  // Check if options contains metadata with groupName
   if (options && options.metadata && options.metadata.groupName) {
-    console.log("Using metadata from options:", options.metadata);
     courseInfo = {
       groupName: options.metadata.groupName,
       level: options.metadata.level || '',
@@ -335,26 +329,50 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
       language: options.metadata.language || ''
     };
 
-    // Add validation here for metadata-based processing
+    // Validation for metadata-based processing
     if (!courseInfo.level && courseInfo.groupName.charAt(0).toUpperCase() !== 'A') {
-      throw new Error(`Level information (e.g., A1, B2.1) is missing for ${courseInfo.groupName}. This is required for non-A type courses.`);
+      throw new Error(`Level information is missing for ${courseInfo.groupName}`);
     }
   } else {
-    // Fall back to extracting from filename
-    console.log("No metadata found, extracting from filename");
     courseInfo = extractCourseInfo(filename, jsonData, workbook.SheetNames[0]);
   }
 
-  // Additional validation to ensure level is detected for non-A courses
+  // Additional validation for level detection
   if (courseInfo.groupName.charAt(0).toUpperCase() !== 'A' && !courseInfo.level) {
-    throw new Error(`Level information (e.g., A1, B2.1) not found for ${courseInfo.groupName}. Please include level information in the filename.`);
+    throw new Error(`Level information not found for ${courseInfo.groupName}`);
   }
 
-  // Create or get group record - PASS THE MODE CORRECTLY
+  // Create or get group record
   const groupRecord = await getOrCreateGroupRecord(courseInfo.groupName, courseInfo.mode);
 
+  // NEW CODE: Check if course already exists
+  const existingCourse = await findExistingCourse(courseInfo.groupName, courseInfo.level);
+  if (existingCourse) {
+    console.log(`Found existing course: ${existingCourse.name}`);
 
-  // Get color for the course
+    // NEW STEP: Check and update sourceUrl if the import is from Google Sheets
+    if (options?.metadata?.sourceUrl && !existingCourse.sourceUrl) {
+      console.log(`Updating course ${existingCourse.name} with Google Sheets URL`);
+      await updateRecord('courses', existingCourse.id, {
+        sourceUrl: options.metadata.sourceUrl
+      });
+
+      // Update our local copy of existingCourse
+      existingCourse.sourceUrl = options.metadata.sourceUrl;
+    }
+
+    // Update the course with new sessions
+    return await updateExistingCourseWithNewSessions(
+      existingCourse,
+      jsonData,
+      excelWorksheet,
+      headerRowIndex,
+      options
+    );
+  }
+
+  // If no existing course, continue with creating a new one...
+  // Rest of your existing code for creating a new course
   const courseColor = await getNextCourseColor();
 
   // Create course record
