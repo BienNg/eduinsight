@@ -3,7 +3,7 @@ import TabCard from '../../common/TabCard';
 import CourseItem from './CourseItem';
 import MonthSummary from './MonthSummary';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 const TeacherCourseTab = ({
   currentMonthData,
@@ -19,6 +19,25 @@ const TeacherCourseTab = ({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('currentMonth');
   
+  // Sort data in descending order by course name using useMemo to avoid unnecessary re-sorting
+  const sortedCurrentMonthData = useMemo(() => {
+    return [...currentMonthData].sort((a, b) => 
+      b.course.name.localeCompare(a.course.name)
+    );
+  }, [currentMonthData]);
+
+  const sortedPreviousMonthData = useMemo(() => {
+    return [...previousMonthData].sort((a, b) => 
+      b.course.name.localeCompare(a.course.name)
+    );
+  }, [previousMonthData]);
+
+  const sortedCourses = useMemo(() => {
+    return [...courses].sort((a, b) => 
+      b.name.localeCompare(a.name)
+    );
+  }, [courses]);
+
   const totalMonthHours = currentMonthData.reduce((sum, data) => sum + data.totalHours, 0);
   const totalMonthSessions = currentMonthData.reduce((sum, data) => sum + data.sessions.length, 0);
   const totalLongSessions = currentMonthData.reduce((sum, data) => sum + data.longSessionsCount, 0);
@@ -29,10 +48,10 @@ const TeacherCourseTab = ({
 
   const renderCurrentMonth = () => (
     <>
-      {currentMonthData.length > 0 ? (
+      {sortedCurrentMonthData.length > 0 ? (
         <>
           <div className="compact-course-list">
-            {currentMonthData.map(data => (
+            {sortedCurrentMonthData.map(data => (
               <CourseItem 
                 key={data.course.id}
                 data={data}
@@ -57,10 +76,10 @@ const TeacherCourseTab = ({
 
   const renderPreviousMonth = () => (
     <>
-      {previousMonthData.length > 0 ? (
+      {sortedPreviousMonthData.length > 0 ? (
         <>
           <div className="compact-course-list">
-            {previousMonthData.map(data => (
+            {sortedPreviousMonthData.map(data => (
               <CourseItem 
                 key={data.course.id}
                 data={data}
@@ -85,8 +104,8 @@ const TeacherCourseTab = ({
 
   const renderAllCourses = () => (
     <div className="compact-course-list">
-      {courses.length > 0 ? (
-        courses.map(course => (
+      {sortedCourses.length > 0 ? (
+        sortedCourses.map(course => (
           <div
             key={course.id}
             className="compact-course-item clickable"
