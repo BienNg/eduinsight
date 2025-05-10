@@ -4,6 +4,8 @@ import { faClock } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../../common/ProgressBar';
 import { getTotalSessionsByLevel } from '../utils/teacherDetailUtils';
+import { calculateTotalHours } from '../../utils/timeUtils';
+import { countLongSessions } from '../../utils/sessionUtils';
 
 const CourseItem = ({ data, courseCompletionMap, groupsData, onHover, onLeave }) => {
   const navigate = useNavigate();
@@ -11,6 +13,12 @@ const CourseItem = ({ data, courseCompletionMap, groupsData, onHover, onLeave })
   const courseProgress = courseCompletionMap[data.course.id] || { total: 0, completed: 0 };
   const totalSessionCount = getTotalSessionsByLevel(data.course.level);
   const completedSessionCount = courseProgress.completed;
+
+  // Calculate total hours using the utility
+  const totalHours = calculateTotalHours(data.sessions);
+  
+  // Calculate long sessions using the utility
+  const longSessionsCount = countLongSessions(data.sessions);
   
   // Calculate progress percentage
   const progress = totalSessionCount > 0
@@ -38,8 +46,8 @@ const CourseItem = ({ data, courseCompletionMap, groupsData, onHover, onLeave })
 
         <div className="course-meta">
           <span>{data.sessions.length} Lektionen</span>
-          <span>{data.totalHours.toFixed(1)}h</span>
-          {data.longSessionsCount > 0 && (
+          <span>{totalHours.toFixed(1)}h</span>
+          {longSessionsCount > 0 && (
             <span className="long-session-count">
               <FontAwesomeIcon icon={faClock} />
               {data.longSessionsCount}

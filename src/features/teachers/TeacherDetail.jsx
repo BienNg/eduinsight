@@ -32,6 +32,7 @@ const TeacherDetail = () => {
         uniqueGroupIds,
         chartData,
         sessionsTotalHours,
+        longSessionsCount,
         updateTeacherData
     } = useTeacherData(id);
 
@@ -109,6 +110,7 @@ const TeacherDetail = () => {
                         uniqueGroupIds={uniqueGroupIds}
                         sessionsTotalHours={sessionsTotalHours}
                         sessionsLength={sessions.length}
+                        longSessionsCount={longSessionsCount}
                         updateTeacherData={updateTeacherData}
                     />
 

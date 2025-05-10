@@ -4,6 +4,8 @@ import CourseItem from './CourseItem';
 import MonthSummary from './MonthSummary';
 import { useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
+import { calculateTotalHours } from '../../utils/timeUtils';
+import { countLongSessions } from '../../utils/sessionUtils';
 
 const TeacherCourseTab = ({
   currentMonthData,
@@ -18,41 +20,43 @@ const TeacherCourseTab = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('currentMonth');
-  
+
   // Sort data in descending order by course name using useMemo to avoid unnecessary re-sorting
   const sortedCurrentMonthData = useMemo(() => {
-    return [...currentMonthData].sort((a, b) => 
+    return [...currentMonthData].sort((a, b) =>
       b.course.name.localeCompare(a.course.name)
     );
   }, [currentMonthData]);
 
   const sortedPreviousMonthData = useMemo(() => {
-    return [...previousMonthData].sort((a, b) => 
+    return [...previousMonthData].sort((a, b) =>
       b.course.name.localeCompare(a.course.name)
     );
   }, [previousMonthData]);
 
   const sortedCourses = useMemo(() => {
-    return [...courses].sort((a, b) => 
+    return [...courses].sort((a, b) =>
       b.name.localeCompare(a.name)
     );
   }, [courses]);
 
-  const totalMonthHours = currentMonthData.reduce((sum, data) => sum + data.totalHours, 0);
   const totalMonthSessions = currentMonthData.reduce((sum, data) => sum + data.sessions.length, 0);
-  const totalLongSessions = currentMonthData.reduce((sum, data) => sum + data.longSessionsCount, 0);
-
-  const totalPrevMonthHours = previousMonthData.reduce((sum, data) => sum + data.totalHours, 0);
+  const totalMonthHours = currentMonthData.reduce((sum, data) => {
+    return sum + calculateTotalHours(data.sessions);
+  }, 0);
+  const totalLongSessions = currentMonthData.reduce((sum, data) => sum + countLongSessions(data.sessions), 0);
   const totalPrevMonthSessions = previousMonthData.reduce((sum, data) => sum + data.sessions.length, 0);
-  const totalPrevLongSessions = previousMonthData.reduce((sum, data) => sum + data.longSessionsCount, 0);
-
+  const totalPrevMonthHours = previousMonthData.reduce((sum, data) => {
+    return sum + calculateTotalHours(data.sessions);
+  }, 0);
+  const totalPrevLongSessions = previousMonthData.reduce((sum, data) => sum + countLongSessions(data.sessions), 0);
   const renderCurrentMonth = () => (
     <>
       {sortedCurrentMonthData.length > 0 ? (
         <>
           <div className="compact-course-list">
             {sortedCurrentMonthData.map(data => (
-              <CourseItem 
+              <CourseItem
                 key={data.course.id}
                 data={data}
                 courseCompletionMap={courseCompletionMap}
@@ -62,10 +66,10 @@ const TeacherCourseTab = ({
               />
             ))}
           </div>
-          <MonthSummary 
-            totalSessions={totalMonthSessions} 
-            totalHours={totalMonthHours} 
-            totalLongSessions={totalLongSessions} 
+          <MonthSummary
+            totalSessions={totalMonthSessions}
+            totalHours={totalMonthHours}
+            totalLongSessions={totalLongSessions}
           />
         </>
       ) : (
@@ -80,7 +84,7 @@ const TeacherCourseTab = ({
         <>
           <div className="compact-course-list">
             {sortedPreviousMonthData.map(data => (
-              <CourseItem 
+              <CourseItem
                 key={data.course.id}
                 data={data}
                 courseCompletionMap={courseCompletionMap}
@@ -90,10 +94,10 @@ const TeacherCourseTab = ({
               />
             ))}
           </div>
-          <MonthSummary 
-            totalSessions={totalPrevMonthSessions} 
-            totalHours={totalPrevMonthHours} 
-            totalLongSessions={totalPrevLongSessions} 
+          <MonthSummary
+            totalSessions={totalPrevMonthSessions}
+            totalHours={totalPrevMonthHours}
+            totalLongSessions={totalPrevLongSessions}
           />
         </>
       ) : (
@@ -155,7 +159,7 @@ const TeacherCourseTab = ({
 
   // Get the correct title based on active tab
   const getTabTitle = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'currentMonth':
         return `Kurse (${monthNow})`;
       case 'previousMonth':

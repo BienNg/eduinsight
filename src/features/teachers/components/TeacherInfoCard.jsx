@@ -3,18 +3,19 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 
-const TeacherInfoCard = ({ 
-  teacher, 
-  courses, 
-  uniqueGroupIds, 
-  sessionsTotalHours, 
+const TeacherInfoCard = ({
+  teacher,
+  courses,
+  uniqueGroupIds,
+  sessionsTotalHours,
   sessionsLength,
-  updateTeacherData 
+  longSessionsCount,
+  updateTeacherData
 }) => {
   const [isEditingCountry, setIsEditingCountry] = useState(false);
   const [countryValue, setCountryValue] = useState(teacher.country || '');
   const [updateStatus, setUpdateStatus] = useState(null);
-  
+
   // Available countries for selection
   const availableCountries = ['Deutschland', 'Vietnam'];
 
@@ -22,13 +23,13 @@ const TeacherInfoCard = ({
     try {
       setUpdateStatus(null);
       const success = await updateTeacherData('country', countryValue);
-      
+
       if (success) {
         setUpdateStatus('success');
       } else {
         setUpdateStatus('error');
       }
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => {
         setUpdateStatus(null);
@@ -70,19 +71,19 @@ const TeacherInfoCard = ({
                   ))}
                 </select>
                 <div className="edit-actions">
-                  <button 
-                    onClick={handleUpdateCountry} 
+                  <button
+                    onClick={handleUpdateCountry}
                     className="btn-icon success"
                     title="Save"
                     disabled={!countryValue}
                   >
                     <FontAwesomeIcon icon={faCheck} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       setIsEditingCountry(false);
                       setCountryValue(teacher.country || '');
-                    }} 
+                    }}
                     className="btn-icon cancel"
                     title="Cancel"
                   >
@@ -93,8 +94,8 @@ const TeacherInfoCard = ({
             ) : (
               <div className="value-with-edit">
                 <span className="value">{teacher.country || 'No Country'}</span>
-                <button 
-                  onClick={() => setIsEditingCountry(true)} 
+                <button
+                  onClick={() => setIsEditingCountry(true)}
                   className="btn-edit"
                   title="Edit country"
                 >
@@ -116,11 +117,15 @@ const TeacherInfoCard = ({
             <span className="value">{sessionsLength}</span>
           </div>
           <div className="info-item">
+            <span className="label">2h-Lektionen:</span>
+            <span className="value">{longSessionsCount}</span>
+          </div>
+          <div className="info-item">
             <span className="label">Gesamt Stunden:</span>
             <span className="value">{sessionsTotalHours.toFixed(1)}</span>
           </div>
         </div>
-        
+
         {updateStatus && (
           <div className={`update-status ${updateStatus}`}>
             {updateStatus === 'success' ? 'Country updated successfully!' : 'Failed to update country.'}

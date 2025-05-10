@@ -11,6 +11,8 @@ import {
     getTeacherPreviousMonthData
 } from '../../utils/dateQueryUtils';
 import { prepareChartData } from '../utils/teacherDetailUtils';
+import { calculateTotalHours } from '../../utils/timeUtils';
+import { isLongSession } from '../../utils/sessionUtils';
 
 export const useTeacherData = (teacherId) => {
     const [teacher, setTeacher] = useState(null);
@@ -129,7 +131,11 @@ export const useTeacherData = (teacherId) => {
     }, [courses]);
 
     const chartData = useMemo(() => prepareChartData(sessions), [sessions]);
-    const sessionsTotalHours = useMemo(() => sessions.length * 1.5, [sessions.length]);
+    const sessionsTotalHours = useMemo(() => calculateTotalHours(sessions), [sessions]);
+    const longSessionsCount = useMemo(() =>
+        sessions.filter(session => isLongSession(session.startTime, session.endTime)).length,
+        [sessions]
+    );
 
     const updateTeacherData = async (fieldName, value) => {
         try {
@@ -163,6 +169,7 @@ export const useTeacherData = (teacherId) => {
         uniqueGroupIds,
         chartData,
         sessionsTotalHours,
-        updateTeacherData
+        updateTeacherData,sessionsTotalHours,
+        longSessionsCount,
     };
 };
