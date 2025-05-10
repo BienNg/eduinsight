@@ -134,10 +134,24 @@ const TeacherCourseTab = ({
     }
   ];
 
+  // Get the correct title based on active tab
+  const getTabTitle = () => {
+    switch(activeTab) {
+      case 'currentMonth':
+        return `Kurse (${monthNow})`;
+      case 'previousMonth':
+        return `Kurse (${prevMonthName})`;
+      case 'allCourses':
+        return 'Alle Kurse';
+      default:
+        return `Kurse (${monthNow})`;
+    }
+  };
+
   return (
     <TabCard
       className="animate-card"
-      title={`Kurse (${monthNow})`}
+      title={getTabTitle()}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       tabs={tabs}
