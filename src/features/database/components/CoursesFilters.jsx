@@ -86,6 +86,19 @@ const CoursesFilters = ({
                             <option value="no">No Students</option>
                         </select>
                     </div>
+                    
+                    <div className="filter-item">
+                        <label htmlFor="hassourceUrlFilter">Source URL:</label>
+                        <select
+                            id="hassourceUrlFilter"
+                            value={filters.hassourceUrl || ''}
+                            onChange={(e) => onFilterChange('hassourceUrl', e.target.value || null)}
+                        >
+                            <option value="">Any</option>
+                            <option value="yes">Available</option>
+                            <option value="no">Not Available</option>
+                        </select>
+                    </div>
 
                     <div className="filter-item">
                         <label htmlFor="filterLogic">Filter Logic:</label>

@@ -1,17 +1,18 @@
 // src/features/database/tabs/CoursesTab.jsx
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import CoursesFilters from '../components/CoursesFilters';
 import '../../styles/Filters.css';
 
 const CoursesTab = ({ courses, groups }) => {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     level: null,
     status: null,
     groupId: null,
     hasSessions: null,
-    hasStudents: null
+    hasStudents: null,
+    hassourceUrl: null
   });
   const [filterLogic, setFilterLogic] = useState('AND');
 
@@ -42,7 +43,8 @@ const CoursesTab = ({ courses, groups }) => {
   };
 
   const filteredCourses = useMemo(() => {
-    if (!filters.level && !filters.status && !filters.groupId && !filters.hasSessions && !filters.hasStudents) {
+    if (!filters.level && !filters.status && !filters.groupId && !filters.hasSessions && 
+        !filters.hasStudents && !filters.hassourceUrl) {
       return courses;
     }
 
@@ -90,11 +92,20 @@ const CoursesTab = ({ courses, groups }) => {
         const hasStudents = course.studentIds && course.studentIds.length > 0;
         studentsMatch = (filters.hasStudents === 'yes') ? hasStudents : !hasStudents;
       }
+      
+      // sourceUrl match logic
+      let sourceUrlMatch = true;
+      if (filters.hassourceUrl) {
+        const hassourceUrl = Boolean(course.sourceUrl);
+        sourceUrlMatch = (filters.hassourceUrl === 'yes') ? hassourceUrl : !hassourceUrl;
+      }
 
       if (filterLogic === 'AND') {
-        return levelMatch && statusMatch && groupMatch && sessionsMatch && studentsMatch;
+        return levelMatch && statusMatch && groupMatch && sessionsMatch && 
+               studentsMatch && sourceUrlMatch;
       } else {
-        return levelMatch || statusMatch || groupMatch || sessionsMatch || studentsMatch;
+        return levelMatch || statusMatch || groupMatch || sessionsMatch || 
+               studentsMatch || sourceUrlMatch;
       }
     });
   }, [courses, filters, filterLogic]);
@@ -127,7 +138,7 @@ const CoursesTab = ({ courses, groups }) => {
               <th>Students</th>
               <th>Created</th>
               <th>Updated</th>
-              <th>Description</th>
+              <th>Source URL</th>
             </tr>
           </thead>
           <tbody>
@@ -138,7 +149,7 @@ const CoursesTab = ({ courses, groups }) => {
                 <tr 
                   key={course.id} 
                   onClick={() => handleCourseClick(course.id)}
-                  className="clickable-row" // Add this class for styling
+                  className="clickable-row"
                 >
                   <td className="truncate">{course.name}</td>
                   <td>{course.level || 'N/A'}</td>
@@ -159,7 +170,18 @@ const CoursesTab = ({ courses, groups }) => {
                   <td>{course.studentIds?.length || 0}</td>
                   <td>{course.createdAt || 'N/A'}</td>
                   <td>{course.updatedAt || 'N/A'}</td>
-                  <td className="truncate">{course.description || 'N/A'}</td>
+                  <td className="truncate">
+                    {course.sourceUrl ? (
+                      <a 
+                        href={course.sourceUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {course.sourceUrl}
+                      </a>
+                    ) : 'N/A'}
+                  </td>
                 </tr>
               );
             })}
