@@ -47,6 +47,13 @@
   text-align: left;
   border-bottom: 1px solid #eee;
   font-size: 13px;
+  word-wrap: break-word;
+  max-width: 200px;
+}
+.sessions-table td:nth-child(4) {
+  white-space: normal; /* Allow text to wrap */
+  word-break: break-word; /* Break words if needed */
+  min-width: 150px; /* Minimum width to ensure space for comments */
 }
 
 .sessions-table th {
