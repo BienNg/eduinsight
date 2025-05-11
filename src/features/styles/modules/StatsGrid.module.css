@@ -1,0 +1,120 @@
+/* src/features/styles/modules/StatsGrid.module.css */
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.statsGrid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+    animation: cardFadeIn 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+/* Make the grid responsive and configurable */
+.columns2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.columns3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.columns4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.columns5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.statCard {
+    background-color: white;
+    border-radius: 30px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.statValue {
+    font-size: 42px;
+    font-weight: 600;
+    color: var(--primary-blue);
+    margin-bottom: 2px;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Animation delay for each card */
+.statCard:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.statCard:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.statCard:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.statCard:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.statCard:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.statCard:nth-child(n+6) {
+    animation-delay: 0.6s;
+}
+
+/* Colors for icons */
+.blue {
+    color: #0088FE;
+}
+
+.green {
+    color: #00C49F;
+}
+
+.yellow {
+    color: #FFBB28;
+}
+
+.purple {
+    color: #8884d8;
+}
+
+.orange {
+    color: #FF8042;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+}

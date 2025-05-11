@@ -1,7 +1,8 @@
-// src/features/teachers/tabs/TeacherOverviewTab.jsx - Import section update
+// src/features/teachers/tabs/TeacherOverviewTab.jsx
 // JSX imports
 import GroupBadge from '../../common/GroupBadge';
 import { getAllRecords } from '../../firebase/database';
+import StatsGrid from '../../common/components/StatsGrid';
 
 // Library imports
 import {
@@ -157,6 +158,40 @@ const TeacherOverview = () => {
     });
   };
 
+  // Create the stats data for the StatsGrid component
+  const statsData = [
+    {
+      icon: faUserTie,
+      value: stats.activeTeachers,
+      label: "Active Teachers",
+      color: "blue"
+    },
+    {
+      icon: faLayerGroup,
+      value: stats.activeGroups,
+      label: "Active Groups",
+      color: "green"
+    },
+    {
+      icon: faCalendarDay,
+      value: stats.totalSessions,
+      label: "Total Sessions",
+      color: "yellow"
+    },
+    {
+      icon: faChalkboardTeacher,
+      value: stats.avgSessionsPerTeacher,
+      label: "Avg Sessions/Teacher",
+      color: "purple"
+    },
+    {
+      icon: faUserGraduate,
+      value: stats.enrolledStudents,
+      label: "Enrolled Students",
+      color: "orange"
+    }
+  ];
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   return (
@@ -167,36 +202,8 @@ const TeacherOverview = () => {
 
       {!loading && !error && (
         <>
-          {/* First Row: Stat Cards */}
-          <div className="compact-stats-grid animate-card">
-            <div className="stat-card compact">
-              <FontAwesomeIcon icon={faUserTie} size="lg" color="#0088FE" />
-              <div className="stat-value">{stats.activeTeachers}</div>
-              <div className="stat-label">Active Teachers</div>
-            </div>
-
-            <div className="stat-card compact">
-              <FontAwesomeIcon icon={faLayerGroup} size="lg" color="#00C49F" />
-              <div className="stat-value">{stats.activeGroups}</div>
-              <div className="stat-label">Active Groups</div>
-            </div>
-
-            <div className="stat-card compact">
-              <FontAwesomeIcon icon={faCalendarDay} size="lg" color="#FFBB28" />
-              <div className="stat-value">{stats.totalSessions}</div>
-              <div className="stat-label">Total Sessions</div>
-            </div>
-            <div className="stat-card compact">
-              <FontAwesomeIcon icon={faChalkboardTeacher} size="lg" color="#8884d8" />
-              <div className="stat-value">{stats.avgSessionsPerTeacher}</div>
-              <div className="stat-label">Avg Sessions/Teacher</div>
-            </div>
-            <div className="stat-card compact">
-              <FontAwesomeIcon icon={faUserGraduate} size="lg" color="#FF8042" />
-              <div className="stat-value">{stats.enrolledStudents}</div>
-              <div className="stat-label">Enrolled Students</div>
-            </div>
-          </div>
+          {/* First Row: Stat Cards - Using the new StatsGrid component */}
+          <StatsGrid stats={statsData} columns={5} />
 
           {/* Second Row: Two cards (2/3 and 1/3 split) */}
           <div className="three-column-overview-grid animate-card">
