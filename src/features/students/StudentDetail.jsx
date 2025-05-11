@@ -116,6 +116,7 @@ const StudentDetail = ({ student, onClose }) => {
               <StudentOverview 
                 student={student} 
                 sessions={sessions} 
+                courses={courses} 
               />
             )}
 
