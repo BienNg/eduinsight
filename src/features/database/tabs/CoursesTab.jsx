@@ -13,6 +13,20 @@ const CoursesTab = ({ courses, groups }) => {
   });
   const [filterLogic, setFilterLogic] = useState('AND');
 
+  const availableLevels = useMemo(() => {
+    const levelsSet = new Set();
+
+    courses.forEach((course) => {
+      // Only add non-empty levels
+      if (course.level) {
+        levelsSet.add(course.level);
+      }
+    });
+
+    // Convert Set to Array and sort alphabetically
+    return [...levelsSet].sort();
+  }, [courses]);
+
   const handleFilterChange = (filterName, value) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
@@ -55,7 +69,7 @@ const CoursesTab = ({ courses, groups }) => {
           groupMatch = course.groupId === filters.groupId;
         }
       }
-      
+
       // Sessions match logic
       let sessionsMatch = true;
       if (filters.hasSessions) {
@@ -79,7 +93,7 @@ const CoursesTab = ({ courses, groups }) => {
   }, [courses, filters, filterLogic]);
 
   // Sort courses by name for better readability
-  const sortedFilteredCourses = [...filteredCourses].sort((a, b) => 
+  const sortedFilteredCourses = [...filteredCourses].sort((a, b) =>
     a.name.localeCompare(b.name)
   );
 
@@ -91,8 +105,9 @@ const CoursesTab = ({ courses, groups }) => {
         onFilterChange={handleFilterChange}
         filterLogic={filterLogic}
         onFilterLogicChange={setFilterLogic}
+        availableLevels={availableLevels}
       />
-      
+
       <div className="courses-list-container">
         <table className="students-table">
           <thead>
@@ -111,7 +126,7 @@ const CoursesTab = ({ courses, groups }) => {
           <tbody>
             {sortedFilteredCourses.map((course) => {
               const group = course.groupId ? groups.find((g) => g.id === course.groupId) : null;
-              
+
               return (
                 <tr key={course.id}>
                   <td className="truncate">{course.name}</td>
@@ -121,8 +136,8 @@ const CoursesTab = ({ courses, groups }) => {
                   </td>
                   <td>
                     {group ? (
-                      <span 
-                        className="group-indicator" 
+                      <span
+                        className="group-indicator"
                         style={{ backgroundColor: group.color || '#0066cc' }}
                       >
                         {group.name}
