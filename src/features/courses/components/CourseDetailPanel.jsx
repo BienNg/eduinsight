@@ -311,6 +311,9 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
       <div className="course-detail-panel-header">
         <h2 className="course-detail-panel-title">{course.name || 'Kursdetails'}</h2>
         <div className="course-detail-panel-actions">
+          {course.lastUpdated && (
+            <span className="course-detail-panel-last-updated">{course.lastUpdated}</span>
+          )}
           {deletingCourseId === course.id ? (
             <span className="course-detail-panel-deleting">Löschen...</span>
           ) : (
