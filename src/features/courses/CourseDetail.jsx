@@ -5,6 +5,17 @@ import { handleDeleteCourse } from '../utils/courseDeletionUtils';
 import SessionDetailModal from '../sessions/SessionDetailModal';
 import StudentDetailModal from '../students/StudentDetailModal';
 import SortableTable from '../common/components/SortableTable'; // Add this import
+import StatsGrid from '../common/components/StatsGrid';
+import {
+    faUsers,
+    faCalendarDay,
+    faChalkboardTeacher,
+    faLayerGroup,
+    faStar,
+    faCalendarAlt,
+    faCalendarCheck,
+    faChartLine
+} from '@fortawesome/free-solid-svg-icons';
 
 // CSS Imports
 import '../styles/CourseDetail.css';
@@ -254,9 +265,9 @@ const CourseDetail = ({ onClose }) => {
     // Define student table columns
     const studentColumns = [
         { key: 'name', label: 'Name', sortable: true },
-        { 
-            key: 'attendance', 
-            label: 'Absence', 
+        {
+            key: 'attendance',
+            label: 'Absence',
             sortable: true,
             render: (student) => calculateStudentAttendance(student.id)
         },
@@ -267,15 +278,15 @@ const CourseDetail = ({ onClose }) => {
     // Define session table columns
     const sessionColumns = [
         { key: 'title', label: 'Title', sortable: true },
-        { 
-            key: 'date', 
-            label: 'Date', 
+        {
+            key: 'date',
+            label: 'Date',
             sortable: true,
             render: (session) => safelyRenderValue(session.date)
         },
-        { 
-            key: 'teacherId', 
-            label: 'Teacher', 
+        {
+            key: 'teacherId',
+            label: 'Teacher',
             sortable: true,
             render: (session) => {
                 return session.teacherId
@@ -290,21 +301,21 @@ const CourseDetail = ({ onClose }) => {
                     : '-';
             }
         },
-        { 
-            key: 'time', 
-            label: 'Time', 
+        {
+            key: 'time',
+            label: 'Time',
             sortable: true,
             render: (session) => `${safelyRenderValue(session.startTime)} - ${safelyRenderValue(session.endTime)}`
         },
-        { 
-            key: 'attendance', 
-            label: 'Attendance', 
+        {
+            key: 'attendance',
+            label: 'Attendance',
             sortable: true,
             render: (session) => calculateSessionAttendance(session)
         },
-        { 
-            key: 'status', 
-            label: 'Status', 
+        {
+            key: 'status',
+            label: 'Status',
             sortable: true,
             render: (session) => session.status && (
                 <span className={`${styles.statusBadge} ${styles[`status${session.status.charAt(0).toUpperCase() + session.status.slice(1)}`]}`}>
@@ -316,7 +327,7 @@ const CourseDetail = ({ onClose }) => {
 
     // Student actions
     const renderStudentActions = (student) => (
-        <button 
+        <button
             className={styles.detailsButton}
             onClick={() => openStudentDetail(student)}
         >
@@ -326,7 +337,7 @@ const CourseDetail = ({ onClose }) => {
 
     // Session actions
     const renderSessionActions = (session) => (
-        <button 
+        <button
             className={styles.detailsButton}
             onClick={() => openSessionDetail(session)}
         >
@@ -393,57 +404,65 @@ const CourseDetail = ({ onClose }) => {
                     {/* Course Overview Section */}
                     <section className="course-section course-overview-section">
                         <h3 className="section-title">Course Overview</h3>
-                        <div className="stats-row">
-                            <div className="stat-box">
-                                <h3>Students</h3>
-                                <div className="stat-value">{students.length}</div>
-                            </div>
-                            <div className="stat-box">
-                                <h3>Sessions</h3>
-                                <div className="stat-value">{sessions.length}</div>
-                            </div>
-                            <div className="stat-box">
-                                <h3>Teacher{teachers.length !== 1 ? 's' : ''}</h3>
-                                <div className="stat-value">
-                                    {teachers.length > 0
-                                        ? teachers.map(t => t.name).join(', ')
-                                        : 'Not assigned'}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="course-info-card">
-                            <h3>Course Information</h3>
-                            <div className="info-grid">
-                                <div className="info-item">
-                                    <span className="label">Group:</span>
-                                    <span className="value">
-                                        {group ? group.name : (course.group || '-')}
-                                    </span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Level:</span>
-                                    <span className="value">{course.level}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Start Date:</span>
-                                    <span className="value">{course.startDate || '-'}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">End Date:</span>
-                                    <span className="value">{course.endDate || '-'}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="label">Average Attendance:</span>
-                                    <span className="value">
-                                        {students.length > 0 ?
-                                            Math.round(students.reduce((sum, student) =>
-                                                sum + calculateStudentAttendance(student.id), 0) / students.length)
-                                            : '-'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                        <StatsGrid
+                            columns={4}
+                            stats={[
+                                {
+                                    icon: faUsers,
+                                    value: students.length,
+                                    label: 'Students',
+                                    color: 'blue'
+                                },
+                                {
+                                    icon: faCalendarDay,
+                                    value: sessions.length,
+                                    label: 'Sessions',
+                                    color: 'green'
+                                },
+                                {
+                                    icon: faChalkboardTeacher,
+                                    value: teachers.length > 0 ? teachers.length : '-',
+                                    label: `Teacher${teachers.length !== 1 ? 's' : ''}`,
+                                    color: 'purple'
+                                },
+                                {
+                                    icon: faLayerGroup,
+                                    value: group ? group.name : (course.group || '-'),
+                                    label: 'Group',
+                                    color: 'yellow'
+                                },
+                                {
+                                    icon: faStar,
+                                    value: course.level || '-',
+                                    label: 'Level',
+                                    color: 'orange'
+                                },
+                                {
+                                    icon: faCalendarAlt,
+                                    value: course.startDate || '-',
+                                    label: 'Start Date',
+                                    color: 'blue'
+                                },
+                                {
+                                    icon: faCalendarCheck,
+                                    value: course.endDate || '-',
+                                    label: 'End Date',
+                                    color: 'green'
+                                },
+                                {
+                                    icon: faChartLine,
+                                    value: students.length > 0 ?
+                                        Math.round(
+                                            sessions.reduce((sum, session) => {
+                                                const [present, total] = calculateSessionAttendance(session).split('/');
+                                                return sum + (parseInt(present) / parseInt(total) * 100 || 0);
+                                            }, 0) / sessions.length
+                                        ) + '%' : '-',
+                                    label: 'Avg Attendance',
+                                    color: 'purple'
+                                }
+                            ]}
+                        />
                     </section>
 
                     {/* Students Section - Using SortableTable */}
