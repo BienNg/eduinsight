@@ -2,14 +2,19 @@
 import React from 'react';
 import ProgressBar from '../../common/ProgressBar';
 
-const GroupsList = ({ 
-  groups, 
-  loading, 
-  error, 
-  searchQuery, 
-  selectedGroupName, 
-  onSelectGroup 
+const GroupsList = ({
+  groups,
+  loading,
+  error,
+  searchQuery,
+  selectedGroupName,
+  onSelectGroup
 }) => {
+  // Sort groups by name in descending order
+  const sortedGroups = [...groups].sort((a, b) =>
+    b.name.localeCompare(a.name)
+  );
+
   return (
     <div className="groups-list-container">
       {loading && (
@@ -26,7 +31,7 @@ const GroupsList = ({
         </div>
       )}
 
-      {!loading && !error && groups.length === 0 && (
+      {!loading && !error && sortedGroups.length === 0 && (
         <div className="groups-list-empty">
           {searchQuery ? (
             <p>Keine Ergebnisse für "{searchQuery}" gefunden.</p>
@@ -36,9 +41,9 @@ const GroupsList = ({
         </div>
       )}
 
-      {!loading && !error && groups.length > 0 && (
+      {!loading && !error && sortedGroups.length > 0 && (
         <div className="groups-list">
-          {groups.map(group => (
+          {sortedGroups.map(group => (
             <div
               key={group.id || group.name}
               className={`group-list-item ${selectedGroupName === group.name ? 'selected' : ''}`}
