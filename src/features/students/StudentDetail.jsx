@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import './StudentDetail.css';
 import '../common/Tabs.css';
 import ConfirmationModal from '../common/ConfirmationModal';
-import DetailLayout from '../common/DetailLayout';
 import { useStudentData } from './hooks/useStudentData';
 import StudentOverview from './components/StudentOverview';
 import StudentRelations from './components/StudentRelations';
@@ -84,37 +83,55 @@ const StudentDetail = ({ student, onClose }) => {
   }, []);
 
   return (
-    <DetailLayout
-      title={safelyRenderValue(student.name)}
-      tabs={tabs}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      onClose={onClose}
-      showTabsInHeader={true} // Add this new prop to indicate tabs should be in header
-    >
-      {loading ? (
-        <div className="loading-indicator">Daten werden geladen...</div>
-      ) : (
-        <>
-          {activeTab === 'overview' && (
-            <StudentOverview 
-              student={student} 
-              sessions={sessions} 
-            />
-          )}
+    <div className="student-detail-view">
+      <div className="detail-header">
+        <div className="header-content">
+          <h2>{safelyRenderValue(student.name)}</h2>
+          
+          {/* Tabs in header */}
+          <div className="header-tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={activeTab === tab.id ? 'active' : ''}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          
+          <button className="back-button" onClick={onClose}>
+            ← Back
+          </button>
+        </div>
+      </div>
 
-          {activeTab === 'relations' && (
-            <StudentRelations 
-              student={student}
-              allStudents={allStudents}
-              courses={courses}
-              onRefreshData={refreshData}
-            />
-          )}
-        </>
-      )}
+      <div className="detail-content">
+        {loading ? (
+          <div className="loading-indicator">Daten werden geladen...</div>
+        ) : (
+          <>
+            {activeTab === 'overview' && (
+              <StudentOverview 
+                student={student} 
+                sessions={sessions} 
+              />
+            )}
 
-      {/* Modals stay at the bottom of the DetailLayout */}
+            {activeTab === 'relations' && (
+              <StudentRelations 
+                student={student}
+                allStudents={allStudents}
+                courses={courses}
+                onRefreshData={refreshData}
+              />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Modals stay at the bottom */}
       <ConfirmationModal
         isOpen={modalConfig.isOpen}
         title={modalConfig.title}
@@ -122,7 +139,7 @@ const StudentDetail = ({ student, onClose }) => {
         onConfirm={modalConfig.onConfirm}
         onCancel={modalConfig.onCancel}
       />
-    </DetailLayout>
+    </div>
   );
 };
 

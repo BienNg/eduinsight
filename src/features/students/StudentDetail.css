@@ -1,12 +1,4 @@
-/* src/components/Dashboard/StudentDetail.css */
-.student-detail-container {
-    width: 100%;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
+/* src/features/students/StudentDetail.css */
 .student-detail-view {
     display: flex;
     flex-direction: column;
@@ -34,13 +26,22 @@
     flex-grow: 1;
 }
 
-.close-button {
-    background: none;
+.back-button {
+    background: rgba(37, 99, 235, 0.1);
     border: none;
-    font-size: 22px;
+    color: #2563eb;
+    padding: 8px 16px;
+    border-radius: 4px;
     cursor: pointer;
-    color: #666;
-    margin-right: 15px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.back-button:hover {
+    background: rgba(37, 99, 235, 0.2);
 }
 
 .header-tabs {
@@ -68,100 +69,21 @@
     background-color: #f5f5f5;
 }
 
-
 .detail-content {
     padding: 20px;
     overflow-y: auto;
     flex: 1;
 }
 
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-    margin-top: 16px;
-}
-
-.info-item {
+.loading-indicator {
     display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.info-item .label {
-    font-weight: 500;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
     color: #666;
 }
 
-.info-item .value {
-    font-weight: 400;
-    color: #333;
-}
-
-.stats-row {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-top: 16px;
-}
-
-.stat-box {
-    background-color: #f5f5f5;
-    border-radius: 6px;
-    padding: 16px;
-    flex: 1;
-    min-width: 140px;
-    text-align: center;
-}
-
-.stat-box h3 {
-    margin: 0 0 8px;
-    font-size: 14px;
-    color: #666;
-}
-
-.stat-box .stat-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--primary-blue);
-}
-
-.attendance-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 16px;
-}
-
-.attendance-table th,
-.attendance-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-
-.attendance-table th {
-    background-color: #f5f5f5;
-    font-weight: 500;
-    color: #555;
-}
-
-.status-present {
-    color: #2e7d32;
-}
-
-.status-absent {
-    color: #c62828;
-}
-
-.status-sick {
-    color: #f57c00;
-}
-
-.status-technical_issues {
-    color: #0277bd;
-}
-
+/* Relations tab styles */
 .relations-container {
     display: flex;
     gap: 20px;
@@ -178,7 +100,6 @@
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -214,20 +135,15 @@
     padding-bottom: 6px;
 }
 
-.preview-info-item {
+.empty-preview {
     display: flex;
-    margin-bottom: 8px;
-}
-
-.preview-label {
-    font-weight: 500;
-    color: #666;
-    width: 80px;
-    flex-shrink: 0;
-}
-
-.preview-value {
-    color: #333;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
 }
 
 .course-badges {
@@ -243,17 +159,6 @@
     padding: 4px 12px;
     font-size: 13px;
     font-weight: 500;
-}
-
-.empty-preview {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    color: #999;
-    font-style: italic;
-    padding: 20px;
-    text-align: center;
 }
 
 .empty-courses {
@@ -284,21 +189,42 @@
     border-left: 3px solid var(--primary-blue);
 }
 
-.student-item,
 .student-name {
     font-weight: 500;
 }
 
+.search-container {
+    margin-bottom: 10px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.confirm-button {
+    background-color: var(--primary-blue, #0088FE);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.confirm-button:hover {
+    background-color: var(--dark-blue, #0066CC);
+}
+
+.confirm-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .stats-row {
-        flex-direction: column;
-    }
-
     .relations-container {
         flex-direction: column;
     }
