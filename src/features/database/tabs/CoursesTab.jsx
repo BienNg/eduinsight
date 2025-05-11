@@ -16,6 +16,11 @@ const CoursesTab = ({ courses, groups }) => {
   });
   const [filterLogic, setFilterLogic] = useState('AND');
 
+  // Sort groups alphabetically in descending order
+  const sortedGroups = useMemo(() => {
+    return [...groups].sort((a, b) => b.name.localeCompare(a.name));
+  }, [groups]);
+
   // Handle click on course row
   const handleCourseClick = (courseId) => {
     navigate(`/courses/${courseId}`);
@@ -132,7 +137,7 @@ const CoursesTab = ({ courses, groups }) => {
   return (
     <div className="courses-tab-container">
       <CoursesFilters
-        groups={groups}
+        groups={sortedGroups}
         filters={filters}
         onFilterChange={handleFilterChange}
         filterLogic={filterLogic}
