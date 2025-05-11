@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import CoursesFilters from '../components/CoursesFilters';
 import '../../styles/Filters.css';
 
-const CoursesTab = ({ courses, groups }) => {
+const CoursesTab = ({ courses, groups, sessions }) => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
     level: null,
@@ -15,6 +15,30 @@ const CoursesTab = ({ courses, groups }) => {
     hassourceUrl: null
   });
   const [filterLogic, setFilterLogic] = useState('AND');
+
+  // Calculate completed sessions for each course
+  const courseSessionsMap = useMemo(() => {
+    const map = {};
+
+    courses.forEach(course => {
+      if (course.sessionIds && course.sessionIds.length > 0) {
+        const courseSessions = sessions.filter(session =>
+          course.sessionIds.includes(session.id)
+        );
+
+        const totalSessions = courseSessions.length;
+        const completedSessions = courseSessions.filter(
+          session => session.status === 'completed'
+        ).length;
+
+        map[course.id] = { total: totalSessions, completed: completedSessions };
+      } else {
+        map[course.id] = { total: 0, completed: 0 };
+      }
+    });
+
+    return map;
+  }, [courses, sessions]);
 
   // Sort groups alphabetically in descending order
   const sortedGroups = useMemo(() => {
@@ -154,7 +178,7 @@ const CoursesTab = ({ courses, groups }) => {
               <th>Level</th>
               <th>Status</th>
               <th>Group</th>
-              <th>Sessions</th>
+              <th>Completed</th>
               <th>Students</th>
               <th>Updated</th>
               <th>Source URL</th>
@@ -163,6 +187,7 @@ const CoursesTab = ({ courses, groups }) => {
           <tbody>
             {sortedFilteredCourses.map((course) => {
               const group = course.groupId ? groups.find((g) => g.id === course.groupId) : null;
+              const sessionStats = courseSessionsMap[course.id] || { total: 0, completed: 0 };
 
               return (
                 <tr
@@ -171,7 +196,7 @@ const CoursesTab = ({ courses, groups }) => {
                   className="clickable-row"
                 >
                   <td className="truncate">{course.name}</td>
-                  <td>{course.level || 'N/A'}</td>
+                  <td className="level-column">{course.level || 'N/A'}</td>
                   <td className={`status-${course.status?.toLowerCase() || 'unknown'}`}>
                     {course.status || 'N/A'}
                   </td>
@@ -185,7 +210,10 @@ const CoursesTab = ({ courses, groups }) => {
                       </span>
                     ) : 'None'}
                   </td>
-                  <td>{course.sessionIds?.length || 0}</td>
+                  <td className="completion-column">
+                    {sessionStats.completed}/{sessionStats.total}
+                  </td>
+
                   <td>{course.studentIds?.length || 0}</td>
                   <td>{course.lastUpdated || 'N/A'}</td>
                   <td className="truncate">
