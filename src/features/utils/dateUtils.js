@@ -79,6 +79,12 @@ export const formatTime = (value) => {
     return `${hours}:00`;
   }
 
+  // NEW: Handle time with decimal point format (e.g., "22.30")
+  if (typeof value === 'string' && /^\d{1,2}\.\d{2}$/.test(value.trim())) {
+    const [hours, minutes] = value.trim().split('.');
+    return `${hours.padStart(2, '0')}:${minutes}`;
+  }
+
   // If it's already a string in HH:MM format
   if (typeof value === 'string' && value.includes(':')) {
     return value;
