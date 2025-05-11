@@ -151,7 +151,6 @@ const CoursesTab = ({ courses, groups }) => {
               <th>Group</th>
               <th>Sessions</th>
               <th>Students</th>
-              <th>Created</th>
               <th>Updated</th>
               <th>Source URL</th>
             </tr>
@@ -183,8 +182,7 @@ const CoursesTab = ({ courses, groups }) => {
                   </td>
                   <td>{course.sessionIds?.length || 0}</td>
                   <td>{course.studentIds?.length || 0}</td>
-                  <td>{course.createdAt || 'N/A'}</td>
-                  <td>{course.updatedAt || 'N/A'}</td>
+                  <td>{course.lastUpdated || 'N/A'}</td>
                   <td className="truncate">
                     {course.sourceUrl ? (
                       <a
