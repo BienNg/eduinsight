@@ -1,5 +1,6 @@
 // src/features/courses/components/CourseDetailPanel.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBook,
@@ -13,7 +14,8 @@ import {
   faEllipsisV,
   faTrash,
   faLink,
-  faSync // Add sync icon import
+  faSync,
+  faExternalLinkAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { handleDeleteCourse } from '../../utils/courseDeletionUtils';
 import { calculateTotalHours } from '../../utils/timeUtils';
@@ -27,6 +29,7 @@ import { toast } from 'sonner'; // Assuming you're using sonner for toast notifi
 import '../../styles/CourseDetailPanel.css';
 
 const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, group }) => {
+  const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
   const [error, setError] = useState(null);
@@ -37,6 +40,16 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
   const currentCourseId = useRef(course?.id);
   // Track active toast ID
   const toastId = useRef(null);
+
+  const handleOpenCourseDetail = (e) => {
+    e.stopPropagation();
+    if (course && course.id) {
+      // Navigate to the course detail page with the group name in state if available
+      navigate(`/courses/${course.id}`, {
+        state: { groupName: group?.name }
+      });
+    }
+  };
 
   // Cleanup toast when component unmounts or course changes
   useEffect(() => {
@@ -318,6 +331,13 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
             <span className="course-detail-panel-deleting">Löschen...</span>
           ) : (
             <>
+              <button
+                className="course-detail-panel-detail-button"
+                onClick={handleOpenCourseDetail}
+                title="Kursdetails anzeigen"
+              >
+                <FontAwesomeIcon icon={faExternalLinkAlt} />
+              </button>
               {/* Sync button - only show if course has sourceUrl */}
               {course && course.sourceUrl && (
                 <button
