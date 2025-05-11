@@ -1,3 +1,4 @@
+// Modified StudentDetail.jsx with Anwesenheit and Kurse tabs removed
 import React, { useState, useEffect } from 'react';
 import {
   getRecordById,
@@ -6,23 +7,13 @@ import {
   createRecord
 } from '../firebase/database';
 import './StudentDetail.css';
-import '../common/Tabs.css'; // Import the tab styles
-import TabComponent from '../common/TabComponent'; // Import TabComponent
+import '../common/Tabs.css';
 import { mergeStudents } from '../firebase/database';
 import ConfirmationModal from '../common/ConfirmationModal';
-import ReassignModal from '../common/ReassignModal';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faExchangeAlt } from '@fortawesome/free-solid-svg-icons';
 import DetailLayout from '../common/DetailLayout';
-import StatBox from '../common/StatBox';
-import InfoGrid from '../common/InfoGrid';
-import EntityDetailContent from '../common/EntityDetailContent';
-import './StudentDetail.css';
 import StatsGrid from '../common/components/StatsGrid';
-import { faUser, faInfoCircle, faCheckCircle, faBookOpen, faCalendarAlt, faStickyNote, faCheckSquare, faTimesCircle, faMedkit, faLaptopCode } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faCheckCircle, faBookOpen, faCalendarAlt, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import styles from '../../../src/features/styles/modules/StatsGrid.module.css';
-
-
 
 const StudentDetail = ({ student, onClose }) => {
   const [sessions, setSessions] = useState([]);
@@ -36,134 +27,11 @@ const StudentDetail = ({ student, onClose }) => {
   const [isMerging, setIsMerging] = useState(false);
   const [mergeError, setMergeError] = useState(null);
 
-  // State for reassignment
-  const [showReassignModal, setShowReassignModal] = useState(false);
-  const [currentCourseForReassign, setCurrentCourseForReassign] = useState(null);
-  const [reassignSearchQuery, setReassignSearchQuery] = useState('');
-  const [filteredReassignStudents, setFilteredReassignStudents] = useState([]);
-
-  // Define tabs configuration
+  // Define tabs configuration - REMOVED Anwesenheit and Kurse tabs
   const tabs = [
     { id: 'overview', label: 'Übersicht' },
-    { id: 'attendance', label: 'Anwesenheit' },
-    { id: 'courses', label: 'Kurse' },
     { id: 'relations', label: 'Relations' }
   ];
-
-  const handleOpenReassignModal = (course) => {
-    setCurrentCourseForReassign(course);
-    setReassignSearchQuery('');
-    // Filter out the current student from the list
-    const otherStudents = allStudents.filter(s => s.id !== student.id);
-    setFilteredReassignStudents(otherStudents);
-    setShowReassignModal(true);
-  };
-
-  const handleReassignSearch = (query) => {
-    setReassignSearchQuery(query);
-    const otherStudents = allStudents.filter(s => s.id !== student.id);
-
-    if (!query.trim()) {
-      setFilteredReassignStudents(otherStudents);
-    } else {
-      const filtered = otherStudents.filter(s =>
-        s.name && s.name.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredReassignStudents(filtered);
-    }
-  };
-
-  const handleReassignStudent = async (targetStudentId) => {
-    if (!currentCourseForReassign || !targetStudentId) return;
-
-    try {
-      // Get current course ID
-      const courseId = currentCourseForReassign.id;
-
-      // Get the target student
-      const targetStudent = await getRecordById('students', targetStudentId);
-      if (!targetStudent) {
-        throw new Error(`Target student with ID ${targetStudentId} not found`);
-      }
-
-      // Update target student's courseIds
-      const targetCourseIds = targetStudent.courseIds || [];
-      if (!targetCourseIds.includes(courseId)) {
-        const updatedTargetCourseIds = [...targetCourseIds, courseId];
-        await updateRecord('students', targetStudentId, { courseIds: updatedTargetCourseIds });
-      }
-
-      // Update current student's courseIds
-      const currentCourseIds = student.courseIds || [];
-      const updatedCurrentCourseIds = currentCourseIds.filter(id => id !== courseId);
-      await updateRecord('students', student.id, { courseIds: updatedCurrentCourseIds });
-
-      // Update the course's studentIds
-      const course = await getRecordById('courses', courseId);
-      if (course) {
-        const courseStudentIds = course.studentIds || [];
-        // Remove current student and add target student
-        const updatedStudentIds = courseStudentIds
-          .filter(id => id !== student.id)
-          .concat(targetStudentId);
-
-        // Make sure we don't have duplicates
-        const uniqueStudentIds = [...new Set(updatedStudentIds)];
-        await updateRecord('courses', courseId, { studentIds: uniqueStudentIds });
-      }
-
-      // Close the modal
-      setShowReassignModal(false);
-
-      // Refresh data
-      fetchStudentData();
-
-    } catch (error) {
-      console.error("Error reassigning course:", error);
-      alert(`Error reassigning course: ${error.message}`);
-    }
-  };
-
-  const handleCreateNewStudent = async (name) => {
-    if (!name.trim() || !currentCourseForReassign) return;
-
-    try {
-      // Create new student
-      const newStudent = await createRecord('students', {
-        name: name.trim(),
-        courseIds: [currentCourseForReassign.id],
-        createdAt: new Date().toISOString()
-      });
-
-      // Update current student's courseIds
-      const currentCourseIds = student.courseIds || [];
-      const updatedCurrentCourseIds = currentCourseIds.filter(id => id !== currentCourseForReassign.id);
-      await updateRecord('students', student.id, { courseIds: updatedCurrentCourseIds });
-
-      // Update the course's studentIds
-      const courseId = currentCourseForReassign.id;
-      const course = await getRecordById('courses', courseId);
-      if (course) {
-        const courseStudentIds = course.studentIds || [];
-        // Remove current student and add new student
-        const updatedStudentIds = courseStudentIds
-          .filter(id => id !== student.id)
-          .concat(newStudent.id);
-
-        await updateRecord('courses', courseId, { studentIds: updatedStudentIds });
-      }
-
-      // Close the modal
-      setShowReassignModal(false);
-
-      // Refresh data
-      fetchStudentData();
-
-    } catch (error) {
-      console.error("Error creating new student:", error);
-      alert(`Error creating new student: ${error.message}`);
-    }
-  };
 
   // Add the merge functionality
   const handleMergeStudents = async () => {
@@ -255,7 +123,6 @@ const StudentDetail = ({ student, onClose }) => {
   useEffect(() => {
     fetchStudentData();
   }, [student.id]);
-
 
   // Function to handle student selection in relations tab
   const handleStudentSelect = (selectedStudent) => {
@@ -349,67 +216,11 @@ const StudentDetail = ({ student, onClose }) => {
 
   const stats = calculateAttendanceStats();
 
-  // Map attendance status to readable format
-  const getAttendanceStatus = (status) => {
-    const statusMap = {
-      'present': 'Anwesend',
-      'absent': 'Abwesend',
-      'sick': 'Krank',
-      'technical_issues': 'Technische Probleme',
-      'unknown': 'Unbekannt'
-    };
-    return statusMap[status] || status;
-  };
-
-  // Calculate course-specific stats
-  const getCourseStats = () => {
-    const courseStats = {};
-
-    sessions.forEach(session => {
-      if (!session.courseId || !session.attendance || !session.attendance[student.id]) return;
-
-      if (!courseStats[session.courseId]) {
-        courseStats[session.courseId] = {
-          present: 0,
-          absent: 0,
-          sick: 0,
-          technical: 0,
-          unknown: 0,
-          total: 0
-        };
-      }
-
-      const stats = courseStats[session.courseId];
-      stats.total++;
-
-      const attendanceData = session.attendance[student.id];
-      const status = typeof attendanceData === 'object' ? attendanceData.status : attendanceData;
-
-      if (status === 'present') stats.present++;
-      else if (status === 'absent') stats.absent++;
-      else if (status === 'sick') stats.sick++;
-      else if (status === 'technical_issues') stats.technical++;
-      else stats.unknown++;
-    });
-
-    return courseStats;
-  };
-
   // Function to filter students based on search query
   const filteredStudents = allStudents.filter(s =>
     s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-
-  // Create info items for InfoGrid
-  const infoItems = [
-    { label: 'Name', value: safelyRenderValue(student.name) },
-    { label: 'Info', value: safelyRenderValue(student.info) },
-    { label: 'Anwesenheitsquote', value: `${stats.rate}%` },
-    { label: 'Anzahl Kurse', value: student.courses ? student.courses.length : 0 },
-    { label: 'Gesamte Lektionen', value: stats.total },
-    { label: 'Notizen', value: safelyRenderValue(student.notes) }
-  ];
   return (
     <DetailLayout
       title={safelyRenderValue(student.name)}
@@ -467,158 +278,6 @@ const StudentDetail = ({ student, onClose }) => {
                 />
               </div>
             </>
-          )}
-
-          {activeTab === 'attendance' && (
-            <EntityDetailContent
-              title="Anwesenheitsverlauf"
-              empty={sessions.length === 0}
-              emptyMessage="Keine Anwesenheitsdaten gefunden."
-            >
-              <table className="attendance-table">
-                <thead>
-                  <tr>
-                    <th>Datum</th>
-                    <th>Kurs</th>
-                    <th>Lektion</th>
-                    <th>Status</th>
-                    <th>Kommentar</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((session) => {
-                    // Get course name
-                    const course = courses.find(c => c.id === session.courseId);
-                    const courseName = course ? course.name : '-';
-
-                    // Get attendance data
-                    const attendanceData = session.attendance[student.id];
-                    const status = typeof attendanceData === 'object' ?
-                      attendanceData.status : attendanceData;
-                    const comment = typeof attendanceData === 'object' && attendanceData.comment ?
-                      attendanceData.comment : '';
-
-                    return (
-                      <tr key={session.id}>
-                        <td>{safelyRenderValue(session.date)}</td>
-                        <td>{courseName}</td>
-                        <td>{safelyRenderValue(session.title)}</td>
-                        <td className={`status-${status}`}>
-                          {getAttendanceStatus(status)}
-                        </td>
-                        <td>{comment}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </EntityDetailContent>
-          )}
-
-          {activeTab === 'courses' && (
-            <EntityDetailContent
-              title="Kursbeteiligung"
-              empty={!courses.filter(course => student.courseIds && student.courseIds.includes(course.id)).length}
-              emptyMessage="Keine Kurse gefunden."
-            >
-              <>
-                {courses
-                  .filter(course => student.courseIds && student.courseIds.includes(course.id))
-                  .map(course => {
-                    // Get course-specific attendance statistics
-                    const courseStats = getCourseStats()[course.id] || {
-                      total: 0, present: 0, absent: 0, sick: 0, technical: 0
-                    };
-
-                    const attendanceRate = courseStats.total > 0
-                      ? Math.round((courseStats.present / courseStats.total) * 100)
-                      : 0;
-
-                    return (
-                      <div key={course.id} className="course-card">
-                        <div className="course-header">
-                          <h4>{course.name}</h4>
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <button
-                              className="btn-icon"
-                              onClick={() => handleOpenReassignModal(course)}
-                              title="Reassign student to another course"
-                              style={{
-                                backgroundColor: 'transparent',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '32px',
-                                height: '32px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginLeft: '10px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <FontAwesomeIcon
-                                icon={faExchangeAlt}
-                                style={{
-                                  color: 'white',
-                                  fontSize: '16px',
-                                }}
-                              />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="course-stats">
-                          <div className="course-stat">
-                            <span className="label">Anwesenheitsquote:</span>
-                            <span className="value">{attendanceRate}%</span>
-                          </div>
-                          <div className="course-stat">
-                            <span className="label">Lektionen:</span>
-                            <span className="value">{courseStats.total}</span>
-                          </div>
-                          <div className="course-stat">
-                            <span className="label">Abwesend:</span>
-                            <span className="value">
-                              {courseStats.absent + courseStats.sick + courseStats.technical}
-                            </span>
-                          </div>
-                          <div className="course-stat">
-                            <span className="label">Zeitraum:</span>
-                            <span className="value">
-                              {course.startDate} - {course.endDate || 'heute'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="attendance-breakdown">
-                          <div className="progress-bar">
-                            <div
-                              className="progress-segment present"
-                              style={{ width: `${(courseStats.present / courseStats.total) * 100}%` }}
-                              title={`Anwesend: ${courseStats.present}`}
-                            ></div>
-                            <div
-                              className="progress-segment absent"
-                              style={{ width: `${(courseStats.absent / courseStats.total) * 100}%` }}
-                              title={`Abwesend: ${courseStats.absent}`}
-                            ></div>
-                            <div
-                              className="progress-segment sick"
-                              style={{ width: `${(courseStats.sick / courseStats.total) * 100}%` }}
-                              title={`Krank: ${courseStats.sick}`}
-                            ></div>
-                            <div
-                              className="progress-segment technical"
-                              style={{ width: `${(courseStats.technical / courseStats.total) * 100}%` }}
-                              title={`Technische Probleme: ${courseStats.technical}`}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </>
-            </EntityDetailContent>
           )}
 
           {activeTab === 'relations' && (
@@ -751,17 +410,6 @@ const StudentDetail = ({ student, onClose }) => {
       )}
 
       {/* Modals stay at the bottom of the DetailLayout */}
-      <ReassignModal
-        isOpen={showReassignModal}
-        onClose={() => setShowReassignModal(false)}
-        course={currentCourseForReassign}
-        students={filteredReassignStudents}
-        searchQuery={reassignSearchQuery}
-        onSearchChange={handleReassignSearch}
-        onReassign={handleReassignStudent}
-        onCreateNew={handleCreateNewStudent}
-        safelyRenderValue={safelyRenderValue}
-      />
       <ConfirmationModal
         isOpen={showMergeConfirmation}
         title="Confirm Student Merge"
