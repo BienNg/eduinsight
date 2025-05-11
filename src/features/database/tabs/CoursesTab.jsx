@@ -1,9 +1,11 @@
 // src/features/database/tabs/CoursesTab.jsx
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import CoursesFilters from '../components/CoursesFilters';
 import '../../styles/Filters.css';
 
 const CoursesTab = ({ courses, groups }) => {
+  const navigate = useNavigate(); // Initialize useNavigate
   const [filters, setFilters] = useState({
     level: null,
     status: null,
@@ -12,6 +14,11 @@ const CoursesTab = ({ courses, groups }) => {
     hasStudents: null
   });
   const [filterLogic, setFilterLogic] = useState('AND');
+
+  // Handle click on course row
+  const handleCourseClick = (courseId) => {
+    navigate(`/courses/${courseId}`);
+  };
 
   const availableLevels = useMemo(() => {
     const levelsSet = new Set();
@@ -128,7 +135,11 @@ const CoursesTab = ({ courses, groups }) => {
               const group = course.groupId ? groups.find((g) => g.id === course.groupId) : null;
 
               return (
-                <tr key={course.id}>
+                <tr 
+                  key={course.id} 
+                  onClick={() => handleCourseClick(course.id)}
+                  className="clickable-row" // Add this class for styling
+                >
                   <td className="truncate">{course.name}</td>
                   <td>{course.level || 'N/A'}</td>
                   <td className={`status-${course.status?.toLowerCase() || 'unknown'}`}>
