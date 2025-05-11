@@ -577,8 +577,10 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                                                 {calculateSessionAttendance(session)}
                                             </td>
                                             <td>
-                                                {session.status === 'ongoing' && (
-                                                    <span className="status-badge ongoing">Ongoing</span>
+                                                {session.status && (
+                                                    <span className={`status-badge ${session.status}`}>
+                                                        {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                                                    </span>
                                                 )}
                                             </td>
                                             <td>
