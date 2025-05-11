@@ -4,10 +4,12 @@ import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '
 import { handleDeleteCourse } from '../utils/courseDeletionUtils';
 import SessionDetailModal from '../sessions/SessionDetailModal';
 import StudentDetailModal from '../students/StudentDetailModal';
+import SortableTable from '../common/components/SortableTable'; // Add this import
 
 // CSS Imports
 import '../styles/CourseDetail.css';
 import '../styles/Content.css';
+import styles from '../styles/modules/Table.module.css'; // Add this import
 
 // Library Imports
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -28,7 +30,6 @@ const CourseDetail = ({ onClose }) => {
     const [error, setError] = useState(null);
     const [selectedSession, setSelectedSession] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
-    const [sortConfig, setSortConfig] = useState({ key: 'sessionOrder', direction: 'ascending' });
     const [showOptions, setShowOptions] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
@@ -54,93 +55,15 @@ const CourseDetail = ({ onClose }) => {
         handleClose();
     };
 
-    // Add this function to handle column header clicks
-    const requestSort = (key) => {
-        if (sortConfig.key === key) {
-            if (sortConfig.direction === 'ascending') {
-                // Second click: change to descending
-                setSortConfig({ key, direction: 'descending' });
-            } else {
-                // Third click: reset to default (sessionOrder ascending)
-                setSortConfig({ key: 'sessionOrder', direction: 'ascending' });
-            }
-        } else {
-            // First click on a new column: set to ascending
-            setSortConfig({ key, direction: 'ascending' });
-        }
-    };
+    // Helper function to parse German date format (DD.MM.YYYY)
+    const parseGermanDate = (dateStr) => {
+        if (!dateStr) return null;
 
-    // Add this function to get sorted sessions
-    const getSortedSessions = () => {
-        const sortableItems = [...sessions];
-        if (sortConfig.key) {
-            sortableItems.sort((a, b) => {
-                // Handle attendance separately
-                if (sortConfig.key === 'attendance') {
-                    const attendanceA = calculateSessionAttendance(a);
-                    const attendanceB = calculateSessionAttendance(b);
-                    const [presentA, totalA] = attendanceA.split('/').map(Number);
-                    const [presentB, totalB] = attendanceB.split('/').map(Number);
+        const parts = dateStr.split('.');
+        if (parts.length !== 3) return null;
 
-                    // Calculate percentage
-                    const percentA = totalA === 0 ? 0 : (presentA / totalA) * 100;
-                    const percentB = totalB === 0 ? 0 : (presentB / totalB) * 100;
-
-                    return sortConfig.direction === 'ascending'
-                        ? percentA - percentB
-                        : percentB - percentA;
-                }
-
-                // Handle date separately
-                if (sortConfig.key === 'date') {
-                    const dateA = parseGermanDate(a.date) || new Date(0);
-                    const dateB = parseGermanDate(b.date) || new Date(0);
-                    return sortConfig.direction === 'ascending'
-                        ? dateA - dateB
-                        : dateB - dateA;
-                }
-
-                // Handle time separately
-                if (sortConfig.key === 'time') {
-                    const timeA = a.startTime || '';
-                    const timeB = b.startTime || '';
-                    return sortConfig.direction === 'ascending'
-                        ? timeA.localeCompare(timeB)
-                        : timeB.localeCompare(timeA);
-                }
-
-                // Handle teacher separately
-                if (sortConfig.key === 'teacher') {
-                    const teacherIdA = a.teacherId || '';
-                    const teacherIdB = b.teacherId || '';
-                    return sortConfig.direction === 'ascending'
-                        ? teacherIdA.localeCompare(teacherIdB)
-                        : teacherIdB.localeCompare(teacherIdA);
-                }
-                if (sortConfig.key === 'sessionOrder') {
-                    const orderA = a.sessionOrder || 0;
-                    const orderB = b.sessionOrder || 0;
-                    return sortConfig.direction === 'ascending'
-                        ? orderA - orderB
-                        : orderB - orderA;
-                }
-
-                // Default case - compare by value
-                const valueA = a[sortConfig.key] || '';
-                const valueB = b[sortConfig.key] || '';
-
-                if (typeof valueA === 'string' && typeof valueB === 'string') {
-                    return sortConfig.direction === 'ascending'
-                        ? valueA.localeCompare(valueB)
-                        : valueB.localeCompare(valueA);
-                }
-
-                return sortConfig.direction === 'ascending'
-                    ? (valueA > valueB ? 1 : -1)
-                    : (valueB > valueA ? 1 : -1);
-            });
-        }
-        return sortableItems;
+        // Note: JS months are 0-indexed
+        return new Date(parts[2], parts[1] - 1, parts[0]);
     };
 
     useEffect(() => {
@@ -183,7 +106,7 @@ const CourseDetail = ({ onClose }) => {
                 );
                 const sessionData = await Promise.all(sessionPromises);
 
-                // Sort sessions by date
+                // Sort sessions by sessionOrder by default
                 const sortedSessions = sessionData
                     .filter(s => s !== null)
                     .sort((a, b) => {
@@ -218,18 +141,6 @@ const CourseDetail = ({ onClose }) => {
         }
     }, [id]);
 
-
-    // Helper function to parse German date format (DD.MM.YYYY)
-    const parseGermanDate = (dateStr) => {
-        if (!dateStr) return null;
-
-        const parts = dateStr.split('.');
-        if (parts.length !== 3) return null;
-
-        // Note: JS months are 0-indexed
-        return new Date(parts[2], parts[1] - 1, parts[0]);
-    };
-
     const openSessionDetail = (session) => {
         setSelectedSession(session);
     };
@@ -238,7 +149,6 @@ const CourseDetail = ({ onClose }) => {
         setSelectedSession(null);
     };
 
-    // Add new functions to handle student details
     const openStudentDetail = (student) => {
         setSelectedStudent(student);
     };
@@ -247,7 +157,7 @@ const CourseDetail = ({ onClose }) => {
         setSelectedStudent(null);
     };
 
-    // Calculate attendance for a student across all sessions - now returns absences/total format
+    // Calculate attendance for a student across all sessions - returns absences/total format
     const calculateStudentAttendance = (studentId) => {
         if (!sessions || sessions.length === 0) return "0/0";
 
@@ -340,6 +250,89 @@ const CourseDetail = ({ onClose }) => {
         // Last resort for any other type
         return String(value);
     };
+
+    // Define student table columns
+    const studentColumns = [
+        { key: 'name', label: 'Name', sortable: true },
+        { 
+            key: 'attendance', 
+            label: 'Absence', 
+            sortable: true,
+            render: (student) => calculateStudentAttendance(student.id)
+        },
+        { key: 'info', label: 'Info', sortable: true },
+        { key: 'notes', label: 'Notes', sortable: true }
+    ];
+
+    // Define session table columns
+    const sessionColumns = [
+        { key: 'title', label: 'Title', sortable: true },
+        { 
+            key: 'date', 
+            label: 'Date', 
+            sortable: true,
+            render: (session) => safelyRenderValue(session.date)
+        },
+        { 
+            key: 'teacherId', 
+            label: 'Teacher', 
+            sortable: true,
+            render: (session) => {
+                return session.teacherId
+                    ? (
+                        teachers.length > 0
+                            ? (
+                                teachers.find(t => String(t.id) === String(session.teacherId))?.name
+                                || 'Different Teacher'
+                            )
+                            : 'Different Teacher'
+                    )
+                    : '-';
+            }
+        },
+        { 
+            key: 'time', 
+            label: 'Time', 
+            sortable: true,
+            render: (session) => `${safelyRenderValue(session.startTime)} - ${safelyRenderValue(session.endTime)}`
+        },
+        { 
+            key: 'attendance', 
+            label: 'Attendance', 
+            sortable: true,
+            render: (session) => calculateSessionAttendance(session)
+        },
+        { 
+            key: 'status', 
+            label: 'Status', 
+            sortable: true,
+            render: (session) => session.status && (
+                <span className={`${styles.statusBadge} ${styles[`status${session.status.charAt(0).toUpperCase() + session.status.slice(1)}`]}`}>
+                    {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                </span>
+            )
+        }
+    ];
+
+    // Student actions
+    const renderStudentActions = (student) => (
+        <button 
+            className={styles.detailsButton}
+            onClick={() => openStudentDetail(student)}
+        >
+            Details
+        </button>
+    );
+
+    // Session actions
+    const renderSessionActions = (session) => (
+        <button 
+            className={styles.detailsButton}
+            onClick={() => openSessionDetail(session)}
+        >
+            Details
+        </button>
+    );
 
     if (loading) return <div className="loading">Loading course details...</div>;
     if (error) return <div className="error">{error}</div>;
@@ -453,128 +446,26 @@ const CourseDetail = ({ onClose }) => {
                         </div>
                     </section>
 
-                    {/* Students Section */}
+                    {/* Students Section - Using SortableTable */}
                     <section className="course-section students-section">
                         <h3 className="section-title">Students ({students.length})</h3>
-                        <div className="table-container">
-                            <table className="students-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Absence</th>
-                                        <th>Info</th>
-                                        <th>Notes</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {students.map((student) => (
-                                        <tr key={student.id}>
-                                            <td>{student.name}</td>
-                                            <td>
-                                                {calculateStudentAttendance(student.id)}
-                                            </td>
-                                            <td>{student.info || '-'}</td>
-                                            <td>{student.notes || '-'}</td>
-                                            <td>
-                                                <button
-                                                    className="btn-details"
-                                                    onClick={() => openStudentDetail(student)}
-                                                >
-                                                    Details
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <SortableTable
+                            columns={studentColumns}
+                            data={students}
+                            defaultSortColumn="name"
+                            actions={renderStudentActions}
+                        />
                     </section>
 
-                    {/* Sessions Section */}
+                    {/* Sessions Section - Using SortableTable */}
                     <section className="course-section sessions-section">
                         <h3 className="section-title">Sessions ({sessions.length})</h3>
-                        <div className="table-container">
-                            <table className="sessions-table">
-                                <thead>
-                                    <tr>
-                                        <th
-                                            onClick={() => requestSort('sessionOrder')}
-                                            className={sortConfig.key === 'title' ? `sorted-${sortConfig.direction}` : ''}
-                                        >
-                                            Title {sortConfig.key === 'sessionOrder' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('date')}
-                                            className={sortConfig.key === 'date' ? `sorted-${sortConfig.direction}` : ''}
-                                        >
-                                            Date {sortConfig.key === 'date' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('teacher')}
-                                            className={sortConfig.key === 'teacher' ? `sorted-${sortConfig.direction}` : ''}
-                                        >
-                                            Teacher {sortConfig.key === 'teacher' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('time')}
-                                            className={sortConfig.key === 'time' ? `sorted-${sortConfig.direction}` : ''}
-                                        >
-                                            Time {sortConfig.key === 'time' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                        </th>
-                                        <th
-                                            onClick={() => requestSort('attendance')}
-                                            className={sortConfig.key === 'attendance' ? `sorted-${sortConfig.direction}` : ''}
-                                        >
-                                            Attendance {sortConfig.key === 'attendance' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
-                                        </th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {getSortedSessions().map((session) => (
-                                        <tr key={session.id}>
-                                            <td>{safelyRenderValue(session.title)}</td>
-                                            <td>{safelyRenderValue(session.date)}</td>
-                                            <td>
-                                                {session.teacherId
-                                                    ? (
-                                                        teachers.length > 0
-                                                            ? (
-                                                                teachers.find(t => String(t.id) === String(session.teacherId))?.name
-                                                                || 'Different Teacher'
-                                                            )
-                                                            : 'Different Teacher'
-                                                    )
-                                                    : '-'}
-                                            </td>
-                                            <td>
-                                                {safelyRenderValue(session.startTime)} - {safelyRenderValue(session.endTime)}
-                                            </td>
-                                            <td>
-                                                {calculateSessionAttendance(session)}
-                                            </td>
-                                            <td>
-                                                {session.status && (
-                                                    <span className={`status-badge ${session.status}`}>
-                                                        {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                <button
-                                                    className="btn-details"
-                                                    onClick={() => openSessionDetail(session)}
-                                                >
-                                                    Details
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <SortableTable
+                            columns={sessionColumns}
+                            data={sessions}
+                            defaultSortColumn="sessionOrder"
+                            actions={renderSessionActions}
+                        />
                     </section>
                 </div>
 
