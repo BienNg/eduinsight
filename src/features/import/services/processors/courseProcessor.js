@@ -41,6 +41,8 @@ const updateExistingCourseWithNewSessions = async (
   headerRowIndex,
   options
 ) => {
+  const formattedDateTime = getFormattedDateTime();
+
   if (options?.metadata?.sourceUrl) {
     const googleSheetsUrl = options.metadata.sourceUrl;
 
@@ -262,8 +264,6 @@ const updateExistingCourseWithNewSessions = async (
       `The latest session recorded is on ${existingCourse.latestSessionDate || 'unknown date'}.`
     );
   }
-  const formattedDateTime = getFormattedDateTime();
-
 
   // Update the course's lastUpdated timestamp
   await updateRecord('courses', existingCourse.id, {
