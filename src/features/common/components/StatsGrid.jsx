@@ -25,7 +25,11 @@ const StatsGrid = ({ stats, columns = 5 }) => {
               className={colorClasses[stat.color] || colorClasses.blue} 
             />
           )}
-          <div className={styles.statValue}>{stat.value}</div>
+          {stat.renderValue ? (
+            stat.renderValue()
+          ) : (
+            <div className={styles.statValue}>{stat.value}</div>
+          )}
           <div className={styles.statLabel}>{stat.label}</div>
         </div>
       ))}

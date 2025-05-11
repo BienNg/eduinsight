@@ -6,6 +6,8 @@ import SessionDetailModal from '../sessions/SessionDetailModal';
 import StudentDetailModal from '../students/StudentDetailModal';
 import SortableTable from '../common/components/SortableTable'; // Add this import
 import StatsGrid from '../common/components/StatsGrid';
+import TeacherBadge from '../common/TeacherBadge';
+
 import {
     faUsers,
     faCalendarDay,
@@ -421,7 +423,17 @@ const CourseDetail = ({ onClose }) => {
                                 },
                                 {
                                     icon: faChalkboardTeacher,
-                                    value: teachers.length > 0 ? teachers.length : '-',
+                                    renderValue: () => (
+                                        <div className="stat-teacher-badges">
+                                            {teachers.length > 0 ? (
+                                                teachers.map((teacher) => (
+                                                    <TeacherBadge key={teacher.id} teacher={teacher} />
+                                                ))
+                                            ) : (
+                                                <span className="no-teachers">No teachers</span>
+                                            )}
+                                        </div>
+                                    ),
                                     label: `Teacher${teachers.length !== 1 ? 's' : ''}`,
                                     color: 'purple'
                                 },
