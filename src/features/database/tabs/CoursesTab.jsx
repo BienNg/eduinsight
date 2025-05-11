@@ -21,6 +21,20 @@ const CoursesTab = ({ courses, groups }) => {
     navigate(`/courses/${courseId}`);
   };
 
+  const availableStatuses = useMemo(() => {
+    const statusesSet = new Set();
+
+    courses.forEach((course) => {
+      // Only add non-empty statuses
+      if (course.status) {
+        statusesSet.add(course.status);
+      }
+    });
+
+    // Convert Set to Array and sort alphabetically
+    return [...statusesSet].sort();
+  }, [courses]);
+
   const availableLevels = useMemo(() => {
     const levelsSet = new Set();
 
@@ -43,8 +57,8 @@ const CoursesTab = ({ courses, groups }) => {
   };
 
   const filteredCourses = useMemo(() => {
-    if (!filters.level && !filters.status && !filters.groupId && !filters.hasSessions && 
-        !filters.hasStudents && !filters.hassourceUrl) {
+    if (!filters.level && !filters.status && !filters.groupId && !filters.hasSessions &&
+      !filters.hasStudents && !filters.hassourceUrl) {
       return courses;
     }
 
@@ -92,7 +106,7 @@ const CoursesTab = ({ courses, groups }) => {
         const hasStudents = course.studentIds && course.studentIds.length > 0;
         studentsMatch = (filters.hasStudents === 'yes') ? hasStudents : !hasStudents;
       }
-      
+
       // sourceUrl match logic
       let sourceUrlMatch = true;
       if (filters.hassourceUrl) {
@@ -101,11 +115,11 @@ const CoursesTab = ({ courses, groups }) => {
       }
 
       if (filterLogic === 'AND') {
-        return levelMatch && statusMatch && groupMatch && sessionsMatch && 
-               studentsMatch && sourceUrlMatch;
+        return levelMatch && statusMatch && groupMatch && sessionsMatch &&
+          studentsMatch && sourceUrlMatch;
       } else {
-        return levelMatch || statusMatch || groupMatch || sessionsMatch || 
-               studentsMatch || sourceUrlMatch;
+        return levelMatch || statusMatch || groupMatch || sessionsMatch ||
+          studentsMatch || sourceUrlMatch;
       }
     });
   }, [courses, filters, filterLogic]);
@@ -124,6 +138,7 @@ const CoursesTab = ({ courses, groups }) => {
         filterLogic={filterLogic}
         onFilterLogicChange={setFilterLogic}
         availableLevels={availableLevels}
+        availableStatuses={availableStatuses}
       />
 
       <div className="courses-list-container">
@@ -146,8 +161,8 @@ const CoursesTab = ({ courses, groups }) => {
               const group = course.groupId ? groups.find((g) => g.id === course.groupId) : null;
 
               return (
-                <tr 
-                  key={course.id} 
+                <tr
+                  key={course.id}
                   onClick={() => handleCourseClick(course.id)}
                   className="clickable-row"
                 >
@@ -172,9 +187,9 @@ const CoursesTab = ({ courses, groups }) => {
                   <td>{course.updatedAt || 'N/A'}</td>
                   <td className="truncate">
                     {course.sourceUrl ? (
-                      <a 
-                        href={course.sourceUrl} 
-                        target="_blank" 
+                      <a
+                        href={course.sourceUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                       >

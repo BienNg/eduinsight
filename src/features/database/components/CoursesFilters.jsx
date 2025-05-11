@@ -7,7 +7,8 @@ const CoursesFilters = ({
     onFilterChange,
     filterLogic,
     onFilterLogicChange,
-    availableLevels
+    availableLevels,
+    availableStatuses
 }) => {
     return (
         <div className="courses-filters">
@@ -38,9 +39,12 @@ const CoursesFilters = ({
                             onChange={(e) => onFilterChange('status', e.target.value || null)}
                         >
                             <option value="">All Statuses</option>
-                            <option value="Active">Active</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Upcoming">Upcoming</option>
+                            <option value="empty">No Status</option>
+                            {availableStatuses.map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -86,7 +90,7 @@ const CoursesFilters = ({
                             <option value="no">No Students</option>
                         </select>
                     </div>
-                    
+
                     <div className="filter-item">
                         <label htmlFor="hassourceUrlFilter">Source URL:</label>
                         <select

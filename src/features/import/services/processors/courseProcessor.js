@@ -14,6 +14,25 @@ import { findColumnIndex } from '../helpers/columnFinder';
 import { excelDateToJSDate, formatDate, formatTime } from '../../../utils/dateUtils';
 import { createTeacherRecord, getOrCreateMonthRecord } from '../firebaseService';
 
+/**
+ * Format the current date and time in the specified format
+ * @returns {string} Formatted date/time string like "2025-05-20 (14:34)"
+ */
+const getFormattedDateTime = () => {
+  const now = new Date();
+
+  // Get year, month, day
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const day = String(now.getDate()).padStart(2, '0');
+
+  // Get hours and minutes
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+
+  // Create the formatted string
+  return `${year}-${month}-${day} (${hours}:${minutes})`;
+};
 
 const updateExistingCourseWithNewSessions = async (
   existingCourse,
@@ -30,7 +49,8 @@ const updateExistingCourseWithNewSessions = async (
       await updateRecord('courses', existingCourse.id, {
         sourceUrl: options.metadata.sourceUrl,
         sheetName: options.metadata.sheetName,
-        sheetIndex: options.metadata.sheetIndex || 0
+        sheetIndex: options.metadata.sheetIndex || 0,
+        lastUpdated: formattedDateTime // Add formatted date/time
       });
 
       // Update our local copy
@@ -38,7 +58,8 @@ const updateExistingCourseWithNewSessions = async (
         ...existingCourse,
         sourceUrl: options.metadata.sourceUrl,
         sheetName: options.metadata.sheetName,
-        sheetIndex: options.metadata.sheetIndex || 0
+        sheetIndex: options.metadata.sheetIndex || 0,
+        lastUpdated: formattedDateTime // Add formatted date/time
       };
 
       console.log(`Updated course ${existingCourse.name} with Google Sheets URL: ${googleSheetsUrl}`);
@@ -241,6 +262,13 @@ const updateExistingCourseWithNewSessions = async (
       `The latest session recorded is on ${existingCourse.latestSessionDate || 'unknown date'}.`
     );
   }
+  const formattedDateTime = getFormattedDateTime();
+
+
+  // Update the course's lastUpdated timestamp
+  await updateRecord('courses', existingCourse.id, {
+    lastUpdated: formattedDateTime
+  });
 
   // Create a success message with the updated session details
   const updateMessage = `Updated ${updatedSessions.length} sessions in course "${existingCourse.name}": ${updatedSessionTitles.join(', ')}`;
@@ -250,7 +278,8 @@ const updateExistingCourseWithNewSessions = async (
     updatedSessionsCount: updatedSessions.length,
     updatedSessionTitles: updatedSessionTitles,
     updateMessage,
-    monthIds: Array.from(monthIds)
+    monthIds: Array.from(monthIds),
+    lastUpdated: formattedDateTime
   };
 };
 
@@ -416,7 +445,8 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
     color: courseColor,
     sourceUrl: options?.metadata?.sourceUrl || '',
     sheetName: options?.metadata?.sheetName || '',
-    sheetIndex: options?.metadata?.sheetIndex || 0
+    sheetIndex: options?.metadata?.sheetIndex || 0,
+    lastUpdated: getFormattedDateTime() // Format: "2025-05-20 (14:34)"
   });
 
   // Update group with course ID
@@ -466,7 +496,8 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
       outliers: outliers,
       missingDays: missingDays
     },
-    monthIds: Array.from(monthIds)
+    monthIds: Array.from(monthIds),
+    lastUpdated: getFormattedDateTime() // Add formatted date/time
   });
 
   return {
