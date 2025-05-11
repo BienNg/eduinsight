@@ -11,56 +11,39 @@ export const processAttendanceData = (row, excelRow, students, currentSession) =
     const cellValue = row[columnIndex];
     const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
 
-    if (cellValue !== undefined && cellValue !== null || excelCell.fill) {
-      let attendanceValue = 'unknown';
-      let comment = '';
+    // Extract comment if any (from cell note or text value)
+    let comment = '';
+    if (excelCell.note) {
+      comment = excelCell.note.texts.map(t => t.text).join('');
+    } else if (typeof cellValue === 'string' && cellValue.trim() !== '') {
+      comment = cellValue;
+    }
 
-      // Try to get cell comment if any
-      if (excelCell.note) {
-        comment = excelCell.note.texts.map(t => t.text).join('');
-      } else if (typeof cellValue === 'string' && cellValue.trim() !== '') {
-        comment = cellValue;
+    // Determine attendance status ONLY from cell color
+    let attendanceValue = 'unknown';
+    if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
+      const color = excelCell.fill.fgColor.argb || '';
+
+      // Green -> present, Red/Pink -> absent
+      if (isGreenColor(color)) {
+        attendanceValue = 'present';
       }
-
-      // Color-based detection
-      if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
-        const color = excelCell.fill.fgColor.argb || '';
-
-        // Green -> present, Red/Pink -> absent
-        if (isGreenColor(color)) {
-          attendanceValue = 'present';
-        }
-        else if (isRedColor(color)) {
-          attendanceValue = 'absent';
-        }
+      else if (isRedColor(color)) {
+        attendanceValue = 'absent';
       }
+    }
 
-      // If we couldn't determine from color, try text values
-      if (attendanceValue === 'unknown' && cellValue) {
-        const cellText = cellValue.toString().toLowerCase();
-        if (cellText === 'true' || cellText === 'anwesend' || cellText === 'present') {
-          attendanceValue = 'present';
-        } else if (cellText === 'false' || cellText === 'abwesend' || cellText === 'absent') {
-          attendanceValue = 'absent';
-        } else if (cellText.includes('krank') || cellText.includes('sick')) {
-          attendanceValue = 'sick';
-        } else if (cellText.includes('kamera aus') || cellText.includes('mic aus')) {
-          attendanceValue = 'technical_issues';
-        }
-      }
+    // Record attendance if we determined a status OR if there's a comment
+    if (attendanceValue !== 'unknown' || comment) {
+      // Store both the color-determined status and the comment
+      currentSession.attendance[student.id] = {
+        status: attendanceValue, // Based only on color
+        comment: comment         // Preserve any comment regardless of status
+      };
 
-      // Non-empty cell means student has joined by this session date
-      if (attendanceValue !== 'unknown' || comment) {
-        // Record attendance with comment
-        currentSession.attendance[student.id] = {
-          status: attendanceValue,
-          comment: comment || ''
-        };
-
-        // Update student join date if this is the first record of them in this course
-        if (currentSession.date) {
-          updateStudentJoinDate(student.id, currentSession.courseId, currentSession.date);
-        }
+      // Update student join date if this is the first record of them in this course
+      if (currentSession.date) {
+        updateStudentJoinDate(student.id, currentSession.courseId, currentSession.date);
       }
     }
   }
