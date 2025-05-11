@@ -13,6 +13,8 @@ import {
 import { findColumnIndex } from '../helpers/columnFinder';
 import { excelDateToJSDate, formatDate, formatTime } from '../../../utils/dateUtils';
 import { createTeacherRecord, getOrCreateMonthRecord } from '../firebaseService';
+import { isGreenColor, isRedColor } from '../helpers/colorUtils';
+import { updateStudentJoinDate } from './attendanceProcessor';
 
 /**
  * Format the current date and time in the specified format
@@ -94,6 +96,8 @@ const updateExistingCourseWithNewSessions = async (
 
   // Process header row to find column indices
   const headerRow = jsonData[headerRowIndex];
+  const students = await extractStudentData(headerRow, existingCourse.id, existingCourse.groupId);
+
   const columnIndices = {
     folien: findColumnIndex(headerRow, ["Folien", "Canva"]),
     date: findColumnIndex(headerRow, ["Unterrichtstag", "Datum", "Tag", "Date", "Day"]),
@@ -230,13 +234,9 @@ const updateExistingCourseWithNewSessions = async (
               // Track this month ID for course updates
               monthIds.add(monthRecord.id);
             }
-
-            // If session had a previous month, we should also decrement that month's count
-            // This would require additional code to manage the month records
           }
         }
 
-        // Rest of updates remain the same
         if (matchingExcelSession.startTime && matchingExcelSession.startTime !== existingSession.startTime) {
           updates.startTime = matchingExcelSession.startTime;
         }
@@ -244,10 +244,79 @@ const updateExistingCourseWithNewSessions = async (
         if (matchingExcelSession.endTime && matchingExcelSession.endTime !== existingSession.endTime) {
           updates.endTime = matchingExcelSession.endTime;
         }
+        if (matchingExcelSession.date) {
+          // Find the row in Excel file that corresponds to this session
+          let sessionRowIndex = -1;
+          for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (!row || row.length === 0) continue;
+
+            const folienTitle = row[columnIndices.folien];
+            if (folienTitle && folienTitle.toString().trim() === existingSession.title) {
+              sessionRowIndex = i;
+              break;
+            }
+          }
+
+          // If we found the row, process attendance
+          if (sessionRowIndex >= 0) {
+            const excelRow = excelWorksheet.getRow(sessionRowIndex + 1); // +1 because ExcelJS is 1-based
+            const row = jsonData[sessionRowIndex];
+
+            // Create new attendance object to overwrite existing data
+            const newAttendance = {};
+
+            // Process attendance for each student
+            for (const student of students) {
+              const columnIndex = student.columnIndex;
+              const cellValue = row[columnIndex];
+              const excelCell = excelRow.getCell(columnIndex + 1); // +1 because ExcelJS is 1-based
+
+              // Extract comment if any
+              let comment = '';
+              if (excelCell.note) {
+                comment = excelCell.note.texts.map(t => t.text).join('');
+              } else if (typeof cellValue === 'string' && cellValue.trim() !== '') {
+                comment = cellValue;
+              }
+
+              // Determine attendance status from cell color
+              let attendanceValue = 'unknown';
+              if (excelCell.fill && excelCell.fill.type === 'pattern' && excelCell.fill.fgColor) {
+                const color = excelCell.fill.fgColor.argb || '';
+
+                // Green -> present, Red/Pink -> absent
+                if (isGreenColor(color)) {
+                  attendanceValue = 'present';
+                }
+                else if (isRedColor(color)) {
+                  attendanceValue = 'absent';
+                }
+              }
+
+              // Record attendance if we determined a status OR if there's a comment
+              if (attendanceValue !== 'unknown' || comment) {
+                newAttendance[student.id] = {
+                  status: attendanceValue,
+                  comment: comment
+                };
+              }
+            }
+
+            // Update attendance in the database if there's any data
+            if (Object.keys(newAttendance).length > 0) {
+              updates.attendance = newAttendance;
+
+              // Update session join dates for students
+              for (const studentId in newAttendance) {
+                updateStudentJoinDate(studentId, existingCourse.id, matchingExcelSession.date);
+              }
+            }
+          }
+        }
 
         // Only update if we have actual changes
-        if (Object.keys(updates).length > 1) { // More than just status
-          // Update the session in the database
+        if (Object.keys(updates).length > 1) { 
           await updateRecord('sessions', existingSession.id, updates);
 
           updatedSessions.push({

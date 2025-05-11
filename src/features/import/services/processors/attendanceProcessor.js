@@ -176,7 +176,7 @@ export const processAttendanceData = (row, excelRow, students, currentSession) =
 
 
 // Helper function to update student join date
-const updateStudentJoinDate = async (studentId, courseId, sessionDate) => {
+export const updateStudentJoinDate = async (studentId, courseId, sessionDate) => {
   try {
     const studentSnapshot = await get(ref(database, `students/${studentId}`));
 
