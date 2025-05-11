@@ -1,51 +1,63 @@
-// src/components/common/DetailLayout.jsx
+// src/features/common/DetailLayout.jsx
 import React from 'react';
-import TabComponent from './TabComponent';
 import './DetailLayout.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
-const DetailLayout = ({ 
-  title, 
-  subtitle,
-  onClose, 
-  tabs, 
-  activeTab, 
-  setActiveTab, 
-  headerRight, 
+const DetailLayout = ({
+  title,
+  tabs,
+  activeTab,
+  setActiveTab,
+  onClose,
   children,
-  breadcrumbParent,
-  onBreadcrumbClick
+  showTabsInHeader = false // New prop with default value
 }) => {
   return (
-    <div className="detail-wrapper">
-      {breadcrumbParent && (
-        <div className="breadcrumb">
-          <span className="breadcrumb-link" onClick={onBreadcrumbClick || onClose}>
-            {breadcrumbParent}
-          </span>
-          <span className="breadcrumb-separator">›</span>
-          <span className="breadcrumb-current">{title}</span>
-        </div>
-      )}
-      
-      <div className="detail-header">
-        <div className="header-left">
-          <h2>{title}</h2>
-          {subtitle && <div className="detail-subtitle">{subtitle}</div>}
-        </div>
-        {headerRight}
-        <button className="back-button" onClick={onClose}>
-          <FontAwesomeIcon icon={faArrowLeft} /> Back
-        </button>
-      </div>
+    <div className="student-detail-container">
+      <div className="student-detail-view">
+        <div className="detail-header">
+          <div className="header-content">
+            <h2>{title}</h2>
 
-      <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
-        {/* Tab content will be rendered here */}
-      </TabComponent>
 
-      <div className="detail-content">
-        {children}
+            {/* Conditionally render tabs in header if showTabsInHeader is true */}
+            {showTabsInHeader && tabs && tabs.length > 0 && (
+              <div className="header-tabs">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    className={activeTab === tab.id ? 'active' : ''}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button className="close-button" onClick={onClose}>
+              ←
+            </button>
+
+          </div>
+        </div>
+
+        {/* Only render tabs section if not showing in header */}
+        {!showTabsInHeader && tabs && tabs.length > 0 && (
+          <div className="detail-tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={activeTab === tab.id ? 'active' : ''}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="detail-content">
+          {children}
+        </div>
       </div>
     </div>
   );

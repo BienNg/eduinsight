@@ -10,7 +10,6 @@ const StudentOverview = ({ student, sessions }) => {
 
   return (
     <div className="session-info-section">
-      <h3>Schülerinformation</h3>
       <StatsGrid
         stats={[
           {

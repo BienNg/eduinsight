@@ -90,6 +90,7 @@ const StudentDetail = ({ student, onClose }) => {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       onClose={onClose}
+      showTabsInHeader={true} // Add this new prop to indicate tabs should be in header
     >
       {loading ? (
         <div className="loading-indicator">Daten werden geladen...</div>
