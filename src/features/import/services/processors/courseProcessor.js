@@ -277,7 +277,30 @@ const updateExistingCourseWithNewSessions = async (
 
   // Create a success message with the updated session details
   const updateMessage = `Updated ${updatedSessions.length} sessions in course "${existingCourse.name}": ${updatedSessionTitles.join(', ')}`;
+  if (updatedSessions.length > 0) {
+    // Get all sessions for this course (including updated ones)
+    const allSessions = [];
+    for (const sessionId of existingCourse.sessionIds) {
+      const session = await getRecordById('sessions', sessionId);
+      if (session) {
+        allSessions.push(session);
+      }
+    }
 
+    // Determine new course status
+    const newStatus = determineCourseStatus(allSessions);
+
+    // Update course status if changed
+    if (newStatus !== existingCourse.status) {
+      await updateRecord('courses', existingCourse.id, {
+        status: newStatus,
+        lastUpdated: formattedDateTime
+      });
+
+      // Update local copy
+      existingCourse.status = newStatus;
+    }
+  }
   return {
     ...existingCourse,
     updatedSessionsCount: updatedSessions.length,
@@ -515,15 +538,15 @@ export const processCourseData = async (arrayBuffer, filename, options) => {
 const determineCourseStatus = (sessions) => {
   if (sessions.length === 0) return 'ongoing';
 
-  const hasAnyOngoingSessions = sessions.some(session => session.status === 'ongoing');
-  if (hasAnyOngoingSessions) return 'ongoing';
+  // Check if all sessions have dates (no planned future sessions without dates)
+  const allSessionsHaveDates = sessions.every(session => !!session.date);
 
+  // Check if all sessions are completed
   const allSessionsCompleted = sessions.every(session => session.status === 'completed');
-  if (allSessionsCompleted) return 'completed';
 
+  // If all sessions have dates and all are completed, mark the course as completed
+  if (allSessionsHaveDates && allSessionsCompleted) return 'completed';
+
+  // Otherwise, if there are any ongoing sessions, keep the course ongoing
   return 'ongoing';
-};
-
-export default {
-  processCourseData
 };
