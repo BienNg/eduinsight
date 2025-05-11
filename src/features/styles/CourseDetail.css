@@ -1,7 +1,7 @@
 /* src/components/Dashboard/CourseDetail.css */
 
 :root {
-  /* Color System */
+  /* Color System - keeping these as they're likely used globally */
   --primary-color: #2563eb;
   --primary-dark: #1d4ed8;
   --secondary-color: #64748b;
@@ -13,22 +13,23 @@
   --warning-color: #f59e0b;
   --error-color: #ef4444;
 
-  /* Elevation System */
+  /* Elevation and spacing systems - keeping core variables */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-
-  /* Border Radius */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
-
-  /* Spacing System */
   --space-xs: 0.5rem;
   --space-sm: 0.75rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2rem;
+}
+
+/* ===== COURSE DETAIL PAGE LAYOUT ===== */
+.course-detail-page {
+  width: 100%;
 }
 
 .course-detail-container {
@@ -39,6 +40,11 @@
   overflow: hidden;
 }
 
+.course-detail-unified-content {
+  padding: var(--space-lg);
+}
+
+/* ===== HEADER ===== */
 .course-detail-header {
   background-color: var(--primary-color);
   color: white;
@@ -55,58 +61,173 @@
   margin-left: 16px;
 }
 
-.back-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.course-level-badge {
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-}
-
-.course-detail-tabs {
+/* ===== BREADCRUMB ===== */
+.breadcrumb {
   display: flex;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.tab {
-  color: var(--text-secondary);
-  padding: var(--space-md) var(--space-lg);
-  transition: color 0.2s ease;
+  align-items: center;
+  gap: 8px;
+  font-size: 1em;
+  margin-bottom: 18px;
+  color: #6b7280;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   background: none;
   border: none;
-  font-size: 16px;
-  font-weight: 500;
+  padding: 0;
+  margin-left: 24px;
+  margin-top: 10px;
+  user-select: none;
+}
+
+.breadcrumb .breadcrumb-link {
   cursor: pointer;
+  color: #2563eb;
+  transition: color 0.2s;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.breadcrumb .breadcrumb-link:hover {
+  color: #1e40af;
+}
+
+.breadcrumb .breadcrumb-separator {
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  font-size: 1.1em;
+  user-select: none;
+}
+
+.breadcrumb .breadcrumb-current {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* ===== OPTIONS MENU ===== */
+.more-options-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+.more-options-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  outline: none;
+  height: 32px;
+  width: 32px;
+}
+
+.more-options-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
   position: relative;
 }
 
-.tab.active {
-  color: var(--primary-color);
-}
-
-.tab.active::after {
+.more-options-icon::before,
+.more-options-icon::after,
+.more-options-icon span {
   content: '';
+  display: block;
   position: absolute;
-  bottom: 0;
-  left: 0;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.more-options-icon::before {
+  top: 3px;
+}
+
+.more-options-icon span {
+  top: 8px;
+}
+
+.more-options-icon::after {
+  top: 13px;
+}
+
+.more-options-menu {
+  position: absolute;
+  right: 0;
+  top: 120%;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  z-index: 100;
+  min-width: 170px;
+  padding: 6px 0;
+  animation: fadeInMenu 0.15s;
+}
+
+@keyframes fadeInMenu {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.more-options-menu .option-item {
   width: 100%;
-  height: 3px;
-  background-color: var(--primary-blue);
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #dc2626;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 0;
+  transition: background 0.12s;
+  font-size: 15px;
 }
 
-.course-detail-content {
-  padding: 0 24px 24px 24px; /* Removes top padding, keeps others */
+.more-options-menu .option-item:disabled {
+  color: #aaa;
+  cursor: not-allowed;
 }
 
+.more-options-menu .option-item:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+/* ===== SECTION STYLING ===== */
+.course-section {
+  margin-bottom: var(--space-xl);
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+  margin-top: 0;
+  margin-bottom: var(--space-md);
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: var(--space-sm);
+}
+
+/* ===== STATS DISPLAY ===== */
 .stats-row {
   display: flex;
   gap: 24px;
@@ -121,6 +242,7 @@
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease;
   text-align: center;
+  border: 1px solid #eaeaea;
 }
 
 .stat-box h3 {
@@ -132,86 +254,23 @@
 .stat-box .stat-value {
   font-size: 32px;
   font-weight: bold;
-  color: var(--primary-blue);
+  color: var(--primary-color);
 }
 
-.stat-box:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Table styles */
-.students-table,
-.sessions-table {
-  background-color: var(--surface-color);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.students-table th,
-.sessions-table th,
-.students-table td,
-.sessions-table td {
-  background-color: white;
-  color: var(--text-secondary);
-  font-weight: 600;
-  padding: var(--space-md);
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.students-table th,
-.sessions-table th {
-  background-color: #f5f5f5;
-  font-weight: 500;
-}
-
-.students-table tr:hover,
-.sessions-table tr:hover {
-  background-color: #f9f9f9;
-}
-
-.loading,
-.error {
-  padding: 24px;
-  text-align: center;
-}
-
-.error {
-  color: #d32f2f;
-}
-
-/* Teacher View start */
-.btn-details {
-  background-color: var(--primary-color);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-sm);
-  transition: background-color 0.2s ease;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-details:hover {
-  background-color: var(--primary-dark);
-}
-
-/* Add this to your CourseDetail.css file */
+/* ===== COURSE INFO CARD ===== */
 .course-info-card {
   background-color: white;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
+  border: 1px solid #eaeaea;
+  background-color: #fafafa;
 }
 
 .course-info-card h3 {
   margin-top: 0;
   margin-bottom: 16px;
-  color: var(--primary-blue);
+  color: var(--primary-color);
   border-bottom: 1px solid #eee;
   padding-bottom: 8px;
 }
@@ -237,309 +296,39 @@
   color: #333;
 }
 
-/* Add to src/components/Dashboard/Content.css */
-.month-section {
-  background-color: white;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* ===== TABLE STYLING ===== */
+.table-container {
+  overflow-x: auto;
 }
 
-.month-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.month-header h4 {
-  margin: 0;
-  color: var(--primary-blue);
-  font-size: 18px;
-}
-
-.month-stats {
-  display: flex;
-  gap: 16px;
-}
-
-.month-stats span {
-  font-weight: 500;
-}
-
-.lehrer-content {
+.students-table,
+.sessions-table {
   width: 100%;
-}
-
-/* Teacher View end */
-
-/* Month cards styling */
-.month-cards-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.month-card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  cursor: pointer;
-  transition: box-shadow 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  border-collapse: collapse;
 }
 
-.month-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.month-card-header {
-  background-color: var(--primary-blue);
-  color: white;
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.month-card-header h4 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.month-totals {
-  display: flex;
-  gap: 16px;
-}
-
-.month-card-courses {
-  padding: 16px;
-  border-bottom: 1px solid #eee;
-}
-
-.course-summary {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.course-summary:last-child {
-  border-bottom: none;
-}
-
-.course-name {
-  font-weight: 500;
-}
-
-.course-stats {
-  display: flex;
-  gap: 12px;
-  color: #666;
-}
-
-.session-count,
-.hour-count {
+.students-table th,
+.sessions-table th,
+.students-table td,
+.sessions-table td {
+  background-color: white;
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
   white-space: nowrap;
 }
 
-.month-details {
-  padding: 0 16px 16px;
-}
-
-.month-details h5 {
-  margin: 16px 0;
-  color: var(--primary-blue);
-  font-size: 16px;
-}
-
-/* Add to your CourseDetail.css file */
-.month-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.expand-indicator {
-  font-size: 14px;
-  transition: transform 0.2s ease;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-}
-
-.expand-indicator.expanded {
-  transform: rotate(0deg);
-}
-
-/* Long session indicators */
-.long-session-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background-color: #e3f2fd;
-  color: #0d47a1;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  margin-left: 8px;
-}
-
-.long-session-icon {
-  color: #1565c0;
-  font-size: 14px;
-}
-
-.long-session-count {
-  font-weight: 600;
-}
-
-/* For detailed session view */
-.session-duration-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 16px;
-  margin-left: 8px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.session-duration-badge.long {
-  background-color: #e3f2fd;
-  color: #0d47a1;
-}
-
-.session-duration-badge.normal {
-  background-color: #f5f5f5;
-  color: #555;
-}
-
-/*END Month cards styling */
-
-/* Lehrer Details View */
-.value-with-edit {
-  display: flex;
-  align-items: center;
-}
-
-.btn-edit {
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin-left: 8px;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.btn-edit:hover {
-  background-color: #f0f0f0;
-}
-
-.country-edit {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.country-select {
-  padding: 6px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.edit-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-save {
-  background-color: var(--primary-blue);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-cancel {
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.country-selector-inline {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.country-select {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.save-btn,
-.cancel-btn {
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  border: none;
-  font-size: 12px;
-}
-
-.save-btn {
-  background-color: var(--primary-blue);
-  color: white;
-}
-
-.cancel-btn {
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-}
-
-.value.editable {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.value.editable:hover {
-  text-decoration: underline;
-}
-
-/* END Lehrer Details View */
-
-.status-badge {
-  display: inline-block;
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-lg);
-  font-weight: 500;
-  font-size: 12px;
-  text-align: center;
-}
-
-.status-badge.ongoing {
-  background-color: var(--warning-color);
-  color: var(--surface-color);
-  border: 1px solid #FFEEBA;
-}
-
-/* Add to CourseDetail.css */
+.students-table th,
 .sessions-table th {
+  background-color: #f5f5f5;
+  font-weight: 500;
   cursor: pointer;
   position: relative;
   user-select: none;
@@ -554,30 +343,32 @@
   background-color: #e0e0e0;
 }
 
-/* Lehrer/Kurse Tab */
-.clickable-row {
+.students-table tr:hover,
+.sessions-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* ===== BUTTONS ===== */
+.btn-details {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  font-weight: 500;
   transition: background-color 0.2s;
 }
 
-.clickable-row:hover {
-  background-color: #f0f7ff !important;
+.btn-details:hover {
+  background-color: var(--primary-dark);
 }
 
-.clickable-row:active {
-  background-color: #e1effe !important;
-}
-
-/* Make sure the button doesn't interfere with row clicking */
-.clickable-row .btn-details {
-  position: relative;
-  z-index: 2;
-}
-
+/* ===== STATUS BADGES ===== */
 .status-badge {
   display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 500;
   text-align: center;
@@ -595,237 +386,13 @@
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-/*END Lehrer/Kurse Tab */
-
-
-/* Add to CourseDetail.css */
-.teacher-detail-wrapper {
-  width: 100%;
-  padding: 20px;
+/* ===== LOADING & ERROR STATES ===== */
+.loading,
+.error {
+  padding: 24px;
+  text-align: center;
 }
 
-.teacher-detail-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.teacher-detail-header h2 {
-  margin: 0 16px 0 0;
-  font-weight: 600;
-  color: #333;
-}
-
-.teacher-country-badge {
-  background-color: #f0f7ff;
-  color: #0066cc;
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.teacher-detail-content {
-  width: 100%;
-}
-
-/* Remove any card-specific box-shadow or borders from inner content */
-.course-info-card, .stats-row .stat-box {
-  box-shadow: none;
-  border: 1px solid #eaeaea;
-  background-color: #fafafa;
-}
-
-/* Action buttons in rows */
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.btn-peek {
-  background-color: #f0f7ff;
-  color: var(--primary-blue);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s, color 0.2s;
-}
-
-.btn-peek:hover {
-  background-color: var(--primary-blue);
-  color: white;
-}
-
-/* Side Peek Styles */
-.side-peek-content {
-  padding: 20px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.side-peek-actions {
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-view-details {
-  background-color: var(--primary-blue);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-view-details:hover {
-  background-color: var(--dark-blue);
-}
-
-.btn-view-details::after {
-  content: '→';
-  font-size: 1.2em;
-}
-
-/* Override some of the react-sliding-pane default styles */
-.slide-pane {
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15) !important;
-}
-
-.slide-pane__header {
-  background-color: var(--primary-blue) !important;
-  color: white !important;
-  padding: 16px 24px !important;
-}
-
-.slide-pane__title {
-  font-size: 18px !important;
-  font-weight: 500 !important;
-}
-
-.slide-pane__subtitle {
-  font-size: 14px !important;
-  opacity: 0.8 !important;
-}
-
-.slide-pane__close {
-  color: white !important;
-  opacity: 0.8 !important;
-}
-
-.slide-pane__close:hover {
-  opacity: 1 !important;
-}
-
-/* Overview tab layout */
-.overview-flex-container {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.stats-column {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 30%; /* Adjust as needed for your desired proportion */
-}
-
-.stats-column .stat-box {
-  flex: 1;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.graph-container {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: 70%; /* Adjust as needed for your desired proportion */
-}
-
-.graph-container h3 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  color: var(--primary-blue);
-  border-bottom: 1px solid #eee;
-  padding-bottom: 8px;
-}
-
-.course-detail-page {
-  width: 100%;
-}
-
-.course-detail-unified-content {
-  padding: var(--space-lg);
-}
-
-.course-section {
-  margin-bottom: var(--space-xl);
-  background-color: var(--surface-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-lg);
-}
-
-.section-title {
-  font-size: 1.25rem;
-  color: var(--primary-color);
-  margin-top: 0;
-  margin-bottom: var(--space-md);
-  font-weight: 600;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: var(--space-sm);
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-/* Update table spacing for the unified view */
-.students-table,
-.sessions-table {
-  width: 100%;
-  margin-bottom: 0;
-}
-
-/* Add some spacing between sections */
-.course-overview-section {
-  margin-bottom: var(--space-lg);
-}
-
-.students-section {
-  margin-bottom: var(--space-lg);
-}
-
-/* Make sure the tables don't exceed their container width */
-.students-table th,
-.sessions-table th,
-.students-table td,
-.sessions-table td {
-  white-space: nowrap;
-}
-
-/* Make sure the header has some space from the container */
-.course-detail-header {
-  margin-bottom: 0;
-}
-
-/* Ensure good spacing between all sections */
-.course-detail-unified-content > *:not(:last-child) {
-  margin-bottom: var(--space-lg);
+.error {
+  color: #d32f2f;
 }
