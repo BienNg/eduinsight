@@ -1,32 +1,67 @@
-// src/features/database/components/tabs/CoursesTab.jsx
+// src/features/database/tabs/CoursesTab.jsx
 import React from 'react';
 
-const CoursesTab = ({ courses }) => (
-  <div className="courses-grid">
-    {courses.map((course) => (
-      <div className="course-card" key={course.id}>
-        <div className="course-header">
-          <h3>{course.name}</h3>
-          {course.level && <span className="course-level">{course.level}</span>}
+const CoursesTab = ({ courses, groups }) => {
+  // Sort courses by name for better readability
+  const sortedCourses = [...courses].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
+  return (
+    <div className="courses-list-container">
+      <table className="students-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Level</th>
+            <th>Status</th>
+            <th>Group</th>
+            <th>Sessions</th>
+            <th>Students</th>
+            <th>Created</th>
+            <th>Updated</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedCourses.map((course) => {
+            const group = course.groupId ? groups.find((g) => g.id === course.groupId) : null;
+            
+            return (
+              <tr key={course.id}>
+                <td className="truncate">{course.name}</td>
+                <td>{course.level || 'N/A'}</td>
+                <td className={`status-${course.status?.toLowerCase() || 'unknown'}`}>
+                  {course.status || 'N/A'}
+                </td>
+                <td>
+                  {group ? (
+                    <span 
+                      className="group-indicator" 
+                      style={{ backgroundColor: group.color || '#0066cc' }}
+                    >
+                      {group.name}
+                    </span>
+                  ) : 'None'}
+                </td>
+                <td>{course.sessionIds?.length || 0}</td>
+                <td>{course.studentIds?.length || 0}</td>
+                <td>{course.createdAt || 'N/A'}</td>
+                <td>{course.updatedAt || 'N/A'}</td>
+                <td className="truncate">{course.description || 'N/A'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {courses.length === 0 && <div className="empty-state">No courses found</div>}
+      {courses.length > 100 && (
+        <div className="more-items-hint">
+          Showing first 100 courses. There are {courses.length - 100} more.
         </div>
-        <div className="course-info">
-          <div className="info-item">
-            <span className="label">Status:</span>
-            <span className="value">{course.status || 'N/A'}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Sessions:</span>
-            <span className="value">{course.sessionIds?.length || 0}</span>
-          </div>
-          <div className="info-item">
-            <span className="label">Students:</span>
-            <span className="value">{course.studentIds?.length || 0}</span>
-          </div>
-        </div>
-      </div>
-    ))}
-    {courses.length === 0 && <div className="empty-state">No courses found</div>}
-  </div>
-);
+      )}
+    </div>
+  );
+};
 
 export default CoursesTab;

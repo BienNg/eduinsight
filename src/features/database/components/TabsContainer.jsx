@@ -41,7 +41,7 @@ const TabsContainer = ({ data }) => {
             </TabList>
 
             <TabPanel className="month-tab-panel">
-                <CoursesTab courses={courses} />
+                <CoursesTab courses={courses} groups={groups} />
             </TabPanel>
 
             <TabPanel className="month-tab-panel">
