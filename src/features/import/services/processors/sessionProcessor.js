@@ -62,15 +62,41 @@ export const processSessionData = async (
     }
 
     // Extract values
-    const getValue = (index) => index !== -1 && index < row.length ? row[index] : null;
+    const getValue = (index, expectedType = null) => {
+      if (index === -1 || index >= row.length) return null;
 
+      const value = row[index];
+      if (value === null || value === undefined) return null;
+
+      // Special handling for known column types
+      if (expectedType === 'time' && typeof value === 'number' && value >= 0 && value < 1) {
+        // This is an Excel time value (between 0 and 1)
+        return formatTime(value);
+      }
+
+      if (expectedType === 'date' && typeof value === 'number' && value > 40000) {
+        // This is likely an Excel date value
+        const jsDate = excelDateToJSDate(value);
+        return jsDate ? formatDate(jsDate) : null;
+      }
+
+      if (expectedType === 'teacher' && typeof value === 'number') {
+        // If a number appears in teacher column, it's likely an error
+        if (value > 0 && value < 1) {
+          console.warn(`Ignoring Excel time value ${value} in teacher column`);
+          return null;
+        }
+      }
+
+      return value;
+    };
     const folienTitle = getValue(columnIndices.folien);
     const contentValue = getValue(columnIndices.inhalt);
     const notesValue = getValue(columnIndices.notizen);
-    const dateValue = getValue(columnIndices.date);
-    const startTimeValue = getValue(columnIndices.startTime);
-    const endTimeValue = getValue(columnIndices.endTime);
-    const teacherValue = getValue(columnIndices.teacher);
+    const dateValue = getValue(columnIndices.date, 'date');
+    const startTimeValue = getValue(columnIndices.startTime, 'time');
+    const endTimeValue = getValue(columnIndices.endTime, 'time');
+    const teacherValue = getValue(columnIndices.teacher, 'teacher');
     const messageValue = getValue(columnIndices.message);
 
     // If this is a new session title
@@ -127,6 +153,33 @@ export const processSessionData = async (
 
         // Get teacher and create record
         let teacherId = '';
+        if (teacherValue) {
+          // Check if teacherValue is an Excel time value (between 0 and 1)
+          const isExcelTimeValue =
+            typeof teacherValue === 'number' &&
+            teacherValue > 0 &&
+            teacherValue < 1;
+
+          if (isExcelTimeValue) {
+            console.warn(`Detected Excel time value (${teacherValue}) in teacher column. Ignoring this value.`);
+            // Skip creating teacher record for time values
+          } else {
+            // For valid teacher values, create the teacher record
+            try {
+              const teacherRecord = await createTeacherRecord(teacherValue);
+              teacherId = teacherRecord.id;
+              teacherIds.add(teacherRecord.id);
+
+              // If this is the first teacher we've found, set it as the course's teacher
+              if (!courseRecord.teacherId) {
+                courseRecord.teacherId = teacherId;
+              }
+            } catch (error) {
+              console.error(`Error creating teacher record for value: ${teacherValue}`, error);
+            }
+          }
+        }
+
         if (teacherValue) {
           const teacherRecord = await createTeacherRecord(teacherValue);
           teacherId = teacherRecord.id;

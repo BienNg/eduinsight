@@ -52,7 +52,7 @@ const updateExistingCourseWithNewSessions = async (
         sourceUrl: options.metadata.sourceUrl,
         sheetName: options.metadata.sheetName,
         sheetIndex: options.metadata.sheetIndex || 0,
-        lastUpdated: formattedDateTime // Add formatted date/time
+        lastUpdated: formattedDateTime
       });
 
       // Update our local copy
@@ -61,7 +61,7 @@ const updateExistingCourseWithNewSessions = async (
         sourceUrl: options.metadata.sourceUrl,
         sheetName: options.metadata.sheetName,
         sheetIndex: options.metadata.sheetIndex || 0,
-        lastUpdated: formattedDateTime // Add formatted date/time
+        lastUpdated: formattedDateTime
       };
 
       console.log(`Updated course ${existingCourse.name} with Google Sheets URL: ${googleSheetsUrl}`);
@@ -71,6 +71,11 @@ const updateExistingCourseWithNewSessions = async (
   }
 
   const monthIds = new Set();
+
+  if (!existingCourse.sessionIds || !Array.isArray(existingCourse.sessionIds)) {
+    console.warn(`Course ${existingCourse.name} has no sessionIds array. Creating empty array.`);
+    existingCourse.sessionIds = [];
+  }
 
   // Get the existing sessions for this course
   const existingSessions = [];

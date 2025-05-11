@@ -239,6 +239,13 @@ export const getOrCreateGroupRecord = async (groupName, mode = 'Unknown') => {
 
 
 export const normalizeTeacherName = (name) => {
+  // Check if name is a string, if not convert or provide default
+  if (typeof name !== 'string') {
+    console.warn(`Teacher name is not a string: ${name}. Converting to string.`);
+    // Convert to string if possible, or use default value
+    name = name ? String(name) : '';
+  }
+
   return name
     .trim()
     .toLowerCase()
@@ -249,9 +256,38 @@ export const normalizeTeacherName = (name) => {
 
 export const createTeacherRecord = async (teacherName) => {
   try {
-    // Normalize the teacher name: trim whitespace and convert to title case
+    // Handle Excel numeric values (dates, times, etc.)
+    if (typeof teacherName === 'number') {
+      // Check if it's a time value (between 0 and 1)
+      if (teacherName > 0 && teacherName < 1) {
+        console.warn(`Rejected Excel time value as teacher name: ${teacherName}`);
+        return null;
+      }
+
+      // Check if it's likely a date value
+      if (teacherName > 40000 && teacherName < 50000) {
+        console.warn(`Rejected Excel date value as teacher name: ${teacherName}`);
+        return null;
+      }
+
+      // For other numbers, convert to string
+      teacherName = String(teacherName);
+    }
+
+    // Skip empty or invalid teacher names
+    if (!teacherName || typeof teacherName !== 'string' || teacherName.trim() === '') {
+      console.warn("Empty or invalid teacher name, skipping record creation");
+      return null;
+    }
+
+    // Normalize the teacher name
     const normalizedName = normalizeTeacherName(teacherName);
 
+    // Reject if after normalization it's empty or just digits
+    if (normalizedName === '' || /^\d+(\.\d+)?$/.test(normalizedName)) {
+      console.warn(`Rejected invalid teacher name after normalization: "${normalizedName}"`);
+      return null;
+    }
 
     // Check if teacher already exists (case-insensitive search)
     const teachers = await getAllRecords('teachers');
@@ -274,6 +310,7 @@ export const createTeacherRecord = async (teacherName) => {
     throw error;
   }
 };
+
 
 export const createOrUpdateStudentRecord = async (studentName, studentInfo = '', courseId, courseGroupId) => {
   try {
@@ -427,12 +464,20 @@ export const findExistingCourse = async (groupName, level) => {
         const course = courses[courseId];
 
         if (course.groupId === group.id && course.level === level) {
-          existingCourse = { id: courseId, ...course };
+          // Ensure course has all required properties with defaults
+          existingCourse = {
+            id: courseId,
+            ...course,
+            // Add defaults for potentially missing properties
+            sessionIds: course.sessionIds || [],
+            studentIds: course.studentIds || [],
+            teacherIds: course.teacherIds || []
+          };
 
           // Find the latest session date
-          if (course.sessionIds && course.sessionIds.length > 0) {
+          if (existingCourse.sessionIds && existingCourse.sessionIds.length > 0) {
             // Get all sessions for this course
-            const sessionPromises = course.sessionIds.map(sessionId =>
+            const sessionPromises = existingCourse.sessionIds.map(sessionId =>
               get(ref(database, `sessions/${sessionId}`))
             );
 
