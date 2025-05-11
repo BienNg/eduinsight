@@ -23,7 +23,7 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
     const location = useLocation();
     const { state } = location;
     const groupName = state?.groupName;
-
+    const [group, setGroup] = useState(null);
     const [course, setCourse] = useState(null);
     const [teacher, setTeacher] = useState(null);
     const [teachers, setTeachers] = useState([]);
@@ -165,7 +165,10 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                     throw new Error("Course not found");
                 }
                 setCourse(courseData);
-
+                if (courseData.groupId) {
+                    const groupData = await getRecordById('groups', courseData.groupId);
+                    setGroup(groupData);
+                }
                 // Fetch teacher data if available
                 if (courseData.teacherIds && Array.isArray(courseData.teacherIds)) {
                     const teacherPromises = courseData.teacherIds.map(tid => getRecordById('teachers', tid));
@@ -449,7 +452,9 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                                 <div className="info-grid">
                                     <div className="info-item">
                                         <span className="label">Group:</span>
-                                        <span className="value">{course.group || '-'}</span>
+                                        <span className="value">
+                                            {group ? group.name : (course.group || '-')}
+                                        </span>
                                     </div>
                                     <div className="info-item">
                                         <span className="label">Level:</span>
