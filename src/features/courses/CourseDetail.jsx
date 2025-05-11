@@ -1,23 +1,18 @@
-// JSX Imports
+// src/features/courses/CourseDetail.jsx
 import { useState, useEffect } from 'react';
 import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '../firebase/database';
 import { handleDeleteCourse } from '../utils/courseDeletionUtils';
 import SessionDetailModal from '../sessions/SessionDetailModal';
 import StudentDetailModal from '../students/StudentDetailModal';
-import TabComponent from '../common/TabComponent';
-
 
 // CSS Imports
 import '../styles/CourseDetail.css';
-import '../styles/Content.css'
-import '../common/Tabs.css';
+import '../styles/Content.css';
 
 // Library Imports
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
-
-
-const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
+const CourseDetail = ({ onClose }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -31,18 +26,12 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState(initialActiveTab);
     const [selectedSession, setSelectedSession] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'sessionOrder', direction: 'ascending' });
     const [showOptions, setShowOptions] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    const tabs = [
-        { id: 'overview', label: 'Overview' },
-        { id: 'students', label: 'Students' },
-        { id: 'sessions', label: 'Sessions' }
-    ];
     const handleClose = () => {
         if (groupName) {
             navigate(`/courses/group/${groupName}`);
@@ -56,8 +45,8 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
         await handleDeleteCourse(
             id,
             courseName,
-            setDeleting, // Pass setDeleting to show loading state
-            null,        // setCourses not needed here
+            setDeleting,
+            null,
             setError,
             event
         );
@@ -357,7 +346,8 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
     if (!course) return <div className="error">Course not found</div>;
 
     return (
-        <>{/* Minimalistic Modern Breadcrumb */}
+        <div className="course-detail-page">
+            {/* Minimalistic Modern Breadcrumb */}
             <nav className="breadcrumb">
                 <span className="breadcrumb-link" onClick={handleClose}>Courses</span>
                 <span className="breadcrumb-separator">
@@ -378,9 +368,7 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                 <span className="breadcrumb-current">{course.name}</span>
             </nav>
 
-
             <div className="course-detail-container">
-
                 <div className="course-detail-header">
                     <h2>{course.name}</h2>
                     {/* More Options Button */}
@@ -408,82 +396,67 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                     </div>
                 </div>
 
-                <TabComponent tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}>
-                    {activeTab === 'overview' && (
-                        <div className="overview-tab">
-                            {/* Overview tab content */}
-                        </div>
-                    )}
-                    {activeTab === 'students' && (
-                        <div className="students-tab">
-                            {/* Students tab content */}
-                        </div>
-                    )}
-                    {activeTab === 'sessions' && (
-                        <div className="sessions-tab">
-                            {/* Sessions tab content */}
-                        </div>
-                    )}
-                </TabComponent>
-
-                <div className="app-tab-panel">
-                    {activeTab === 'overview' && (
-                        <div className="overview-tab">
-                            <div className="stats-row">
-                                <div className="stat-box">
-                                    <h3>Students</h3>
-                                    <div className="stat-value">{students.length}</div>
-                                </div>
-                                <div className="stat-box">
-                                    <h3>Sessions</h3>
-                                    <div className="stat-value">{sessions.length}</div>
-                                </div>
-                                <div className="stat-box">
-                                    <h3>Teacher{teachers.length !== 1 ? 's' : ''}</h3>
-                                    <div className="stat-value">
-                                        {teachers.length > 0
-                                            ? teachers.map(t => t.name).join(', ')
-                                            : 'Not assigned'}
-                                    </div>
-                                </div>
+                <div className="course-detail-unified-content">
+                    {/* Course Overview Section */}
+                    <section className="course-section course-overview-section">
+                        <h3 className="section-title">Course Overview</h3>
+                        <div className="stats-row">
+                            <div className="stat-box">
+                                <h3>Students</h3>
+                                <div className="stat-value">{students.length}</div>
                             </div>
-                            <div className="course-info-card">
-                                <h3>Course Information</h3>
-                                <div className="info-grid">
-                                    <div className="info-item">
-                                        <span className="label">Group:</span>
-                                        <span className="value">
-                                            {group ? group.name : (course.group || '-')}
-                                        </span>
-                                    </div>
-                                    <div className="info-item">
-                                        <span className="label">Level:</span>
-                                        <span className="value">{course.level}</span>
-                                    </div>
-                                    <div className="info-item">
-                                        <span className="label">Start Date:</span>
-                                        <span className="value">{course.startDate || '-'}</span>
-                                    </div>
-                                    <div className="info-item">
-                                        <span className="label">End Date:</span>
-                                        <span className="value">{course.endDate || '-'}</span>
-                                    </div>
-                                    <div className="info-item">
-                                        <span className="label">Average Attendance:</span>
-                                        <span className="value">
-                                            {students.length > 0 ?
-                                                Math.round(students.reduce((sum, student) =>
-                                                    sum + calculateStudentAttendance(student.id), 0) / students.length)
-                                                : '-'}
-                                        </span>
-                                    </div>
+                            <div className="stat-box">
+                                <h3>Sessions</h3>
+                                <div className="stat-value">{sessions.length}</div>
+                            </div>
+                            <div className="stat-box">
+                                <h3>Teacher{teachers.length !== 1 ? 's' : ''}</h3>
+                                <div className="stat-value">
+                                    {teachers.length > 0
+                                        ? teachers.map(t => t.name).join(', ')
+                                        : 'Not assigned'}
                                 </div>
                             </div>
                         </div>
-                    )}
 
-                    {activeTab === 'students' && (
-                        <div className="students-tab">
+                        <div className="course-info-card">
+                            <h3>Course Information</h3>
+                            <div className="info-grid">
+                                <div className="info-item">
+                                    <span className="label">Group:</span>
+                                    <span className="value">
+                                        {group ? group.name : (course.group || '-')}
+                                    </span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Level:</span>
+                                    <span className="value">{course.level}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Start Date:</span>
+                                    <span className="value">{course.startDate || '-'}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">End Date:</span>
+                                    <span className="value">{course.endDate || '-'}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="label">Average Attendance:</span>
+                                    <span className="value">
+                                        {students.length > 0 ?
+                                            Math.round(students.reduce((sum, student) =>
+                                                sum + calculateStudentAttendance(student.id), 0) / students.length)
+                                            : '-'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Students Section */}
+                    <section className="course-section students-section">
+                        <h3 className="section-title">Students ({students.length})</h3>
+                        <div className="table-container">
                             <table className="students-table">
                                 <thead>
                                     <tr>
@@ -511,16 +484,17 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                                                     Details
                                                 </button>
                                             </td>
-
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                    )}
+                    </section>
 
-                    {activeTab === 'sessions' && (
-                        <div className="sessions-tab">
+                    {/* Sessions Section */}
+                    <section className="course-section sessions-section">
+                        <h3 className="section-title">Sessions ({sessions.length})</h3>
+                        <div className="table-container">
                             <table className="sessions-table">
                                 <thead>
                                     <tr>
@@ -601,7 +575,7 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                                 </tbody>
                             </table>
                         </div>
-                    )}
+                    </section>
                 </div>
 
                 {selectedSession && (
@@ -621,7 +595,7 @@ const CourseDetail = ({ onClose, initialActiveTab = 'overview' }) => {
                     />
                 )}
             </div>
-        </>
+        </div>
     );
 };
 

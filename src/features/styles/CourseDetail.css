@@ -765,3 +765,67 @@
   border-bottom: 1px solid #eee;
   padding-bottom: 8px;
 }
+
+.course-detail-page {
+  width: 100%;
+}
+
+.course-detail-unified-content {
+  padding: var(--space-lg);
+}
+
+.course-section {
+  margin-bottom: var(--space-xl);
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+  margin-top: 0;
+  margin-bottom: var(--space-md);
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: var(--space-sm);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+/* Update table spacing for the unified view */
+.students-table,
+.sessions-table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+/* Add some spacing between sections */
+.course-overview-section {
+  margin-bottom: var(--space-lg);
+}
+
+.students-section {
+  margin-bottom: var(--space-lg);
+}
+
+/* Make sure the tables don't exceed their container width */
+.students-table th,
+.sessions-table th,
+.students-table td,
+.sessions-table td {
+  white-space: nowrap;
+}
+
+/* Make sure the header has some space from the container */
+.course-detail-header {
+  margin-bottom: 0;
+}
+
+/* Ensure good spacing between all sections */
+.course-detail-unified-content > *:not(:last-child) {
+  margin-bottom: var(--space-lg);
+}
