@@ -4,7 +4,7 @@ import { getRecordById, deleteRecord, getAllRecords, cleanupEmptyMonths } from '
 import { handleDeleteCourse } from '../utils/courseDeletionUtils';
 import SessionDetailModal from '../sessions/SessionDetailModal';
 import StudentDetailModal from '../students/StudentDetailModal';
-import SortableTable from '../common/components/SortableTable'; // Add this import
+import SortableTable from '../common/components/SortableTable';
 import StatsGrid from '../common/components/StatsGrid';
 import TeacherBadge from '../common/TeacherBadge';
 
@@ -353,8 +353,8 @@ const CourseDetail = ({ onClose }) => {
 
     return (
         <div className="course-detail-page">
-            {/* Minimalistic Modern Breadcrumb */}
-            <nav className="breadcrumb">
+            {/* Breadcrumb Navigation */}
+            <nav>
                 <span className="breadcrumb-link" onClick={handleClose}>Courses</span>
                 <span className="breadcrumb-separator">
                     <svg width="16" height="16" fill="none">
@@ -374,149 +374,151 @@ const CourseDetail = ({ onClose }) => {
                 <span className="breadcrumb-current">{course.name}</span>
             </nav>
 
-            <div className="course-detail-container">
-                <div className="course-detail-header">
-                    <h2>{course.name}</h2>
-                    {/* More Options Button */}
-                    <div className="more-options-wrapper">
+            {/* More Options Button */}
+            <div className="more-options-wrapper">
+                <button
+                    className="more-options-btn"
+                    aria-label="More options"
+                    onClick={() => setShowOptions(v => !v)}
+                >
+                    <span className="more-options-icon">
+                        <span></span>
+                    </span>
+                </button>
+                {showOptions && (
+                    <div className="more-options-menu">
                         <button
-                            className="more-options-btn"
-                            aria-label="More options"
-                            onClick={() => setShowOptions(v => !v)}
+                            className="option-item"
+                            onClick={e => onDeleteCourse(course.id, course.name, e)}
+                            disabled={deleting}
                         >
-                            <span className="more-options-icon">
-                                <span></span>
-                            </span>
+                            {deleting ? 'Deleting...' : 'Delete Course'}
                         </button>
-                        {showOptions && (
-                            <div className="more-options-menu">
-                                <button
-                                    className="option-item"
-                                    onClick={e => onDeleteCourse(course.id, course.name, e)}
-                                    disabled={deleting}
-                                >
-                                    {deleting ? 'Deleting...' : 'Delete Course'}
-                                </button>
-                            </div>
-                        )}
                     </div>
-                </div>
-
-                <div className="course-detail-unified-content">
-                    {/* Course Overview Section */}
-                    <section className="course-section course-overview-section">
-                        <h3 className="section-title">Course Overview</h3>
-                        <StatsGrid
-                            columns={4}
-                            stats={[
-                                {
-                                    icon: faUsers,
-                                    value: students.length,
-                                    label: 'Students',
-                                    color: 'blue'
-                                },
-                                {
-                                    icon: faCalendarDay,
-                                    value: sessions.length,
-                                    label: 'Sessions',
-                                    color: 'green'
-                                },
-                                {
-                                    icon: faChalkboardTeacher,
-                                    renderValue: () => (
-                                        <div className="stat-teacher-badges">
-                                            {teachers.length > 0 ? (
-                                                teachers.map((teacher) => (
-                                                    <TeacherBadge key={teacher.id} teacher={teacher} />
-                                                ))
-                                            ) : (
-                                                <span className="no-teachers">No teachers</span>
-                                            )}
-                                        </div>
-                                    ),
-                                    label: `Teacher${teachers.length !== 1 ? 's' : ''}`,
-                                    color: 'purple'
-                                },
-                                {
-                                    icon: faLayerGroup,
-                                    value: group ? group.name : (course.group || '-'),
-                                    label: 'Group',
-                                    color: 'yellow'
-                                },
-                                {
-                                    icon: faStar,
-                                    value: course.level || '-',
-                                    label: 'Level',
-                                    color: 'orange'
-                                },
-                                {
-                                    icon: faCalendarAlt,
-                                    value: course.startDate || '-',
-                                    label: 'Start Date',
-                                    color: 'blue'
-                                },
-                                {
-                                    icon: faCalendarCheck,
-                                    value: course.endDate || '-',
-                                    label: 'End Date',
-                                    color: 'green'
-                                },
-                                {
-                                    icon: faChartLine,
-                                    value: students.length > 0 ?
-                                        Math.round(
-                                            sessions.reduce((sum, session) => {
-                                                const [present, total] = calculateSessionAttendance(session).split('/');
-                                                return sum + (parseInt(present) / parseInt(total) * 100 || 0);
-                                            }, 0) / sessions.length
-                                        ) + '%' : '-',
-                                    label: 'Avg Attendance',
-                                    color: 'purple'
-                                }
-                            ]}
-                        />
-                    </section>
-
-                    {/* Students Section - Using SortableTable */}
-                    <section className="course-section students-section">
-                        <h3 className="section-title">Students ({students.length})</h3>
-                        <SortableTable
-                            columns={studentColumns}
-                            data={students}
-                            defaultSortColumn="name"
-                            actions={renderStudentActions}
-                        />
-                    </section>
-
-                    {/* Sessions Section - Using SortableTable */}
-                    <section className="course-section sessions-section">
-                        <h3 className="section-title">Sessions ({sessions.length})</h3>
-                        <SortableTable
-                            columns={sessionColumns}
-                            data={sessions}
-                            defaultSortColumn="sessionOrder"
-                            actions={renderSessionActions}
-                        />
-                    </section>
-                </div>
-
-                {selectedSession && (
-                    <SessionDetailModal
-                        session={selectedSession}
-                        students={students}
-                        teacher={teacher}
-                        onClose={closeSessionDetail}
-                        groupName={course ? course.group : null}
-                    />
-                )}
-                {selectedStudent && (
-                    <StudentDetailModal
-                        student={selectedStudent}
-                        sessions={sessions}
-                        onClose={closeStudentDetail}
-                    />
                 )}
             </div>
+
+            {/* Error message if present */}
+            {error && (
+                <div className="course-detail-error-alert panel-content">
+                    {error}
+                </div>
+            )}
+
+            {/* Course Overview Section */}
+            <StatsGrid
+                columns={8}
+                stats={[
+                    {
+                        icon: faUsers,
+                        value: students.length,
+                        label: 'Students',
+                        color: 'blue'
+                    },
+                    {
+                        icon: faCalendarDay,
+                        value: sessions.length,
+                        label: 'Sessions',
+                        color: 'green'
+                    },
+                    {
+                        icon: faChalkboardTeacher,
+                        renderValue: () => (
+                            <div className="stat-teacher-badges">
+                                {teachers.length > 0 ? (
+                                    teachers.map((teacher) => (
+                                        <TeacherBadge key={teacher.id} teacher={teacher} />
+                                    ))
+                                ) : (
+                                    <span className="no-teachers">No teachers</span>
+                                )}
+                            </div>
+                        ),
+                        label: `Teacher${teachers.length !== 1 ? 's' : ''}`,
+                        color: 'purple'
+                    },
+                    {
+                        icon: faLayerGroup,
+                        value: group ? group.name : (course.group || '-'),
+                        label: 'Group',
+                        color: 'yellow'
+                    },
+                    {
+                        icon: faStar,
+                        value: course.level || '-',
+                        label: 'Level',
+                        color: 'orange'
+                    },
+                    {
+                        icon: faCalendarAlt,
+                        value: course.startDate || '-',
+                        label: 'Start Date',
+                        color: 'blue'
+                    },
+                    {
+                        icon: faCalendarCheck,
+                        value: course.endDate || '-',
+                        label: 'End Date',
+                        color: 'green'
+                    },
+                    {
+                        icon: faChartLine,
+                        value: students.length > 0 ?
+                            Math.round(
+                                sessions.reduce((sum, session) => {
+                                    const [present, total] = calculateSessionAttendance(session).split('/');
+                                    return sum + (parseInt(present) / parseInt(total) * 100 || 0);
+                                }, 0) / sessions.length
+                            ) + '%' : '-',
+                        label: 'Avg Attendance',
+                        color: 'purple'
+                    }
+                ]}
+            />
+
+            {/* Students Section */}
+            <div className="analytics-card animate-card">
+                <h3 className="section-title">Students ({students.length})</h3>
+                <div className="panel-content">
+                    <SortableTable
+                        columns={studentColumns}
+                        data={students}
+                        defaultSortColumn="name"
+                        actions={renderStudentActions}
+                    />
+                </div>
+            </div>
+
+            {/* Sessions Section */}
+            <div className="analytics-card animate-card">
+                <h3 className="section-title">Sessions ({sessions.length})</h3>
+                <div className="panel-content">
+                    <SortableTable
+                        columns={sessionColumns}
+                        data={sessions}
+                        defaultSortColumn="sessionOrder"
+                        actions={renderSessionActions}
+                    />
+                </div>
+            </div>
+
+            {/* Modal Dialogs */}
+            {selectedSession && (
+                <SessionDetailModal
+                    session={selectedSession}
+                    students={students}
+                    teacher={teacher}
+                    onClose={closeSessionDetail}
+                    groupName={course ? course.group : null}
+                />
+            )}
+            {selectedStudent && (
+                <StudentDetailModal
+                    student={selectedStudent}
+                    sessions={sessions}
+                    onClose={closeStudentDetail}
+                />
+            )}
         </div>
     );
 };
