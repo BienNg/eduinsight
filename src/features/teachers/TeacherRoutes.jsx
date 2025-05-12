@@ -1,7 +1,7 @@
 // src/features/teachers/TeacherRoutes.jsx
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import LehrerContent from '../dashboard/LehrerContent';
+import LehrerContent from './TeacherContent';  // Updated import path
 import TeacherDetail from './TeacherDetail';
 
 const TeacherRoutes = () => {
