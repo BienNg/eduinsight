@@ -19,17 +19,24 @@ import {
 } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserTie, faLayerGroup, faCalendarDay, faUserGraduate, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const TeacherOverview = () => {
   const [stats, setStats] = useState({
-    activeTeachers: 0,
-    activeGroups: 0,
-    totalSessions: 0,
+    activeTeachersLastMonth: 0,
+    activeTeachersThisMonth: 0,
+    activeGroupsLastMonth: 0,
+    activeGroupsThisMonth: 0,
+    totalSessionsLastMonth: 0,
+    totalSessionsThisMonth: 0,
     enrolledStudents: 0,
     avgSessionsPerTeacher: 0
   });
+
+  const [teachersLastMonth, setTeachersLastMonth] = useState([]);
+  const [teachersThisMonth, setTeachersThisMonth] = useState([]);
+  const [monthlyView, setMonthlyView] = useState('last');
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,14 +54,47 @@ const TeacherOverview = () => {
   const handleTeacherClick = (teacherId) => {
     navigate(`/teachers/${teacherId}`);
   };
+  const processMonthData = (sessions, teachersData, coursesData, groupsData) => {
+    // Calculate active teachers
+    const activeTeacherIds = new Set(sessions.map(session => session.teacherId));
 
+    // Calculate active courses and groups
+    const activeCoursesIds = new Set(sessions.map(session => session.courseId));
+    const activeCourses = coursesData.filter(course => activeCoursesIds.has(course.id));
+    const activeGroupIds = new Set(activeCourses.map(course => course.groupId));
+
+    // Get active teachers with their session counts
+    const teachersWithSessionCounts = teachersData
+      .filter(teacher => activeTeacherIds.has(teacher.id))
+      .map(teacher => {
+        const sessionCount = sessions.filter(
+          session => session.teacherId === teacher.id
+        ).length;
+        return {
+          ...teacher,
+          sessionCount
+        };
+      })
+      .sort((a, b) => b.sessionCount - a.sessionCount);
+
+    return {
+      activeTeacherIds,
+      activeCoursesIds,
+      activeGroupIds,
+      activeCourses,
+      teachersWithSessionCounts
+    };
+  };
   const fetchOverviewData = async () => {
     try {
       setLoading(true);
 
-      // Get current date for calculating "last month"
+      // Get current date info
       const now = new Date();
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+      const thisMonthStr = `${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}`;
       const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
 
       // Fetch all necessary data
@@ -70,55 +110,45 @@ const TeacherOverview = () => {
       const last12Months = getLastTwelveMonths();
       const monthlySessionCounts = calculateMonthlySessionCounts(sessionsData, last12Months);
 
-      // Filter sessions from last month
+      // Filter sessions for both months
       const lastMonthSessions = sessionsData.filter(session =>
         session.monthId && session.monthId.startsWith(lastMonthStr)
       );
+      const thisMonthSessions = sessionsData.filter(session =>
+        session.monthId && session.monthId.startsWith(thisMonthStr)
+      );
 
-      // Calculate active teachers (teachers who had sessions last month)
-      const activeTeacherIds = new Set(lastMonthSessions.map(session => session.teacherId));
+      // Process last month data
+      const lastMonthData = processMonthData(lastMonthSessions, teachersData, coursesData, groupsData);
 
-      // Calculate active groups (courses that had sessions last month)
-      const activeCoursesIds = new Set(lastMonthSessions.map(session => session.courseId));
-      const activeCourses = coursesData.filter(course => activeCoursesIds.has(course.id));
-      const activeGroupIds = new Set(activeCourses.map(course => course.groupId));
+      // Process this month data
+      const thisMonthData = processMonthData(thisMonthSessions, teachersData, coursesData, groupsData);
 
-      // Calculate enrolled students
+      setCoursesData(coursesData);
+      setActiveCoursesIds(new Set([...lastMonthData.activeCoursesIds, ...thisMonthData.activeCoursesIds]));
+      setTeachersLastMonth(lastMonthData.teachersWithSessionCounts);
+      setTeachersThisMonth(thisMonthData.teachersWithSessionCounts);
+      setMonthlySessions(monthlySessionCounts);
+      setGroupsData(groupsData);
+
+      // Calculate enrolled students across both months
       const enrolledStudentIds = new Set();
-      activeCourses.forEach(course => {
+      [...lastMonthData.activeCourses, ...thisMonthData.activeCourses].forEach(course => {
         if (course.studentIds && Array.isArray(course.studentIds)) {
           course.studentIds.forEach(id => enrolledStudentIds.add(id));
         }
       });
 
-      // Get active teachers with their session counts
-      const teachersWithSessionCounts = teachersData
-        .filter(teacher => activeTeacherIds.has(teacher.id))
-        .map(teacher => {
-          const sessionCount = lastMonthSessions.filter(
-            session => session.teacherId === teacher.id
-          ).length;
-          return {
-            ...teacher,
-            sessionCount
-          };
-        })
-        .sort((a, b) => b.sessionCount - a.sessionCount);
-
-      setCoursesData(coursesData);
-      setActiveCoursesIds(activeCoursesIds);
-      setTeachers(teachersWithSessionCounts);
-      setMonthlySessions(monthlySessionCounts);
-      setGroupsData(groupsData);
-
-
       setStats({
-        activeTeachers: activeTeacherIds.size,
-        activeGroups: activeGroupIds.size,
-        totalSessions: lastMonthSessions.length,
+        activeTeachersLastMonth: lastMonthData.activeTeacherIds.size,
+        activeTeachersThisMonth: thisMonthData.activeTeacherIds.size,
+        activeGroupsLastMonth: lastMonthData.activeGroupIds.size,
+        activeGroupsThisMonth: thisMonthData.activeGroupIds.size,
+        totalSessionsLastMonth: lastMonthSessions.length,
+        totalSessionsThisMonth: thisMonthSessions.length,
         enrolledStudents: enrolledStudentIds.size,
-        avgSessionsPerTeacher: activeTeacherIds.size ?
-          Math.round((lastMonthSessions.length / activeTeacherIds.size) * 10) / 10 : 0
+        avgSessionsPerTeacher: lastMonthData.activeTeacherIds.size ?
+          Math.round((lastMonthSessions.length / lastMonthData.activeTeacherIds.size) * 10) / 10 : 0
       });
     } catch (err) {
       console.error("Error fetching overview data:", err);
@@ -162,32 +192,40 @@ const TeacherOverview = () => {
   const statsData = [
     {
       icon: faUserTie,
-      value: stats.activeTeachers,
+      value: stats.activeTeachersLastMonth,
+      secondValue: stats.activeTeachersThisMonth,
       label: "Active Teachers",
+      subLabel: "Last Month / This Month",
       color: "blue"
     },
     {
       icon: faLayerGroup,
-      value: stats.activeGroups,
+      value: stats.activeGroupsLastMonth,
+      secondValue: stats.activeGroupsThisMonth,
       label: "Active Groups",
+      subLabel: "Last Month / This Month",
       color: "green"
     },
     {
       icon: faCalendarDay,
-      value: stats.totalSessions,
+      value: stats.totalSessionsLastMonth,
+      secondValue: stats.totalSessionsThisMonth,
       label: "Total Sessions",
+      subLabel: "Last Month / This Month",
       color: "yellow"
     },
     {
       icon: faChalkboardTeacher,
       value: stats.avgSessionsPerTeacher,
       label: "Avg Sessions/Teacher",
+      subLabel: "Last Month",
       color: "purple"
     },
     {
       icon: faUserGraduate,
       value: stats.enrolledStudents,
       label: "Enrolled Students",
+      subLabel: "Both Months",
       color: "orange"
     }
   ];
@@ -308,12 +346,28 @@ const TeacherOverview = () => {
           {/* Third Row: Teacher List */}
           <div className="overview-panel animate-card">
             <div className="panel-header">
-              <h2 className="panel-title">Active Teachers Last Month</h2>
+              <h2 className="panel-title">
+                Active Teachers {monthlyView === 'last' ? 'Last' : 'This'} Month
+              </h2>
+              <div className="month-toggle">
+                <button
+                  className={`toggle-btn ${monthlyView === 'last' ? 'active' : ''}`}
+                  onClick={() => setMonthlyView('last')}
+                >
+                  Last Month
+                </button>
+                <button
+                  className={`toggle-btn ${monthlyView === 'current' ? 'active' : ''}`}
+                  onClick={() => setMonthlyView('current')}
+                >
+                  This Month
+                </button>
+              </div>
             </div>
             <div className="panel-content">
-              {teachers.length > 0 ? (
+              {(monthlyView === 'last' ? teachersLastMonth : teachersThisMonth).length > 0 ? (
                 <div className="compact-teacher-list">
-                  {teachers.map((teacher, index) => {
+                  {(monthlyView === 'last' ? teachersLastMonth : teachersThisMonth).map((teacher, index) => {
                     // Get courses this teacher teaches that are active
                     const teacherActiveCourses = coursesData.filter(course =>
                       course.teacherIds &&
@@ -379,16 +433,18 @@ const TeacherOverview = () => {
                           <span>{teacher.sessionCount} sessions</span>
                         </div>
                         <div className="teacher-group-badges">
-                          {teacherGroups.map(group => (
-                            <GroupBadge key={group.id} group={group} />
-                          ))}
+                          {teacherGroups
+                            .sort((a, b) => b.name.localeCompare(a.name)) // Sort group names in descending order
+                            .map(group => (
+                              <GroupBadge key={group.id} group={group} />
+                            ))}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="empty-message">No active teachers last month</div>
+                <div className="empty-message">No active teachers {monthlyView === 'last' ? 'last' : 'this'} month</div>
               )}
             </div>
           </div>
