@@ -9,8 +9,12 @@ import '../../styles/GroupDetail.css';
 const GroupDetail = ({ groupName, selectedGroup, selectedGroupCourses, loading, onSelectCourse, selectedCourseId }) => {
     if (!groupName) {
         return (
-            <div className="group-detail-no-group-selected">
-                <p>Wählen Sie eine Gruppe aus der Liste, um Details anzuzeigen</p>
+            <div className="course-detail-panel">
+                <div className="course-detail-panel-empty-state">
+                    <FontAwesomeIcon icon={faBook} size="2x" style={{ color: '#cccccc', marginBottom: '16px' }} />
+                    <h3>Kurs auswählen</h3>
+                    <p>Wählen Sie einen Gruppe aus, um Details anzuzeigen</p>
+                </div>
             </div>
         );
     }
