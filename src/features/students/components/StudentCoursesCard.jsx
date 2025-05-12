@@ -66,19 +66,6 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
         return { status: attendanceData, comment: '' };
     };
 
-    // Map attendance status to more readable format
-    const getAttendanceStatus = (status) => {
-        const statusMap = {
-            'present': 'Present',
-            'absent': 'Absent',
-            'sick': 'Sick',
-            'technical_issues': 'Technical Issues',
-            'unknown': 'Unknown'
-        };
-        return statusMap[status] || status;
-    };
-
-    // Generate feedback for a course using OpenAI API
     // Generate feedback for a course using OpenAI API
     const handleGenerateFeedback = async (courseId) => {
         setIsGenerating(prev => ({ ...prev, [courseId]: true }));
@@ -162,7 +149,6 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                 <div className="course-sessions-grid">
                     {studentCourses.length > 0 ? (
                         studentCourses.map(course => (
-                            <div key={course.id} className="course-sessions-card">
                                 <div className="course-sessions-container">
                                     <div className="course-sessions-column">
                                         <h4 className="course-name">{safelyRenderValue(course.name)}</h4>
@@ -186,7 +172,7 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                                                                     <td>{safelyRenderValue(session.title)}</td>
                                                                     <td>{safelyRenderValue(session.date)}</td>
                                                                     <td className={`status-${status}`}>
-                                                                        {getAttendanceStatus(status)}
+                                                                        {status}
                                                                     </td>
                                                                     <td>{comment}</td>
                                                                 </tr>
@@ -218,7 +204,6 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                                             onChange={(e) => handleFeedbackChange(course.id, e.target.value)}
                                         />
                                     </div>
-                                </div>
                             </div>
                         ))
                     ) : (
