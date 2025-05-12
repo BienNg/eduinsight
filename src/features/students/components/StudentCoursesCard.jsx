@@ -1,11 +1,36 @@
 // src/features/students/components/StudentCoursesCard.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBrain } from '@fortawesome/free-solid-svg-icons';
 import { safelyRenderValue } from '../utils/studentDataUtils';
+import { updateRecord, getRecordById } from '../../firebase/database';
 import './StudentCoursesCard.css';
 
 const StudentCoursesCard = ({ student, sessions, courses }) => {
   // Group sessions by courseId
   const sessionsByCourse = {};
+  const [feedbacks, setFeedbacks] = useState({});
+  const [isGenerating, setIsGenerating] = useState({});
+  const [studentData, setStudentData] = useState(student);
+  
+  // Fetch the latest student data to ensure we have current feedback
+  const refreshStudentData = async () => {
+    try {
+      const freshStudentData = await getRecordById('students', student.id);
+      if (freshStudentData) {
+        setStudentData(freshStudentData);
+        // Update feedbacks state from the latest database data
+        setFeedbacks(freshStudentData.feedback || {});
+      }
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+    }
+  };
+  
+  useEffect(() => {
+    // Initial fetch of student data to get feedback
+    refreshStudentData();
+  }, [student.id]);
   
   if (sessions && sessions.length > 0) {
     sessions.forEach(session => {
@@ -50,6 +75,64 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
       'unknown': 'Unknown'
     };
     return statusMap[status] || status;
+  };
+
+  // Generate feedback for a course
+  const handleGenerateFeedback = async (courseId) => {
+    setIsGenerating(prev => ({ ...prev, [courseId]: true }));
+    try {
+      const course = courses.find(c => c.id === courseId);
+      
+      // Get teacher names for this course
+      let teacherNames = "Unknown teacher";
+      if (course && course.teacherIds && course.teacherIds.length > 0) {
+        const teacherPromises = course.teacherIds.map(id => getRecordById('teachers', id));
+        const teachers = await Promise.all(teacherPromises);
+        teacherNames = teachers.filter(Boolean).map(t => t.name).join(', ');
+      }
+      
+      // Create placeholder feedback text
+      const feedbackText = `Generated feedback for ${student.name} in ${course ? course.name : 'this course'} with ${teacherNames}. The student has shown good progress in recent lessons.`;
+      
+      // Create new feedbacks object by copying the existing feedback from the database
+      const newFeedbacks = { 
+        ...(studentData.feedback || {}), 
+        [courseId]: feedbackText 
+      };
+      
+      // Update database first
+      await updateRecord('students', student.id, { 
+        feedback: newFeedbacks 
+      });
+      
+      // Then refresh student data from database to get the latest state
+      await refreshStudentData();
+      
+    } catch (error) {
+      console.error("Error generating feedback:", error);
+    } finally {
+      setIsGenerating(prev => ({ ...prev, [courseId]: false }));
+    }
+  };
+
+  // Handle changes to the feedback text
+  const handleFeedbackChange = async (courseId, value) => {
+    try {
+      // Update directly in the database
+      const newFeedbacks = { 
+        ...(studentData.feedback || {}), 
+        [courseId]: value 
+      };
+      
+      await updateRecord('students', student.id, { 
+        feedback: newFeedbacks 
+      });
+      
+      // Refresh from database to ensure we display what's in the database
+      await refreshStudentData();
+    } catch (error) {
+      console.error("Error updating feedback:", error);
+    }
   };
 
   return (
@@ -100,9 +183,21 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                   </div>
                   
                   <div className="course-notes-column">
+                    <div className="feedback-header">
+                      <button 
+                        className="generate-feedback-btn"
+                        onClick={() => handleGenerateFeedback(course.id)}
+                        disabled={isGenerating[course.id]}
+                      >
+                        <FontAwesomeIcon icon={faBrain} /> 
+                        {isGenerating[course.id] ? 'Generating...' : 'Generate Feedback'}
+                      </button>
+                    </div>
                     <textarea 
                       className="course-notes-textarea" 
                       placeholder="Add your notes about the student's progress in this course..."
+                      value={(studentData.feedback && studentData.feedback[course.id]) || ''}
+                      onChange={(e) => handleFeedbackChange(course.id, e.target.value)}
                     />
                   </div>
                 </div>
