@@ -98,7 +98,7 @@
 .panel-content {
     position: relative;
     padding: 4px;
-    overflow-y: auto;
+    overflow-y: visible;
     flex-grow: 1;
     overflow-x: hidden;
     /* Hide horizontal overflow during animations */

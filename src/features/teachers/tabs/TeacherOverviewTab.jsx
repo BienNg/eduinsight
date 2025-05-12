@@ -3,6 +3,8 @@
 import GroupBadge from '../../common/GroupBadge';
 import { getAllRecords } from '../../firebase/database';
 import StatsGrid from '../../common/components/StatsGrid';
+import TabCard from '../../common/TabCard';
+
 
 // Library imports
 import {
@@ -230,8 +232,90 @@ const TeacherOverview = () => {
     }
   ];
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  // Add this helper function inside your component
+  const renderTeacherList = (teachers, monthLabel) => {
+    return teachers.length > 0 ? (
+      <div className="compact-teacher-list">
+        {teachers.map((teacher, index) => {
+          // Get courses this teacher teaches that are active
+          const teacherActiveCourses = coursesData.filter((course) =>
+            course.teacherIds &&
+            course.teacherIds.includes(teacher.id) &&
+            activeCoursesIds.has(course.id)
+          );
 
+          // Get unique group IDs
+          const teacherGroupIds = new Set(
+            teacherActiveCourses.map((course) => course.groupId)
+          );
+
+          // Get group objects
+          const teacherGroups = Array.from(teacherGroupIds)
+            .map((groupId) => {
+              // Find the actual group from the groups collection
+              const group = groupsData.find((g) => g.id === groupId);
+
+              // If we found the group, use its data
+              if (group) {
+                return {
+                  id: groupId,
+                  name: group.name || 'Unknown Group',
+                  color: group.color || '#e0e0e0'
+                };
+              }
+
+              // Fallback to using course data if group not found
+              const representativeCourse = teacherActiveCourses.find(
+                (course) => course.groupId === groupId
+              );
+
+              if (representativeCourse) {
+                return {
+                  id: groupId,
+                  name: `Group ${groupId.substring(0, 5)}...` || 'Unknown Group',
+                  color: representativeCourse.color || '#e0e0e0'
+                };
+              }
+
+              return null;
+            })
+            .filter(Boolean);
+
+          return (
+            <div
+              className="compact-teacher-item"
+              key={teacher.id}
+              style={{ animationDelay: `${0.1 * index}s` }}
+              onClick={() => handleTeacherClick(teacher.id)}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="teacher-profile">
+                <FontAwesomeIcon icon={faUserTie} className="teacher-icon" />
+                <div className="teacher-info">
+                  <div className="teacher-name"><strong>{teacher.name}</strong></div>
+                  <div className="teacher-subtitle">{teacherGroups.length} groups {monthLabel}</div>
+                </div>
+              </div>
+              <div className="teacher-meta">
+                <span>{teacher.country || 'No Location'}</span>
+                <span>{teacher.sessionCount} sessions</span>
+              </div>
+              <div className="teacher-group-badges">
+                {teacherGroups
+                  .sort((a, b) => b.name.localeCompare(a.name))
+                  .map((group) => (
+                    <GroupBadge key={group.id} group={group} />
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    ) : (
+      <div className="empty-message">No active teachers {monthLabel}</div>
+    );
+  };
   return (
     <div className="teacher-overview-content">
       {loading && <div className="loading-indicator">Loading overview data...</div>}
@@ -344,110 +428,30 @@ const TeacherOverview = () => {
           </div>
 
           {/* Third Row: Teacher List */}
-          <div className="overview-panel animate-card">
-            <div className="panel-header">
-              <h2 className="panel-title">
-                Active Teachers {monthlyView === 'last' ? 'Last' : 'This'} Month
-              </h2>
-              <div className="month-toggle">
-                <button
-                  className={`toggle-btn ${monthlyView === 'last' ? 'active' : ''}`}
-                  onClick={() => setMonthlyView('last')}
-                >
-                  Last Month
-                </button>
-                <button
-                  className={`toggle-btn ${monthlyView === 'current' ? 'active' : ''}`}
-                  onClick={() => setMonthlyView('current')}
-                >
-                  This Month
-                </button>
-              </div>
-            </div>
-            <div className="panel-content">
-              {(monthlyView === 'last' ? teachersLastMonth : teachersThisMonth).length > 0 ? (
-                <div className="compact-teacher-list">
-                  {(monthlyView === 'last' ? teachersLastMonth : teachersThisMonth).map((teacher, index) => {
-                    // Get courses this teacher teaches that are active
-                    const teacherActiveCourses = coursesData.filter(course =>
-                      course.teacherIds &&
-                      course.teacherIds.includes(teacher.id) &&
-                      activeCoursesIds.has(course.id)
-                    );
-
-                    // Get unique group IDs
-                    const teacherGroupIds = new Set(
-                      teacherActiveCourses.map(course => course.groupId)
-                    );
-
-                    // Get group objects
-                    const teacherGroups = Array.from(teacherGroupIds)
-                      .map(groupId => {
-                        // Find the actual group from the groups collection
-                        const group = groupsData.find(g => g.id === groupId);
-
-                        // If we found the group, use its data
-                        if (group) {
-                          return {
-                            id: groupId,
-                            name: group.name || 'Unknown Group',
-                            color: group.color || '#e0e0e0'
-                          };
-                        }
-
-                        // Fallback to using course data if group not found
-                        const representativeCourse = teacherActiveCourses.find(
-                          course => course.groupId === groupId
-                        );
-
-                        if (representativeCourse) {
-                          return {
-                            id: groupId,
-                            name: `Group ${groupId.substring(0, 5)}...` || 'Unknown Group',
-                            color: representativeCourse.color || '#e0e0e0'
-                          };
-                        }
-
-                        return null;
-                      })
-                      .filter(Boolean);
-
-                    return (
-                      <div
-                        className="compact-teacher-item"
-                        key={teacher.id}
-                        style={{ animationDelay: `${0.1 * index}s` }}
-                        onClick={() => handleTeacherClick(teacher.id)}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        <div className="teacher-profile">
-                          <FontAwesomeIcon icon={faUserTie} className="teacher-icon" />
-                          <div className="teacher-info">
-                            <div className="teacher-name"><strong>{teacher.name}</strong></div>
-                            <div className="teacher-subtitle">{teacherGroups.length} groups last month</div>
-                          </div>
-                        </div>
-                        <div className="teacher-meta">
-                          <span>{teacher.country || 'No Location'}</span>
-                          <span>{teacher.sessionCount} sessions</span>
-                        </div>
-                        <div className="teacher-group-badges">
-                          {teacherGroups
-                            .sort((a, b) => b.name.localeCompare(a.name)) // Sort group names in descending order
-                            .map(group => (
-                              <GroupBadge key={group.id} group={group} />
-                            ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="empty-message">No active teachers {monthlyView === 'last' ? 'last' : 'this'} month</div>
-              )}
-            </div>
-          </div>
+          <TabCard
+            title="Active Teachers"
+            className="animate-card"
+            tabs={[
+              {
+                id: 'last',
+                content: (
+                  <div className="panel-content">
+                    {renderTeacherList(teachersLastMonth, 'last month')}
+                  </div>
+                )
+              },
+              {
+                id: 'current',
+                content: (
+                  <div className="panel-content">
+                    {renderTeacherList(teachersThisMonth, 'this month')}
+                  </div>
+                )
+              }
+            ]}
+            activeTab={monthlyView}
+            setActiveTab={setMonthlyView}
+          />
         </>
       )}
     </div>
