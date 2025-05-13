@@ -74,18 +74,6 @@ const CourseStats = ({ course, group, teachers, students, sessions, calculateAve
   // Define the stats data
   const statsData = [
     {
-      icon: faUsers,
-      value: students.length,
-      label: 'Students',
-      color: 'blue'
-    },
-    {
-      icon: faCalendarDay,
-      value: sessions.length,
-      label: 'Sessions',
-      color: 'green'
-    },
-    {
       icon: faChalkboardTeacher,
       value: teachers.length > 0 
         ? teachers.map(teacher => teacher.name).join(', ') 

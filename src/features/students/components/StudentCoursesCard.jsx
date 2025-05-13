@@ -13,6 +13,12 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
     const [feedbacks, setFeedbacks] = useState({});
     const [isGenerating, setIsGenerating] = useState({});
     const [studentData, setStudentData] = useState(student);
+    const [addressForm, setAddressForm] = useState('em'); // Default to 'em'
+    const addressOptions = [
+        { value: 'em', label: 'Em' },
+        { value: 'anh', label: 'Anh' },
+        { value: 'chị', label: 'Chị' }
+    ];
 
     // Fetch the latest student data to ensure we have current feedback
     const refreshStudentData = async () => {
@@ -91,12 +97,14 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                 });
             }
 
-            // Generate feedback using OpenAI
+            // Generate feedback using OpenAI with the addressForm parameter
             const feedbackText = await generateFeedbackFromComments(
                 student.name,
                 course ? course.name : 'khóa học này',
                 teacherNames,
-                courseSessionComments
+                courseSessionComments,
+                addressForm,  // Add this parameter
+                "gpt-4o-mini"  // Keep the model parameter
             );
 
             // Create new feedbacks object by copying the existing feedback from the database
@@ -149,61 +157,75 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                 <div className="course-sessions-grid">
                     {studentCourses.length > 0 ? (
                         studentCourses.map(course => (
-                                <div className="course-sessions-container">
-                                    <div className="course-sessions-column">
-                                        <h4 className="course-name">{safelyRenderValue(course.name)}</h4>
+                            <div className="course-sessions-container">
+                                <div className="course-sessions-column">
+                                    <h4 className="course-name">{safelyRenderValue(course.name)}</h4>
 
-                                        {sessionsByCourse[course.id] && sessionsByCourse[course.id].length > 0 ? (
-                                            <div className="sessions-table-container">
-                                                <table className="sessions-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Session Name</th>
-                                                            <th>Date</th>
-                                                            <th>Status</th>
-                                                            <th>Comment</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {sessionsByCourse[course.id].map(session => {
-                                                            const { status, comment } = getAttendanceInfo(session);
-                                                            return (
-                                                                <tr key={session.id}>
-                                                                    <td>{safelyRenderValue(session.title)}</td>
-                                                                    <td>{safelyRenderValue(session.date)}</td>
-                                                                    <td className={`status-${status}`}>
-                                                                        {status}
-                                                                    </td>
-                                                                    <td>{comment}</td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        ) : (
-                                            <div className="empty-message">No sessions found for this course.</div>
-                                        )}
-                                    </div>
-
-                                    <div className="course-notes-column">
-                                        <div className="feedback-header">
-                                            <button
-                                                className="generate-feedback-btn"
-                                                onClick={() => handleGenerateFeedback(course.id)}
-                                                disabled={isGenerating[course.id]}
-                                            >
-                                                <FontAwesomeIcon icon={faBrain} />
-                                                {isGenerating[course.id] ? 'Generating...' : 'Generate Feedback'}
-                                            </button>
+                                    {sessionsByCourse[course.id] && sessionsByCourse[course.id].length > 0 ? (
+                                        <div className="sessions-table-container">
+                                            <table className="sessions-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Session Name</th>
+                                                        <th>Date</th>
+                                                        <th>Status</th>
+                                                        <th>Comment</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {sessionsByCourse[course.id].map(session => {
+                                                        const { status, comment } = getAttendanceInfo(session);
+                                                        return (
+                                                            <tr key={session.id}>
+                                                                <td>{safelyRenderValue(session.title)}</td>
+                                                                <td>{safelyRenderValue(session.date)}</td>
+                                                                <td className={`status-${status}`}>
+                                                                    {status}
+                                                                </td>
+                                                                <td>{comment}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
                                         </div>
-                                        <textarea
-                                            className="course-notes-textarea"
-                                            placeholder="Add your notes about the student's progress in this course..."
-                                            value={(studentData.feedback && studentData.feedback[course.id]) || ''}
-                                            onChange={(e) => handleFeedbackChange(course.id, e.target.value)}
-                                        />
+                                    ) : (
+                                        <div className="empty-message">No sessions found for this course.</div>
+                                    )}
+                                </div>
+
+                                <div className="course-notes-column">
+                                    <div className="feedback-header">
+                                        <div className="address-form-selector">
+                                            <span>Address as:</span>
+                                            <select
+                                                value={addressForm}
+                                                onChange={(e) => setAddressForm(e.target.value)}
+                                                className="address-form-select"
+                                            >
+                                                {addressOptions.map(option => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <button
+                                            className="generate-feedback-btn"
+                                            onClick={() => handleGenerateFeedback(course.id)}
+                                            disabled={isGenerating[course.id]}
+                                        >
+                                            <FontAwesomeIcon icon={faBrain} />
+                                            {isGenerating[course.id] ? 'Generating...' : 'Generate Feedback'}
+                                        </button>
                                     </div>
+                                    <textarea
+                                        className="course-notes-textarea"
+                                        placeholder="Add your notes about the student's progress in this course..."
+                                        value={(studentData.feedback && studentData.feedback[course.id]) || ''}
+                                        onChange={(e) => handleFeedbackChange(course.id, e.target.value)}
+                                    />
+                                </div>
                             </div>
                         ))
                     ) : (
