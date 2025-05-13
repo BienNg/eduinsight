@@ -1,7 +1,7 @@
 // src/features/students/components/StudentCoursesCard.jsx
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBrain } from '@fortawesome/free-solid-svg-icons';
+import { faBrain, faHistory } from '@fortawesome/free-solid-svg-icons';
 import { safelyRenderValue } from '../utils/studentDataUtils';
 import { updateRecord, getRecordById } from '../../firebase/database';
 import { generateFeedbackFromComments } from '../../utils/openaiUtils';
@@ -17,7 +17,9 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
     const addressOptions = [
         { value: 'em', label: 'Em' },
         { value: 'anh', label: 'Anh' },
-        { value: 'chị', label: 'Chị' }
+        { value: 'chị', label: 'Chị' },
+        { value: 'co', label: 'Co' },
+        { value: 'chú', label: 'Chú' }
     ];
 
     // Fetch the latest student data to ensure we have current feedback
@@ -97,14 +99,41 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                 });
             }
 
-            // Generate feedback using OpenAI with the addressForm parameter
+            // Find previous feedback from other courses
+            const previousFeedback = [];
+            if (studentData.feedback) {
+                // Filter out the current course
+                Object.entries(studentData.feedback).forEach(([feedbackCourseId, feedbackText]) => {
+                    if (feedbackCourseId !== courseId && feedbackText.trim()) {
+                        // Find course name for this feedback
+                        const feedbackCourse = courses.find(c => c.id === feedbackCourseId);
+                        const courseName = feedbackCourse ? feedbackCourse.name : 'Khóa học khác';
+
+                        previousFeedback.push({
+                            courseName,
+                            feedbackText,
+                            courseId: feedbackCourseId
+                        });
+                    }
+                });
+            }
+
+            // Sort previous feedback by course ID (assuming newer courses have higher IDs)
+            // This is a simple way to get the most recent feedback first
+            previousFeedback.sort((a, b) => b.courseId.localeCompare(a.courseId));
+
+            // Take only the most recent feedback for context (to avoid overwhelming the API)
+            const recentPreviousFeedback = previousFeedback.length > 0 ? previousFeedback[0] : null;
+
+            // Generate feedback using OpenAI with both current session data and previous feedback
             const feedbackText = await generateFeedbackFromComments(
                 student.name,
                 course ? course.name : 'khóa học này',
                 teacherNames,
                 courseSessionComments,
-                addressForm,  // Add this parameter
-                "gpt-4o-mini"  // Keep the model parameter
+                addressForm,
+                recentPreviousFeedback, // Add the previous feedback as a new parameter
+                "gpt-4o-mini"
             );
 
             // Create new feedbacks object by copying the existing feedback from the database
@@ -197,7 +226,6 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                                 <div className="course-notes-column">
                                     <div className="feedback-header">
                                         <div className="address-form-selector">
-                                            <span>Address as:</span>
                                             <select
                                                 value={addressForm}
                                                 onChange={(e) => setAddressForm(e.target.value)}
@@ -216,7 +244,7 @@ const StudentCoursesCard = ({ student, sessions, courses }) => {
                                             disabled={isGenerating[course.id]}
                                         >
                                             <FontAwesomeIcon icon={faBrain} />
-                                            {isGenerating[course.id] ? 'Generating...' : 'Generate Feedback'}
+                                            {isGenerating[course.id] ? 'Đang tạo...' : 'Tạo tin nhắn phản hồi'}
                                         </button>
                                     </div>
                                     <textarea

@@ -144,9 +144,28 @@
   gap: 8px;
 }
 
+.feedback-style-hint {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+  margin-top: 4px;
+}
+
 .address-form-selector span {
   font-size: 14px;
   color: #555;
+}
+
+.previous-feedback-indicator {
+  display: inline-block;
+  margin-left: 10px;
+  color: var(--primary-blue, #0088FE);
+  font-size: 12px;
+}
+
+.history-icon {
+  margin-right: 4px;
+  font-size: 10px;
 }
 
 .address-form-select {
