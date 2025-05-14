@@ -1,8 +1,12 @@
 // src/features/courses/CourseDetail/hooks/useTableData.js
 import styles from '../../../styles/modules/Table.module.css';
 
-export const useTableData = (teachers, calculateStudentAttendance, calculateSessionAttendance) => {
-  // Helper function to safely render any type of value
+export const useTableData = (
+  teachers,
+  calculateStudentAttendance,
+  calculateSessionAttendance,
+  calculateAverageAttendance
+) => {  // Helper function to safely render any type of value
   const safelyRenderValue = (value) => {
     if (value === null || value === undefined) {
       return '-';
@@ -49,15 +53,13 @@ export const useTableData = (teachers, calculateStudentAttendance, calculateSess
 
   // Define student table columns
   const studentColumns = [
-    { key: 'name', label: 'Name', sortable: true }, // We'll overwrite this label with the title prop
+    { key: 'name', label: 'Name', sortable: true },
     {
       key: 'attendance',
-      label: 'Absence',
+      label: `Attendance (${calculateAverageAttendance()})`,
       sortable: true,
       render: (student) => calculateStudentAttendance(student.id)
-    },
-    { key: 'info', label: 'Info', sortable: true },
-    { key: 'notes', label: 'Notes', sortable: true }
+    }
   ];
 
   // Define session table columns

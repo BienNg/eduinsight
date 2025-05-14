@@ -54,8 +54,12 @@ const CourseDetail = ({ onClose }) => {
   const {
     studentColumns,
     sessionColumns
-  } = useTableData(teachers, calculateStudentAttendance, calculateSessionAttendance);
-
+  } = useTableData(
+    teachers,
+    calculateStudentAttendance,
+    calculateSessionAttendance,
+    calculateAverageAttendance // Pass this function as well
+  );
   const handleClose = () => {
     if (groupName) {
       navigate(`/courses/group/${groupName}`);
