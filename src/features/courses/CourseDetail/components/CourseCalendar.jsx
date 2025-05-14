@@ -1,4 +1,6 @@
 // src/features/courses/CourseDetail/components/CourseCalendar.jsx
+// Fix for tab switching animation issue
+
 import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
@@ -11,6 +13,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
   const [direction, setDirection] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const gridRef = useRef(null);
+  const animationEndedRef = useRef(false); // New ref to track animation completion
 
   // Parse a date string in DD.MM.YYYY format to a Date object
   const parseDate = (dateStr) => {
@@ -47,50 +50,55 @@ const CourseCalendar = ({ course, sessions = [] }) => {
   
   const lastCompletedDate = lastCompletedSession?.date || "N/A";
 
-  // Generate month tabs between start date and end date
+  // Generate month tabs ONLY for months with sessions
   const generateMonthTabs = () => {
-    if (!startDate || !endDate) {
-      // If we don't have valid dates, return the current month
+    if (sortedSessions.length === 0) {
+      // If we don't have any sessions, return the current month
       const now = new Date();
       return [{
         id: 0,
-        label: new Date(now.getFullYear(), now.getMonth(), 1).toLocaleString('default', { month: 'long' }),
+        label: `${new Date(now.getFullYear(), now.getMonth(), 1).toLocaleString('default', { month: 'long' })} ${now.getFullYear()}`,
         month: now.getMonth(),
         year: now.getFullYear()
       }];
     }
     
-    const tabs = [];
-    const currentDate = new Date(startDate);
+    // Create a Set to track unique month/year combinations
+    const monthYearSet = new Set();
     
-    // Set the date to the first day of the month for proper comparison
-    currentDate.setDate(1);
-    const endMonthDate = new Date(endDate);
-    endMonthDate.setDate(1);
-    
-    // Generate a tab for each month from start to end
-    let tabId = 0;
-    while (currentDate <= endMonthDate) {
-      const monthName = currentDate.toLocaleString('default', { month: 'long' });
-      const monthYear = currentDate.getFullYear();
+    // Add each month that has sessions
+    sortedSessions.forEach(session => {
+      if (!session.date) return;
       
-      tabs.push({
-        id: tabId++,
-        label: monthName,
-        month: currentDate.getMonth(),
-        year: monthYear
-      });
-      
-      // Move to the next month
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
+      const sessionDate = parseDate(session.date);
+      if (sessionDate) {
+        const month = sessionDate.getMonth();
+        const year = sessionDate.getFullYear();
+        monthYearSet.add(`${month}-${year}`);
+      }
+    });
+
+    // Convert the Set to an array of objects and sort chronologically
+    const monthsWithSessions = Array.from(monthYearSet).map(monthYear => {
+      const [month, year] = monthYear.split('-').map(Number);
+      return { month, year };
+    }).sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return a.month - b.month;
+    });
     
-    return tabs;
+    // Create the tabs with proper labels including year
+    return monthsWithSessions.map((item, index) => ({
+      id: index,
+      label: `${new Date(item.year, item.month, 1).toLocaleString('default', { month: 'long' })} ${item.year}`,
+      month: item.month,
+      year: item.year
+    }));
   };
   
   const monthTabs = generateMonthTabs();
 
-  // Set initial activeTab to the current month if possible
+  // Set initial activeTab to the current month if possible, otherwise to the latest month with sessions
   useEffect(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -104,6 +112,10 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     if (currentMonthTab >= 0) {
       setActiveTab(currentMonthTab);
       setPreviousTab(currentMonthTab);
+    } else if (monthTabs.length > 0) {
+      // If current month not found, default to the last month with sessions
+      setActiveTab(monthTabs.length - 1);
+      setPreviousTab(monthTabs.length - 1);
     }
   }, [monthTabs]);
   
@@ -184,28 +196,31 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     return weeks;
   };
 
-  // Handle tab navigation
+  // Handle tab navigation - Updated with better state management
   const handlePrevTab = () => {
     if (activeTab > 0 && !isAnimating) {
+      animationEndedRef.current = false; // Reset animation completion flag
       setDirection('right');
       setPreviousTab(activeTab);
       setIsAnimating(true);
-      setActiveTab(activeTab - 1);
+      setActiveTab(prevActiveTab => prevActiveTab - 1);
     }
   };
   
   const handleNextTab = () => {
     if (activeTab < monthTabs.length - 1 && !isAnimating) {
+      animationEndedRef.current = false; // Reset animation completion flag
       setDirection('left');
       setPreviousTab(activeTab);
       setIsAnimating(true);
-      setActiveTab(activeTab + 1);
+      setActiveTab(prevActiveTab => prevActiveTab + 1);
     }
   };
 
   const handleTabClick = (tabIndex) => {
     if (tabIndex === activeTab || isAnimating) return;
     
+    animationEndedRef.current = false; // Reset animation completion flag
     setDirection(tabIndex > activeTab ? 'left' : 'right');
     setPreviousTab(activeTab);
     setIsAnimating(true);
@@ -213,9 +228,10 @@ const CourseCalendar = ({ course, sessions = [] }) => {
   };
 
   const handleAnimationEnd = () => {
-    if (isAnimating) {
+    // Prevent duplicate calls by checking our ref
+    if (isAnimating && !animationEndedRef.current) {
+      animationEndedRef.current = true;
       setIsAnimating(false);
-      setPreviousTab(activeTab);
     }
   };
 
