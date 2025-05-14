@@ -2,27 +2,35 @@
 import React, { useRef } from 'react';
 import CalendarDay from './CalendarDay';
 
-const CalendarGrid = ({ 
-  activeTab, 
-  previousTab, 
-  isAnimating, 
-  direction, 
-  monthTabs, 
-  generateCalendarData, 
-  handleAnimationEnd 
+// In CalendarGrid.jsx
+
+const CalendarGrid = ({
+  activeTab,
+  previousTab,
+  isAnimating,
+  direction,
+  monthTabs,
+  generateCalendarData,
+  handleAnimationEnd,
+  weekdayPattern,
+  onToggleWeekday,
+  isUpdating // Add this parameter
 }) => {
   const gridRef = useRef(null);
-  
+
   if (!isAnimating) {
     // When not animating, just show the active month
     const activeTabData = monthTabs[activeTab];
     const calendarData = generateCalendarData(activeTabData.month, activeTabData.year);
-    
+
     return (
       <div className="calendar-grid-wrapper">
         <div className="calendar-grid active">
-          <CalendarDaysHeader />
-          
+          <CalendarDaysHeader
+            weekdayPattern={weekdayPattern}
+            onToggleWeekday={onToggleWeekday}
+            isUpdating={isUpdating} // Pass the updating state
+          />
           {calendarData.map((week, weekIndex) => (
             <div key={`week-${weekIndex}`} className="calendar-week">
               {week.map((day, dayIndex) => (
@@ -36,23 +44,25 @@ const CalendarGrid = ({
       </div>
     );
   }
-  
+
   // During animation, show both previous and new grids with appropriate animations
   const previousTabData = monthTabs[previousTab];
   const activeTabData = monthTabs[activeTab];
-  
+
   const previousCalendarData = generateCalendarData(previousTabData.month, previousTabData.year);
   const activeCalendarData = generateCalendarData(activeTabData.month, activeTabData.year);
-  
+
   return (
     <div className="calendar-grid-wrapper" ref={gridRef}>
       {/* Previous month grid */}
-      <div 
+      <div
         className={`calendar-grid ${direction === 'left' ? 'slide-out-left' : 'slide-out-right'}`}
         onAnimationEnd={handleAnimationEnd}
       >
-        <CalendarDaysHeader />
-        
+        <CalendarDaysHeader
+          weekdayPattern={weekdayPattern}
+          onToggleWeekday={onToggleWeekday}
+        />
         {previousCalendarData.map((week, weekIndex) => (
           <div key={`prev-week-${weekIndex}`} className="calendar-week">
             {week.map((day, dayIndex) => (
@@ -63,13 +73,15 @@ const CalendarGrid = ({
           </div>
         ))}
       </div>
-      
+
       {/* Active month grid */}
-      <div 
+      <div
         className={`calendar-grid ${direction === 'left' ? 'slide-in-right' : 'slide-in-left'}`}
       >
-        <CalendarDaysHeader />
-        
+        <CalendarDaysHeader
+          weekdayPattern={weekdayPattern}
+          onToggleWeekday={onToggleWeekday}
+        />
         {activeCalendarData.map((week, weekIndex) => (
           <div key={`active-week-${weekIndex}`} className="calendar-week">
             {week.map((day, dayIndex) => (
@@ -84,16 +96,44 @@ const CalendarGrid = ({
   );
 };
 
-const CalendarDaysHeader = () => (
-  <div className="calendar-days-header">
-    <div className="day-header">M</div>
-    <div className="day-header">D</div>
-    <div className="day-header">M</div>
-    <div className="day-header">D</div>
-    <div className="day-header">F</div>
-    <div className="day-header">S</div>
-    <div className="day-header">S</div>
-  </div>
-);
+const CalendarDaysHeader = ({
+  weekdayPattern = [],
+  onToggleWeekday,
+  isUpdating
+}) => {
+  // Full weekday names in order (Monday-first format)
+  const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  // Short labels for display
+  const weekdayLabels = ['M', 'D', 'M', 'D', 'F', 'S', 'S'];
 
+  // Check if a day is in the pattern
+  const isDayHighlighted = (index) => {
+    return weekdayPattern.includes(weekdays[index]);
+  };
+
+  // Handle click on a weekday header
+  const handleDayClick = (index) => {
+    console.log(`Clicked on ${weekdays[index]}`); // Debug log
+    if (onToggleWeekday) {
+      onToggleWeekday(weekdays[index]);
+    } else {
+      console.error('onToggleWeekday is not defined or not passed properly');
+    }
+  };
+
+  return (
+    <div className="calendar-days-header">
+      {weekdayLabels.map((label, index) => (
+        <div
+          key={`day-header-${index}`}
+          className={`day-header ${isDayHighlighted(index) ? 'highlighted-day' : ''} ${isUpdating ? 'updating' : ''}`}
+          onClick={() => handleDayClick(index)}
+          style={{ cursor: 'pointer' }} // Add explicit cursor style
+        >
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+};
 export default CalendarGrid;
