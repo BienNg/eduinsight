@@ -138,3 +138,174 @@
 .calendar-day.today {
   border: 2px solid var(--primary-color, #0066cc);
 }
+
+/* Tab Navigation */
+.calendar-tab-navigation {
+  margin-top: 10px;
+}
+
+.calendar-tab-navigation .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 20px 20px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.calendar-tab-navigation .panel-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.tab-card-navigation {
+  display: flex;
+  align-items: center;
+}
+
+.tab-nav-button {
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--primary-blue, #0066cc);
+  transition: background-color 0.2s;
+}
+
+.tab-nav-button:hover {
+  background-color: #f0f7ff;
+}
+
+.tab-nav-button.disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.tab-nav-button.disabled:hover {
+  background-color: transparent;
+}
+
+.tab-indicators {
+  display: flex;
+  gap: 6px;
+  margin: 0 12px;
+}
+
+.tab-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tab-indicator.active {
+  background-color: var(--primary-blue, #0066cc);
+}
+
+.tab-indicator:hover {
+  background-color: #b0b0b0;
+}
+
+.tab-indicator.active:hover {
+  background-color: var(--primary-blue, #0066cc);
+}
+
+/* Calendar Grid Wrapper and Animations */
+.calendar-content {
+  position: relative;
+  overflow: hidden;
+  padding: 10px 0;
+  min-height: 250px;
+}
+
+.calendar-grid-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.calendar-grid {
+  width: 100%;
+  animation-duration: 0.3s;
+  animation-fill-mode: forwards;
+  padding: 10px;
+}
+
+.calendar-grid.active {
+  position: relative;
+}
+
+/* Animation keyframes */
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Apply animations */
+.calendar-grid.slide-out-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation-name: slideOutLeft;
+}
+
+.calendar-grid.slide-out-right {
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation-name: slideOutRight;
+}
+
+.calendar-grid.slide-in-left {
+  animation-name: slideInLeft;
+}
+
+.calendar-grid.slide-in-right {
+  animation-name: slideInRight;
+}
