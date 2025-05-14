@@ -105,7 +105,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
       setActiveTab(currentMonthTab);
       setPreviousTab(currentMonthTab);
     }
-  }, []);
+  }, [monthTabs]);
   
   // Format for display (DD.MM)
   const formatShortDate = (dateStr) => {
@@ -132,10 +132,21 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     
     // Create a map of dates with sessions
     const sessionDays = new Map();
+    
+    // Map sessions to their corresponding days
     sortedSessions.forEach(session => {
+      if (!session.date) return;
+      
       const sessionDate = parseDate(session.date);
       if (sessionDate && sessionDate.getMonth() === month && sessionDate.getFullYear() === year) {
-        sessionDays.set(sessionDate.getDate(), true);
+        // Store the day and the session information
+        const day = sessionDate.getDate();
+        
+        if (!sessionDays.has(day)) {
+          sessionDays.set(day, []);
+        }
+        
+        sessionDays.get(day).push(session);
       }
     });
     
@@ -149,9 +160,12 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     
     // Add days of the current month
     for (let day = 1; day <= daysInMonth; day++) {
+      const sessionsOnDay = sessionDays.get(day) || [];
+      
       currentWeek.push({
         day,
-        hasSession: sessionDays.has(day),
+        hasSession: sessionsOnDay.length > 0,
+        sessions: sessionsOnDay,
         isToday: isCurrentMonth && day === todayDate
       });
       
@@ -205,6 +219,20 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     }
   };
 
+  // Render a single calendar day
+  const renderCalendarDay = (day) => {
+    if (!day) return <div className="calendar-day"></div>;
+    
+    const hasSessionClass = day.hasSession ? 'has-session' : 'no-session';
+    const todayClass = day.isToday ? 'today' : '';
+    
+    return (
+      <div className={`calendar-day ${hasSessionClass} ${todayClass}`}>
+        {day.day}
+      </div>
+    );
+  };
+
   // Render calendar grid with animation
   const renderCalendarGrid = () => {
     if (!isAnimating) {
@@ -228,11 +256,8 @@ const CourseCalendar = ({ course, sessions = [] }) => {
             {calendarData.map((week, weekIndex) => (
               <div key={`week-${weekIndex}`} className="calendar-week">
                 {week.map((day, dayIndex) => (
-                  <div 
-                    key={`day-${weekIndex}-${dayIndex}`} 
-                    className={`calendar-day ${day ? (day.hasSession ? 'has-session' : 'no-session') : ''} ${day?.isToday ? 'today' : ''}`}
-                  >
-                    {day && day.day}
+                  <div key={`day-${weekIndex}-${dayIndex}`}>
+                    {renderCalendarDay(day)}
                   </div>
                 ))}
               </div>
@@ -269,11 +294,8 @@ const CourseCalendar = ({ course, sessions = [] }) => {
           {previousCalendarData.map((week, weekIndex) => (
             <div key={`prev-week-${weekIndex}`} className="calendar-week">
               {week.map((day, dayIndex) => (
-                <div 
-                  key={`prev-day-${weekIndex}-${dayIndex}`} 
-                  className={`calendar-day ${day ? (day.hasSession ? 'has-session' : 'no-session') : ''} ${day?.isToday ? 'today' : ''}`}
-                >
-                  {day && day.day}
+                <div key={`prev-day-${weekIndex}-${dayIndex}`}>
+                  {renderCalendarDay(day)}
                 </div>
               ))}
             </div>
@@ -297,11 +319,8 @@ const CourseCalendar = ({ course, sessions = [] }) => {
           {activeCalendarData.map((week, weekIndex) => (
             <div key={`active-week-${weekIndex}`} className="calendar-week">
               {week.map((day, dayIndex) => (
-                <div 
-                  key={`active-day-${weekIndex}-${dayIndex}`} 
-                  className={`calendar-day ${day ? (day.hasSession ? 'has-session' : 'no-session') : ''} ${day?.isToday ? 'today' : ''}`}
-                >
-                  {day && day.day}
+                <div key={`active-day-${weekIndex}-${dayIndex}`}>
+                  {renderCalendarDay(day)}
                 </div>
               ))}
             </div>
@@ -311,14 +330,22 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     );
   };
 
+  // Calculate the total number of sessions
+  const totalSessions = sortedSessions.length;
+  
+  // Calculate the number of completed sessions
+  const completedSessions = sortedSessions.filter(
+    session => session.status === "completed" || session.status === "complete"
+  ).length;
+
   return (
     <div className="course-calendar overview-panel animate-card">
       <div className="calendar-header">
         <div className="calendar-title-section">
           <h2 className="calendar-title">Kurs Kalender</h2>
           <span className="calendar-date-range">
-            {startDateStr !== "N/A" && lastCompletedDate !== "N/A" 
-              ? `From ${formatShortDate(startDateStr)} - ${formatShortDate(lastCompletedDate)}, ${startDate ? startDate.getFullYear() : new Date().getFullYear()}`
+            {startDateStr !== "N/A" && endDateStr !== "N/A" 
+              ? `From ${formatShortDate(startDateStr)} - ${formatShortDate(endDateStr)}, ${startDate ? startDate.getFullYear() : new Date().getFullYear()}`
               : startDateStr !== "N/A" ? `From ${formatShortDate(startDateStr)}` : "No sessions scheduled"}
           </span>
         </div>
@@ -333,6 +360,10 @@ const CourseCalendar = ({ course, sessions = [] }) => {
         <div className="calendar-metric">
           <div className="metric-value">{formatShortDate(lastCompletedDate)}</div>
           <div className="metric-label">Laufend</div>
+        </div>
+        <div className="calendar-metric">
+          <div className="metric-value">{`${completedSessions}/${totalSessions}`}</div>
+          <div className="metric-label">Sessions</div>
         </div>
         <div className="status-indicator">
           <div className="status-circle"></div>
