@@ -1,3 +1,5 @@
+/* src/features/styles/modules/Table.module.css */
+
 /* Basic Table Styling */
 .table {
   background-color: #f5f7fa;
@@ -77,7 +79,7 @@
 
 /* Selectable Rows */
 .selectableRow {
-  cursor: pointer;
+  cursor: default;
 }
 
 .selectedRow {
@@ -162,4 +164,53 @@
   background-color: #2563eb;
   color: white;
   border-color: #2563eb;
+}
+
+/* Clickable cell styling */
+.clickableCell {
+  cursor: pointer;
+  color: #3b82f6;
+  position: relative;
+}
+
+/* Ensure we only apply hover effects to clickable cells, not the whole row */
+.table tbody tr:hover td {
+  background-color: inherit;
+}
+
+/* Apply hover effect only to clickable cells */
+.clickableCell:hover {
+  background-color: #f0f7ff !important;
+}
+
+.clickableCellContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clickableIcon {
+  color: #3b82f6;
+  font-size: 14px;
+  margin-left: 8px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+/* Make icon more visible on hover */
+.clickableCell:hover .clickableIcon {
+  opacity: 1;
+}
+
+/* Status-specific colors (for different status values) */
+.statusPending {
+  background-color: #FEF3C7;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+}
+
+.statusCancelled, .statusCanceled {
+  background-color: #E5E7EB;
+  color: #4B5563;
+  border: 1px solid #D1D5DB;
 }

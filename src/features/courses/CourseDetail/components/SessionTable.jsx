@@ -5,15 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 
 const SessionTable = ({ sessions, sessionColumns, openSessionDetail }) => {
-  const renderSessionActions = (session) => (
-    <button
-      className="table-action-button"
-      onClick={() => openSessionDetail(session)}
-    >
-      Details
-    </button>
-  );
-
   return (
     <div className="overview-panel animate-card">
       <div className="panel-header">
@@ -28,7 +19,7 @@ const SessionTable = ({ sessions, sessionColumns, openSessionDetail }) => {
             columns={sessionColumns}
             data={sessions}
             defaultSortColumn="sessionOrder"
-            actions={renderSessionActions}
+            onRowClick={openSessionDetail}
             rowKeyField="id"
           />
         ) : (

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import styles from '../../styles/modules/Table.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 const SortableTable = ({ 
   columns, 
@@ -10,8 +10,7 @@ const SortableTable = ({
   defaultSortColumn, 
   defaultSortDirection = 'ascending',
   onRowClick,
-  rowKeyField = 'id',
-  actions
+  rowKeyField = 'id'
 }) => {
   const [sortConfig, setSortConfig] = useState({
     key: defaultSortColumn,
@@ -73,29 +72,13 @@ const SortableTable = ({
     
     return <span className={badgeClass}>{status}</span>;
   };
-
-  const renderDefaultActions = (row) => {
-    return (
-      <div className={styles.actionButtons}>
-        <button className={styles.iconButton}>
-          <FontAwesomeIcon icon={faEye} />
-        </button>
-        <button className={styles.iconButton}>
-          <FontAwesomeIcon icon={faPen} />
-        </button>
-        <button className={styles.iconButton}>
-          <FontAwesomeIcon icon={faTrash} />
-        </button>
-      </div>
-    );
-  };
   
   return (
     <div className={styles.tableContainer}>
       <table className={styles.table}>
         <thead>
           <tr>
-            {columns.map((column) => (
+            {columns.map((column, index) => (
               <th 
                 key={column.key}
                 onClick={() => column.sortable ? requestSort(column.key) : null}
@@ -108,28 +91,38 @@ const SortableTable = ({
                 {column.label} {getSortIcon(column.key)}
               </th>
             ))}
-            {actions && <th>Action</th>}
           </tr>
         </thead>
         <tbody>
           {getSortedData().map((row) => (
             <tr 
-              key={row[rowKeyField]} 
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              key={row[rowKeyField]}
               className={onRowClick ? styles.selectableRow : ''}
             >
-              {columns.map((column) => (
-                <td key={`${row[rowKeyField]}-${column.key}`}>
-                  {column.key === 'status' ? 
-                    renderStatusBadge(row[column.key]) : 
-                    (column.render ? column.render(row) : row[column.key])}
-                </td>
-              ))}
-              {actions && (
-                <td>
-                  {typeof actions === 'function' ? actions(row) : renderDefaultActions(row)}
-                </td>
-              )}
+              {columns.map((column, index) => {
+                // Only make the first column clickable
+                const isFirstColumn = index === 0;
+                const cellContent = column.key === 'status' 
+                  ? renderStatusBadge(row[column.key]) 
+                  : (column.render ? column.render(row) : row[column.key]);
+                
+                return (
+                  <td 
+                    key={`${row[rowKeyField]}-${column.key}`}
+                    onClick={isFirstColumn && onRowClick ? () => onRowClick(row) : undefined}
+                    className={isFirstColumn && onRowClick ? styles.clickableCell : ''}
+                  >
+                    {isFirstColumn && onRowClick ? (
+                      <div className={styles.clickableCellContent}>
+                        <span>{cellContent}</span>
+                        <FontAwesomeIcon icon={faChevronRight} className={styles.clickableIcon} />
+                      </div>
+                    ) : (
+                      cellContent
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

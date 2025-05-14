@@ -5,15 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 
 const StudentTable = ({ students, studentColumns, openStudentDetail }) => {
-  const renderStudentActions = (student) => (
-    <button
-      className="table-action-button"
-      onClick={() => openStudentDetail(student)}
-    >
-      Details
-    </button>
-  );
-
   return (
     <div className="overview-panel animate-card">
       <div className="panel-header">
@@ -28,7 +19,7 @@ const StudentTable = ({ students, studentColumns, openStudentDetail }) => {
             columns={studentColumns}
             data={students}
             defaultSortColumn="name"
-            actions={renderStudentActions}
+            onRowClick={openStudentDetail}
             rowKeyField="id"
           />
         ) : (
