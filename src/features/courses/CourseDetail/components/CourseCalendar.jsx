@@ -2,16 +2,61 @@
 import React from 'react';
 import '../../../styles/CourseCalendar.css';
 
-const CourseCalendar = ({ course }) => {
-  // Dummy data for the calendar
-  const startDate = "04.05.2025";
-  const currentStatus = "17.05.2025 Laufend";
+const CourseCalendar = ({ course, sessions = [] }) => {
+  // Extract actual dates from sessions
+  const sortedSessions = [...sessions].sort((a, b) => {
+    // Helper function to parse German date format (DD.MM.YYYY)
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      const [day, month, year] = dateStr.split('.').map(Number);
+      return new Date(year, month - 1, day);
+    };
+    
+    const dateA = parseDate(a.date);
+    const dateB = parseDate(b.date);
+    
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    
+    return dateA - dateB;
+  });
   
-  // Generate dummy calendar data
+  // Get the first session date
+  const firstSession = sortedSessions.length > 0 ? sortedSessions[0] : null;
+  
+  // Get the last completed session
+  const lastCompletedSession = [...sortedSessions]
+    .filter(session => session.status === "completed" || session.status === "complete")
+    .pop(); // Get the last one after filtering
+  
+  const startDate = firstSession?.date || "N/A";
+  const lastCompletedDate = lastCompletedSession?.date || "N/A";
+  
+  // Format for display (DD.MM)
+  const formatShortDate = (dateStr) => {
+    if (!dateStr || dateStr === "N/A") return "N/A";
+    const parts = dateStr.split('.');
+    if (parts.length < 2) return dateStr;
+    return `${parts[0]}.${parts[1]}`;
+  };
+  
+  // Generate calendar data
   const generateCalendarData = () => {
     const weeks = [];
     const daysInMonth = 31;
     const startDay = 3; // Wednesday (0 = Monday, 6 = Sunday)
+    
+    // Create a map of dates with sessions
+    const sessionDays = new Map();
+    sortedSessions.forEach(session => {
+      if (session.date) {
+        const day = parseInt(session.date.split('.')[0]);
+        sessionDays.set(day, true);
+      }
+    });
+    
+    // Get today's day of month
+    const today = new Date().getDate();
     
     let currentWeek = Array(startDay).fill(null);
     
@@ -19,8 +64,8 @@ const CourseCalendar = ({ course }) => {
       // Add the day to the current week
       currentWeek.push({
         day,
-        hasSession: Math.random() > 0.6, // Randomly determine if there's a session
-        isToday: day === 17
+        hasSession: sessionDays.has(day),
+        isToday: day === today
       });
       
       // If we've reached Sunday (end of the week) or the last day of the month
@@ -45,18 +90,22 @@ const CourseCalendar = ({ course }) => {
       <div className="calendar-header">
         <div className="calendar-title-section">
           <h2 className="calendar-title">Kurs Kalender</h2>
-          <span className="calendar-date-range">From 15 Feb - 15 May, 2024</span>
+          <span className="calendar-date-range">
+            {startDate !== "N/A" && lastCompletedDate !== "N/A" 
+              ? `From ${formatShortDate(startDate)} - ${formatShortDate(lastCompletedDate)}, ${new Date().getFullYear()}`
+              : startDate !== "N/A" ? `From ${formatShortDate(startDate)}` : "No sessions scheduled"}
+          </span>
         </div>
         <button className="kurs-start-button">Kurs Start</button>
       </div>
       
       <div className="calendar-summary">
         <div className="calendar-metric">
-          <div className="metric-value">{startDate.split('.')[0]}.{startDate.split('.')[1]}</div>
+          <div className="metric-value">{formatShortDate(startDate)}</div>
           <div className="metric-label">Start</div>
         </div>
         <div className="calendar-metric">
-          <div className="metric-value">{currentStatus.split(' ')[0].split('.')[0]}.{currentStatus.split(' ')[0].split('.')[1]}</div>
+          <div className="metric-value">{formatShortDate(lastCompletedDate)}</div>
           <div className="metric-label">Laufend</div>
         </div>
         <div className="status-indicator">

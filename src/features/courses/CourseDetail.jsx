@@ -27,7 +27,7 @@ const CourseDetail = ({ onClose }) => {
   const location = useLocation();
   const { state } = location;
   const groupName = state?.groupName;
-  
+
   // State for UI interactions
   const [selectedSession, setSelectedSession] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -36,24 +36,24 @@ const CourseDetail = ({ onClose }) => {
   const [error, setError] = useState(null);
 
   // Use custom hooks for data fetching and logic
-  const { 
-    course, 
-    group, 
-    teachers, 
-    students, 
-    sessions, 
-    loading 
+  const {
+    course,
+    group,
+    teachers,
+    students,
+    sessions,
+    loading
   } = useCourseData(id);
 
-  const { 
-    calculateStudentAttendance, 
+  const {
+    calculateStudentAttendance,
     calculateSessionAttendance,
-    calculateAverageAttendance 
+    calculateAverageAttendance
   } = useAttendance(students, sessions);
 
-  const { 
-    studentColumns, 
-    sessionColumns 
+  const {
+    studentColumns,
+    sessionColumns
   } = useTableData(teachers, calculateStudentAttendance, calculateSessionAttendance);
 
   const handleClose = () => {
@@ -100,7 +100,7 @@ const CourseDetail = ({ onClose }) => {
 
   return (
     <div className="course-detail-page">
-      <CourseHeader 
+      <CourseHeader
         course={course}
         groupName={groupName}
         handleClose={handleClose}
@@ -118,7 +118,7 @@ const CourseDetail = ({ onClose }) => {
       )}
 
       {/* Course Overview Section */}
-      <CourseStats 
+      <CourseStats
         course={course}
         group={group}
         teachers={teachers}
@@ -131,21 +131,21 @@ const CourseDetail = ({ onClose }) => {
       <div className="course-detail-content-row">
         {/* Students Section */}
         <div className="course-detail-column">
-          <StudentTable 
+          <StudentTable
             students={students}
             studentColumns={studentColumns}
             openStudentDetail={openStudentDetail}
           />
         </div>
-        
+
         {/* Calendar Section */}
         <div className="course-detail-column">
-          <CourseCalendar course={course} />
+          <CourseCalendar course={course} sessions={sessions} />
         </div>
       </div>
 
       {/* Sessions Section */}
-      <SessionTable 
+      <SessionTable
         sessions={sessions}
         sessionColumns={sessionColumns}
         openSessionDetail={openSessionDetail}
