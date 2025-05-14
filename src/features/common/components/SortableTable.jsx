@@ -1,6 +1,8 @@
 // src/features/common/components/SortableTable.jsx
 import { useState } from 'react';
 import styles from '../../styles/modules/Table.module.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 const SortableTable = ({ 
   columns, 
@@ -58,6 +60,35 @@ const SortableTable = ({
     if (sortConfig.key !== key) return null;
     return sortConfig.direction === 'ascending' ? '↑' : '↓';
   };
+
+  const renderStatusBadge = (status) => {
+    const statusLower = String(status).toLowerCase();
+    let badgeClass = styles.statusBadge;
+    
+    if (statusLower === 'paid') {
+      badgeClass += ` ${styles.statusCompleted}`;
+    } else if (statusLower === 'unpaid') {
+      badgeClass += ` ${styles.statusOngoing}`;
+    }
+    
+    return <span className={badgeClass}>{status}</span>;
+  };
+
+  const renderDefaultActions = (row) => {
+    return (
+      <div className={styles.actionButtons}>
+        <button className={styles.iconButton}>
+          <FontAwesomeIcon icon={faEye} />
+        </button>
+        <button className={styles.iconButton}>
+          <FontAwesomeIcon icon={faPen} />
+        </button>
+        <button className={styles.iconButton}>
+          <FontAwesomeIcon icon={faTrash} />
+        </button>
+      </div>
+    );
+  };
   
   return (
     <div className={styles.tableContainer}>
@@ -77,7 +108,7 @@ const SortableTable = ({
                 {column.label} {getSortIcon(column.key)}
               </th>
             ))}
-            {actions && <th>Actions</th>}
+            {actions && <th>Action</th>}
           </tr>
         </thead>
         <tbody>
@@ -89,12 +120,14 @@ const SortableTable = ({
             >
               {columns.map((column) => (
                 <td key={`${row[rowKeyField]}-${column.key}`}>
-                  {column.render ? column.render(row) : row[column.key]}
+                  {column.key === 'status' ? 
+                    renderStatusBadge(row[column.key]) : 
+                    (column.render ? column.render(row) : row[column.key])}
                 </td>
               ))}
               {actions && (
                 <td>
-                  {typeof actions === 'function' ? actions(row) : actions}
+                  {typeof actions === 'function' ? actions(row) : renderDefaultActions(row)}
                 </td>
               )}
             </tr>
