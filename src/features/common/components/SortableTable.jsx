@@ -10,12 +10,23 @@ const SortableTable = ({
   defaultSortColumn, 
   defaultSortDirection = 'ascending',
   onRowClick,
-  rowKeyField = 'id'
+  rowKeyField = 'id',
+  title = null,
+  animationDelay = 1 // Add a prop for animation delay
 }) => {
   const [sortConfig, setSortConfig] = useState({
     key: defaultSortColumn,
     direction: defaultSortDirection
   });
+  
+  // Modify columns to include title in first column if provided
+  const modifiedColumns = [...columns];
+  if (title && modifiedColumns.length > 0) {
+    modifiedColumns[0] = {
+      ...modifiedColumns[0],
+      label: title
+    };
+  }
   
   const requestSort = (key) => {
     let direction = 'ascending';
@@ -73,12 +84,15 @@ const SortableTable = ({
     return <span className={badgeClass}>{status}</span>;
   };
   
+  // Add animation class based on the delay - moved here to fix scope issue
+  const animationClass = `${styles.animatedTable} ${styles[`tableAnimationDelay${animationDelay}`]}`;
+  
   return (
-    <div className={styles.tableContainer}>
+    <div className={`${styles.tableContainer} ${animationClass}`}>
       <table className={styles.table}>
         <thead>
           <tr>
-            {columns.map((column, index) => (
+            {modifiedColumns.map((column, index) => (
               <th 
                 key={column.key}
                 onClick={() => column.sortable ? requestSort(column.key) : null}

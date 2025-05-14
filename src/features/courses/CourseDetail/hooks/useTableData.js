@@ -49,7 +49,7 @@ export const useTableData = (teachers, calculateStudentAttendance, calculateSess
 
   // Define student table columns
   const studentColumns = [
-    { key: 'name', label: 'Name', sortable: true },
+    { key: 'name', label: 'Name', sortable: true }, // We'll overwrite this label with the title prop
     {
       key: 'attendance',
       label: 'Absence',
