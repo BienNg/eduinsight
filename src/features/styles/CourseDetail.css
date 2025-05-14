@@ -258,3 +258,14 @@ nav {
 .error {
   color: #d32f2f;
 }
+
+.course-detail-content-row {
+  display: flex;
+  gap: var(--space-lg, 1.5rem);
+  margin-bottom: var(--space-lg, 1.5rem);
+}
+
+.course-detail-column {
+  flex: 1;
+  min-width: 0; /* Allow flex items to shrink below content size */
+}

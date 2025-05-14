@@ -1,4 +1,4 @@
-// src/features/courses/CourseDetail.jsx
+// src/features/courses/CourseDetail.jsx (updated)
 import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { handleDeleteCourse } from '../utils/courseDeletionUtils';
@@ -15,6 +15,7 @@ import CourseHeader from './CourseDetail/components/CourseHeader';
 import CourseStats from './CourseDetail/components/CourseStats';
 import StudentTable from './CourseDetail/components/StudentTable';
 import SessionTable from './CourseDetail/components/SessionTable';
+import CourseCalendar from './CourseDetail/components/CourseCalendar'; // Add the new component
 
 // CSS Imports
 import '../styles/CourseDetail.css';
@@ -126,12 +127,22 @@ const CourseDetail = ({ onClose }) => {
         calculateAverageAttendance={calculateAverageAttendance}
       />
 
-      {/* Students Section */}
-      <StudentTable 
-        students={students}
-        studentColumns={studentColumns}
-        openStudentDetail={openStudentDetail}
-      />
+      {/* Add a flex container for the tables and calendar */}
+      <div className="course-detail-content-row">
+        {/* Students Section */}
+        <div className="course-detail-column">
+          <StudentTable 
+            students={students}
+            studentColumns={studentColumns}
+            openStudentDetail={openStudentDetail}
+          />
+        </div>
+        
+        {/* Calendar Section */}
+        <div className="course-detail-column">
+          <CourseCalendar course={course} />
+        </div>
+      </div>
 
       {/* Sessions Section */}
       <SessionTable 
