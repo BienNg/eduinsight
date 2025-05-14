@@ -15,7 +15,7 @@ import CourseHeader from './CourseDetail/components/CourseHeader';
 import CourseStats from './CourseDetail/components/CourseStats';
 import StudentTable from './CourseDetail/components/StudentTable';
 import SessionTable from './CourseDetail/components/SessionTable';
-import CourseCalendar from './CourseDetail/components/CourseCalendar'; // Add the new component
+import CourseCalendar from './CourseDetail/components/CourseCalendar/CourseCalendar'; // Add the new component
 
 // CSS Imports
 import '../styles/CourseDetail.css';

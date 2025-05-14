@@ -1,27 +1,21 @@
-// src/features/courses/CourseDetail/components/CourseCalendar.jsx
-// Fix for tab switching animation issue
+// src/features/courses/CourseDetail/components/CourseCalendar/hooks/useCalendarData.js
+import { useState, useEffect, useRef } from 'react';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import '../../../styles/CourseCalendar.css';
-
-const CourseCalendar = ({ course, sessions = [] }) => {
+export const useCalendarData = (sessions = []) => {
   // State for animations and tab management
   const [activeTab, setActiveTab] = useState(0);
   const [previousTab, setPreviousTab] = useState(0);
   const [direction, setDirection] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const gridRef = useRef(null);
-  const animationEndedRef = useRef(false); // New ref to track animation completion
-
+  const animationEndedRef = useRef(false);
+  
   // Parse a date string in DD.MM.YYYY format to a Date object
   const parseDate = (dateStr) => {
     if (!dateStr || dateStr === "N/A") return null;
     const [day, month, year] = dateStr.split('.').map(Number);
     return new Date(year, month - 1, day);
   };
-
+  
   // Sort sessions by date
   const sortedSessions = [...sessions].sort((a, b) => {
     const dateA = parseDate(a.date);
@@ -49,7 +43,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     .pop();
   
   const lastCompletedDate = lastCompletedSession?.date || "N/A";
-
+  
   // Generate month tabs ONLY for months with sessions
   const generateMonthTabs = () => {
     if (sortedSessions.length === 0) {
@@ -77,7 +71,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
         monthYearSet.add(`${month}-${year}`);
       }
     });
-
+    
     // Convert the Set to an array of objects and sort chronologically
     const monthsWithSessions = Array.from(monthYearSet).map(monthYear => {
       const [month, year] = monthYear.split('-').map(Number);
@@ -97,7 +91,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
   };
   
   const monthTabs = generateMonthTabs();
-
+  
   // Set initial activeTab to the current month if possible, otherwise to the latest month with sessions
   useEffect(() => {
     const now = new Date();
@@ -195,8 +189,8 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     
     return weeks;
   };
-
-  // Handle tab navigation - Updated with better state management
+  
+  // Handle tab navigation
   const handlePrevTab = () => {
     if (activeTab > 0 && !isAnimating) {
       animationEndedRef.current = false; // Reset animation completion flag
@@ -216,7 +210,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
       setActiveTab(prevActiveTab => prevActiveTab + 1);
     }
   };
-
+  
   const handleTabClick = (tabIndex) => {
     if (tabIndex === activeTab || isAnimating) return;
     
@@ -226,7 +220,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
     setIsAnimating(true);
     setActiveTab(tabIndex);
   };
-
+  
   const handleAnimationEnd = () => {
     // Prevent duplicate calls by checking our ref
     if (isAnimating && !animationEndedRef.current) {
@@ -234,118 +228,7 @@ const CourseCalendar = ({ course, sessions = [] }) => {
       setIsAnimating(false);
     }
   };
-
-  // Render a single calendar day
-  const renderCalendarDay = (day) => {
-    if (!day) return <div className="calendar-day"></div>;
-    
-    const hasSessionClass = day.hasSession ? 'has-session' : 'no-session';
-    const todayClass = day.isToday ? 'today' : '';
-    
-    return (
-      <div className={`calendar-day ${hasSessionClass} ${todayClass}`}>
-        {day.day}
-      </div>
-    );
-  };
-
-  // Render calendar grid with animation
-  const renderCalendarGrid = () => {
-    if (!isAnimating) {
-      // When not animating, just show the active month
-      const activeTabData = monthTabs[activeTab];
-      const calendarData = generateCalendarData(activeTabData.month, activeTabData.year);
-      
-      return (
-        <div className="calendar-grid-wrapper">
-          <div className="calendar-grid active">
-            <div className="calendar-days-header">
-              <div className="day-header">M</div>
-              <div className="day-header">D</div>
-              <div className="day-header">M</div>
-              <div className="day-header">D</div>
-              <div className="day-header">F</div>
-              <div className="day-header">S</div>
-              <div className="day-header">S</div>
-            </div>
-            
-            {calendarData.map((week, weekIndex) => (
-              <div key={`week-${weekIndex}`} className="calendar-week">
-                {week.map((day, dayIndex) => (
-                  <div key={`day-${weekIndex}-${dayIndex}`}>
-                    {renderCalendarDay(day)}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    
-    // During animation, show both previous and new grids with appropriate animations
-    const previousTabData = monthTabs[previousTab];
-    const activeTabData = monthTabs[activeTab];
-    
-    const previousCalendarData = generateCalendarData(previousTabData.month, previousTabData.year);
-    const activeCalendarData = generateCalendarData(activeTabData.month, activeTabData.year);
-    
-    return (
-      <div className="calendar-grid-wrapper" ref={gridRef}>
-        {/* Previous month grid */}
-        <div 
-          className={`calendar-grid ${direction === 'left' ? 'slide-out-left' : 'slide-out-right'}`}
-          onAnimationEnd={handleAnimationEnd}
-        >
-          <div className="calendar-days-header">
-            <div className="day-header">M</div>
-            <div className="day-header">D</div>
-            <div className="day-header">M</div>
-            <div className="day-header">D</div>
-            <div className="day-header">F</div>
-            <div className="day-header">S</div>
-            <div className="day-header">S</div>
-          </div>
-          
-          {previousCalendarData.map((week, weekIndex) => (
-            <div key={`prev-week-${weekIndex}`} className="calendar-week">
-              {week.map((day, dayIndex) => (
-                <div key={`prev-day-${weekIndex}-${dayIndex}`}>
-                  {renderCalendarDay(day)}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-        
-        {/* Active month grid */}
-        <div 
-          className={`calendar-grid ${direction === 'left' ? 'slide-in-right' : 'slide-in-left'}`}
-        >
-          <div className="calendar-days-header">
-            <div className="day-header">M</div>
-            <div className="day-header">D</div>
-            <div className="day-header">M</div>
-            <div className="day-header">D</div>
-            <div className="day-header">F</div>
-            <div className="day-header">S</div>
-            <div className="day-header">S</div>
-          </div>
-          
-          {activeCalendarData.map((week, weekIndex) => (
-            <div key={`active-week-${weekIndex}`} className="calendar-week">
-              {week.map((day, dayIndex) => (
-                <div key={`active-day-${weekIndex}-${dayIndex}`}>
-                  {renderCalendarDay(day)}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
+  
   // Calculate the total number of sessions
   const totalSessions = sortedSessions.length;
   
@@ -353,82 +236,26 @@ const CourseCalendar = ({ course, sessions = [] }) => {
   const completedSessions = sortedSessions.filter(
     session => session.status === "completed" || session.status === "complete"
   ).length;
-
-  return (
-    <div className="course-calendar overview-panel animate-card">
-      <div className="calendar-header">
-        <div className="calendar-title-section">
-          <h2 className="calendar-title">Kurs Kalender</h2>
-          <span className="calendar-date-range">
-            {startDateStr !== "N/A" && endDateStr !== "N/A" 
-              ? `From ${formatShortDate(startDateStr)} - ${formatShortDate(endDateStr)}, ${startDate ? startDate.getFullYear() : new Date().getFullYear()}`
-              : startDateStr !== "N/A" ? `From ${formatShortDate(startDateStr)}` : "No sessions scheduled"}
-          </span>
-        </div>
-        <button className="kurs-start-button">Kurs Start</button>
-      </div>
-      
-      <div className="calendar-summary">
-        <div className="calendar-metric">
-          <div className="metric-value">{formatShortDate(startDateStr)}</div>
-          <div className="metric-label">Start</div>
-        </div>
-        <div className="calendar-metric">
-          <div className="metric-value">{formatShortDate(lastCompletedDate)}</div>
-          <div className="metric-label">Laufend</div>
-        </div>
-        <div className="calendar-metric">
-          <div className="metric-value">{`${completedSessions}/${totalSessions}`}</div>
-          <div className="metric-label">Sessions</div>
-        </div>
-        <div className="status-indicator">
-          <div className="status-circle"></div>
-        </div>
-      </div>
-      
-      {/* Custom tab navigation, styled like TabCard */}
-      <div className="calendar-tab-navigation">
-        <div className="panel-header">
-          <h3 className="panel-title">
-            {monthTabs[activeTab]?.label || "Calendar"}
-          </h3>
-          
-          <div className="tab-card-navigation">
-            <button 
-              className={`tab-nav-button ${activeTab === 0 || isAnimating ? 'disabled' : ''}`}
-              onClick={handlePrevTab}
-              disabled={activeTab === 0 || isAnimating}
-            >
-              <FontAwesomeIcon icon={faChevronLeft} />
-            </button>
-            
-            <div className="tab-indicators">
-              {monthTabs.map((tab, index) => (
-                <div 
-                  key={tab.id}
-                  className={`tab-indicator ${activeTab === index ? 'active' : ''}`}
-                  onClick={() => handleTabClick(index)}
-                />
-              ))}
-            </div>
-            
-            <button 
-              className={`tab-nav-button ${activeTab === monthTabs.length - 1 || isAnimating ? 'disabled' : ''}`}
-              onClick={handleNextTab}
-              disabled={activeTab === monthTabs.length - 1 || isAnimating}
-            >
-              <FontAwesomeIcon icon={faChevronRight} />
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Calendar grid with animations */}
-      <div className="calendar-content">
-        {renderCalendarGrid()}
-      </div>
-    </div>
-  );
+  
+  return {
+    monthTabs,
+    activeTab,
+    previousTab,
+    direction,
+    isAnimating,
+    setActiveTab,
+    handlePrevTab,
+    handleNextTab,
+    handleTabClick,
+    handleAnimationEnd,
+    startDateStr,
+    endDateStr,
+    lastCompletedDate,
+    completedSessions,
+    totalSessions,
+    generateCalendarData,
+    formatShortDate,
+    startDate,
+    endDate
+  };
 };
-
-export default CourseCalendar;
