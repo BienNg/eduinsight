@@ -16,7 +16,7 @@ const CalendarSummary = ({
       </div>
       <div className="calendar-metric">
         <div className="metric-value">{formatShortDate(lastCompletedDate)}</div>
-        <div className="metric-label">Laufend</div>
+        <div className="metric-label">Letzte Stunde</div>
       </div>
       <div className="calendar-metric">
         <div className="metric-value">{`${completedSessions}/${totalSessions}`}</div>
