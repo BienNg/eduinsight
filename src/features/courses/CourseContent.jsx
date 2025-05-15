@@ -218,6 +218,8 @@ const CourseContent = () => {
         <div className="column groups-column">
           <GroupsList
             groups={filteredGroups}
+            courses={courses} // Add this line to pass courses data
+            sessions={sessions} // Add this line to pass sessions data
             loading={loading}
             error={error}
             searchQuery={searchQuery}

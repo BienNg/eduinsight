@@ -1,15 +1,27 @@
 // src/features/courses/components/GroupsList.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import ProgressBar from '../../common/ProgressBar';
+import { isGroupCompleted, getGroupColor } from '../../utils/groupCompletionUtils';
 
 const GroupsList = ({
   groups,
+  courses = [], // Add courses with default empty array
+  sessions = [], // Add sessions with default empty array
   loading,
   error,
   searchQuery,
   selectedGroupName,
   onSelectGroup
 }) => {
+  // Debug logging to verify data
+  useEffect(() => {
+    console.log('GroupsList received:', {
+      groupsCount: groups.length,
+      coursesCount: courses.length,
+      sessionsCount: sessions.length
+    });
+  }, [groups, courses, sessions]);
+
   // Sort groups by name in descending order
   const sortedGroups = [...groups].sort((a, b) =>
     b.name.localeCompare(a.name)
@@ -43,49 +55,59 @@ const GroupsList = ({
 
       {!loading && !error && sortedGroups.length > 0 && (
         <div className="groups-list">
-          {sortedGroups.map(group => (
-            <div
-              key={group.id || group.name}
-              className={`group-list-item ${selectedGroupName === group.name ? 'selected' : ''}`}
-              onClick={() => onSelectGroup(group)}
-            >
+          {sortedGroups.map(group => {
+            // Determine if the group is completed
+            const isCompleted = isGroupCompleted(group, courses, sessions);
+            
+            // Get the appropriate color based on completion status and group type
+            const groupColor = group.name?.startsWith('G') 
+              ? getGroupColor(isCompleted) 
+              : (group.color || '#0088FE');
+            
+            return (
               <div
-                className="group-color-indicator"
-                style={{ backgroundColor: group.color || '#0088FE' }}
-              />
-              <div className="group-list-content">
-                <div className="group-list-header">
-                  <h3>{group.name}</h3>
-                  <span className="course-count">{group.coursesCount}</span>
-                </div>
-                
-                {/* Teacher badges */}
-                {group.teachers && group.teachers.length > 0 && (
-                  <div className="group-list-teachers">
-                    {group.teachers.map((teacherName, index) => (
-                      <div 
-                        key={`${group.id}-teacher-${index}`} 
-                        className="group-teacher-badge"
-                      >
-                        {teacherName}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="group-list-stats">
-                  <span>{group.totalStudents} Schüler</span>
-                  <span>{group.totalSessions} Lektionen</span>
-                </div>
-                <ProgressBar
-                  progress={group.progress}
-                  color={group.color || '#0088FE'}
-                  height="4px"
-                  showLabel={false}
+                key={group.id || group.name}
+                className={`group-list-item ${selectedGroupName === group.name ? 'selected' : ''}`}
+                onClick={() => onSelectGroup(group)}
+              >
+                <div
+                  className="group-color-indicator"
+                  style={{ backgroundColor: groupColor }}
                 />
+                <div className="group-list-content">
+                  <div className="group-list-header">
+                    <h3>{group.name}</h3>
+                    <span className="course-count">{group.coursesCount}</span>
+                  </div>
+                  
+                  {/* Teacher badges */}
+                  {group.teachers && group.teachers.length > 0 && (
+                    <div className="group-list-teachers">
+                      {group.teachers.map((teacherName, index) => (
+                        <div 
+                          key={`${group.id}-teacher-${index}`} 
+                          className="group-teacher-badge"
+                        >
+                          {teacherName}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="group-list-stats">
+                    <span>{group.totalStudents} Schüler</span>
+                    <span>{group.totalSessions} Lektionen</span>
+                  </div>
+                  <ProgressBar
+                    progress={group.progress}
+                    color={groupColor}
+                    height="4px"
+                    showLabel={false}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

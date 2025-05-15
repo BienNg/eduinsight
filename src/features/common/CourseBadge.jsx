@@ -6,11 +6,7 @@ import { isCourseCompleted, getCourseBadgeColor, getCourseBadgeTextColor } from 
 const CourseBadge = ({ course, onClick, sessions = [] }) => {
   // Filter sessions to only include those for this course
   const courseSessions = sessions.filter(session => session.courseId === course.id);
-  console.log(`CourseBadge for ${course.name}:`, { 
-    courseId: course.id, 
-    totalSessions: sessions.length,
-    courseSessionsCount: courseSessions.length 
-  });
+  
   
   // Determine if the course is completed
   const isCompleted = isCourseCompleted(courseSessions);
