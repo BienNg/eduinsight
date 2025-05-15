@@ -2,6 +2,8 @@
 import * as React from 'react';
 import { ref, update } from 'firebase/database';
 import { database } from '../../../../firebase/config';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import CalendarHeader from './CalendarHeader';
 import CalendarSummary from './CalendarSummary';
 import CalendarTabNavigation from './CalendarTabNavigation';
@@ -11,12 +13,16 @@ import '../../../../styles/CourseCalendar.css';
 
 const { useState, useEffect } = React;
 
-// Add customTitle as a prop
-const CourseCalendar = ({ course, sessions = [], customTitle }) => {
-  // State to track the weekday pattern locally
+const CourseCalendar = ({ 
+  course, 
+  sessions = [], 
+  customTitle, 
+  isDetailPage = false,
+  onCourseClick = null
+}) => {
   const [localWeekdayPattern, setLocalWeekdayPattern] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
-
+  
   // Initialize the local state from course data
   useEffect(() => {
     if (course?.weekdays?.pattern) {
@@ -26,24 +32,24 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
 
   // Function to toggle a weekday in the pattern
   const handleToggleWeekday = async (weekday) => {
-    console.log(`Toggling weekday ${weekday}`, {
+    console.log(`Toggling weekday ${weekday}`, { 
       currentPattern: localWeekdayPattern,
       isUpdating,
       courseId: course?.id
     });
-
+    
     // Prevent multiple rapid updates
     if (isUpdating) {
       console.log('Update already in progress, ignoring click');
       return;
     }
-
+    
     try {
       setIsUpdating(true);
-
+      
       // Create a new array to avoid mutating state directly
       let newPattern;
-
+      
       if (localWeekdayPattern.includes(weekday)) {
         // Remove the weekday if it's already in the pattern
         console.log(`Removing ${weekday} from pattern`);
@@ -53,30 +59,30 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
         console.log(`Adding ${weekday} to pattern`);
         newPattern = [...localWeekdayPattern, weekday];
       }
-
+      
       console.log('New pattern:', newPattern);
-
+      
       // Update local state immediately for UI responsiveness
       setLocalWeekdayPattern(newPattern);
-
+      
       // Convert array to object format for Firebase
       const patternObject = {};
       newPattern.forEach((day, index) => {
         patternObject[index] = day;
       });
-
+      
       console.log('Updating Firebase with pattern:', patternObject);
-
+      
       // Update Firebase - Use the correct Realtime Database reference
       if (course?.id) {
         // Create a reference to the course in the Realtime Database
         const courseRef = ref(database, `courses/${course.id}`);
-
+        
         // Create an update object that only updates the weekdays.pattern field
         const updates = {
           'weekdays/pattern': patternObject
         };
-
+        
         // Update the database
         await update(courseRef, updates);
         console.log('Weekday pattern updated successfully');
@@ -95,13 +101,19 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
     }
   };
 
+  // Use the callback prop for navigation
+  const handleNavigateToDetail = () => {
+    if (course && course.id && onCourseClick) {
+      onCourseClick(course.id);
+    }
+  };
+
   const {
     monthTabs,
     activeTab,
     previousTab,
     direction,
     isAnimating,
-    setActiveTab,
     handlePrevTab,
     handleNextTab,
     handleTabClick,
@@ -118,25 +130,35 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
 
   return (
     <div className="course-calendar overview-panel animate-card">
-      <CalendarHeader
-        startDateStr={startDateStr}
-        endDateStr={endDateStr}
+      {/* Only show if not on detail page and we have a callback */}
+      {!isDetailPage && course && course.id && onCourseClick && (
+        <button 
+          className="course-detail-navigate-button"
+          onClick={handleNavigateToDetail}
+          title="Go to course details"
+        >
+          <FontAwesomeIcon icon={faArrowRight} />
+        </button>
+      )}
+      
+      <CalendarHeader 
+        startDateStr={startDateStr} 
+        endDateStr={endDateStr} 
         formatShortDate={formatShortDate}
         startDate={startDate}
-        // Pass the custom title to CalendarHeader
         customTitle={customTitle}
         sourceUrl={course?.sourceUrl}
       />
-
-      <CalendarSummary
+      
+      <CalendarSummary 
         startDateStr={startDateStr}
         lastCompletedDate={lastCompletedDate}
         completedSessions={completedSessions}
         totalSessions={totalSessions}
         formatShortDate={formatShortDate}
       />
-
-      <CalendarTabNavigation
+      
+      <CalendarTabNavigation 
         monthTabs={monthTabs}
         activeTab={activeTab}
         isAnimating={isAnimating}
@@ -144,9 +166,9 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
         handleNextTab={handleNextTab}
         handleTabClick={handleTabClick}
       />
-
+      
       <div className="calendar-content">
-        <CalendarGrid
+        <CalendarGrid 
           activeTab={activeTab}
           previousTab={previousTab}
           isAnimating={isAnimating}

@@ -1,5 +1,6 @@
 // src/features/dashboard/DashboardContent.jsx
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllRecords } from '../firebase/database';
 import { isCourseCompleted } from '../utils/courseCompletionUtils';
 import CourseCalendar from '../courses/CourseDetail/components/CourseCalendar/CourseCalendar';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 import { syncIncompleteCourses } from '../utils/syncUtils';
 
 const HorizontalCourseCalendars = () => {
+  const navigate = useNavigate(); // Use the hook at this level
   const [courses, setCourses] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +82,11 @@ const HorizontalCourseCalendars = () => {
     }
   };
   
+  // Create a navigation handler function
+  const handleCourseClick = (courseId) => {
+    navigate(`/courses/${courseId}`);
+  };
+  
   if (isLoading) {
     return (
       <div className="horizontal-courses-loading">
@@ -124,6 +131,8 @@ const HorizontalCourseCalendars = () => {
               course={course}
               sessions={getCourseSessions(course.id)}
               customTitle={course.name || `Kurs ${course.id}`}
+              isDetailPage={false}
+              onCourseClick={handleCourseClick} // Pass the callback function
             />
           </div>
         ))}

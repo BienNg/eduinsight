@@ -1,7 +1,7 @@
 // src/features/courses/CourseDetail/components/CourseCalendar/CalendarHeader.jsx
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import { faLink } from '@fortawesome/free-solid-svg-icons';
 
 const CalendarHeader = ({ 
   startDateStr, 
@@ -32,7 +32,7 @@ const CalendarHeader = ({
               onClick={handleUrlClick}
               title="Open Google Sheet"
             >
-              <FontAwesomeIcon icon={faExternalLinkAlt} />
+              <FontAwesomeIcon icon={faLink} />
             </span>
           )}
         </div>

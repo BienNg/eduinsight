@@ -144,8 +144,12 @@ const CourseDetail = ({ onClose }) => {
 
         {/* Calendar Section */}
         <div className="course-detail-column">
-          <CourseCalendar course={course} sessions={sessions} />
-        </div>
+          <CourseCalendar
+            course={course}
+            sessions={sessions}
+            customTitle={course.name}
+            isDetailPage={true} // This IS the detail page
+          />        </div>
       </div>
 
       {/* Sessions Section */}

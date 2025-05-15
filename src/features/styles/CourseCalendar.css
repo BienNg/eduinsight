@@ -1,5 +1,6 @@
 /* src/features/styles/CourseCalendar.css */
 .course-calendar {
+  position: relative;
   background-color: white;
   border-radius: 30px;
   overflow: hidden;
@@ -376,7 +377,6 @@
   /* Very light blue background on hover */
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   /* Subtle shadow */
-  transform: translateY(-1px);
 }
 
 /* Smooth transition for the icon itself */
@@ -384,6 +384,31 @@
   transition: transform 0.2s ease;
 }
 
-.calendar-source-url:hover svg {
-  transform: scale(1.1);
+
+.course-detail-navigate-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f0f7ff;
+  border: none;
+  color: #0066cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  z-index: 5;
+  opacity: 0.8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.course-detail-navigate-button:hover {
+  background-color: #0066cc;
+  color: white;
+  opacity: 1;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
