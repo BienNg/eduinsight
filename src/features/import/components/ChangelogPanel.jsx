@@ -109,7 +109,6 @@ const ChangelogPanel = () => {
       borderRadius: '8px',
       padding: '20px',
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      marginTop: '20px',
       maxHeight: '600px',
       overflowY: 'auto'
     }}>
