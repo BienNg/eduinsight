@@ -1,9 +1,9 @@
 // src/features/dashboard/components/HorizontalCourseCalendars.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords } from '../firebase/database';
-import { isCourseCompleted } from '../utils/courseCompletionUtils';
-import CourseCalendar from '../courses/CourseDetail/components/CourseCalendar/CourseCalendar';
-import '../styles/HorizontalCourseCalendars.css';
+import { getAllRecords } from '../../firebase/database';
+import { isCourseCompleted } from '../../utils/courseCompletionUtils';
+import CourseCalendar from '../../courses/CourseDetail/components/CourseCalendar/CourseCalendar';
+import '../../styles/HorizontalCourseCalendars.css';
 
 const HorizontalCourseCalendars = () => {
   const [courses, setCourses] = useState([]);
@@ -85,7 +85,6 @@ const HorizontalCourseCalendars = () => {
             <CourseCalendar 
               course={course}
               sessions={getCourseSessions(course.id)}
-              customTitle={course.name || `Kurs ${course.id}`} // Pass course name as custom title
             />
           </div>
         ))}

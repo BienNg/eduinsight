@@ -11,7 +11,8 @@ import '../../../../styles/CourseCalendar.css';
 
 const { useState, useEffect } = React;
 
-const CourseCalendar = ({ course, sessions = [] }) => {
+// Add customTitle as a prop
+const CourseCalendar = ({ course, sessions = [], customTitle }) => {
   // State to track the weekday pattern locally
   const [localWeekdayPattern, setLocalWeekdayPattern] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -122,6 +123,8 @@ const CourseCalendar = ({ course, sessions = [] }) => {
         endDateStr={endDateStr} 
         formatShortDate={formatShortDate}
         startDate={startDate}
+        // Pass the custom title to CalendarHeader
+        customTitle={customTitle}
       />
       
       <CalendarSummary 

@@ -5,6 +5,7 @@
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   padding: 20px;
+  width: 400px;
 }
 
 .calendar-header {
@@ -118,10 +119,6 @@
 .day-header:hover {
   background-color: #f0f0f0;
   transform: scale(1.1);
-}
-
-.day-header.highlighted-day {
-  background-color: #e0e0e0;
 }
 
 .day-header.highlighted-day:hover {
@@ -337,7 +334,7 @@
 
 /* Add this to src/features/styles/CourseCalendar.css */
 .day-header.highlighted-day {
-  background-color: #e0e0e0;
+  background-color: #D82E5A;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -345,4 +342,5 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto;
+  color: white;
 }
