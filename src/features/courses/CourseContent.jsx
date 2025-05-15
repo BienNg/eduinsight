@@ -235,6 +235,7 @@ const CourseContent = () => {
             loading={loading}
             onSelectCourse={handleSelectCourse}
             selectedCourseId={courseId}
+            sessions={sessions}
           />
         </div>
 

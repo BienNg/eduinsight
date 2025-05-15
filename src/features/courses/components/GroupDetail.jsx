@@ -6,7 +6,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBook, faUsers, faCalendarAlt, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
 import '../../styles/GroupDetail.css';
 
-const GroupDetail = ({ groupName, selectedGroup, selectedGroupCourses, loading, onSelectCourse, selectedCourseId }) => {
+const GroupDetail = ({
+    groupName,
+    selectedGroup,
+    selectedGroupCourses,
+    loading,
+    onSelectCourse,
+    selectedCourseId,
+    sessions = [] // Add sessions with default empty array
+}) => {
     if (!groupName) {
         return (
             <div className="course-detail-panel">
@@ -84,6 +92,7 @@ const GroupDetail = ({ groupName, selectedGroup, selectedGroupCourses, loading, 
                                             course={course}
                                             groupName={selectedGroup.name}
                                             onClick={() => onSelectCourse(course)}
+                                            sessions={sessions.filter(session => session.courseId === course.id)}
                                         />
                                     </div>
                                 ))}
