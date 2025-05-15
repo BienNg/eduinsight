@@ -324,3 +324,23 @@
   text-align: center;
   padding: 20px;
 }
+
+.group-list-teachers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.group-teacher-badge {
+  background-color: #f0f4f8;
+  color: #2d3748;
+  border-radius: 16px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}

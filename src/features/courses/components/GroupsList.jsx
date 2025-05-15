@@ -58,6 +58,21 @@ const GroupsList = ({
                   <h3>{group.name}</h3>
                   <span className="course-count">{group.coursesCount}</span>
                 </div>
+                
+                {/* Teacher badges */}
+                {group.teachers && group.teachers.length > 0 && (
+                  <div className="group-list-teachers">
+                    {group.teachers.map((teacherName, index) => (
+                      <div 
+                        key={`${group.id}-teacher-${index}`} 
+                        className="group-teacher-badge"
+                      >
+                        {teacherName}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <div className="group-list-stats">
                   <span>{group.totalStudents} Schüler</span>
                   <span>{group.totalSessions} Lektionen</span>
