@@ -1,3 +1,4 @@
+// src/features/months/components/GroupProgressList.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../../common/ProgressBar';
@@ -26,6 +27,8 @@ const calculateGroupProgress = (groupCourses, sessions) => {
 
   // Find the latest course with completed sessions
   let latestActiveIndex = -1;
+  let latestSessionNumber = 0;
+  
   for (let i = 0; i < groupCourses.length; i++) {
     const course = groupCourses[i];
     const courseSessions = sessions.filter(s => s.courseId === course.id);
@@ -33,12 +36,15 @@ const calculateGroupProgress = (groupCourses, sessions) => {
 
     if (completedSessions.length > 0) {
       latestActiveIndex = i;
+      
+      // Find the latest session number
+      // This assumes sessions have a sessionOrder or some property indicating their sequence
+      latestSessionNumber = completedSessions.length;
     }
   }
 
   // Set defaults
   let currentCourse = null;
-  let currentProgress = 0;
   let isGroupComplete = false;
   let overallProgress = 0;
 
@@ -55,10 +61,6 @@ const calculateGroupProgress = (groupCourses, sessions) => {
       const currentLevelSessions = sessions.filter(s => s.courseId === currentCourse.id);
       const completedCurrentSessions = currentLevelSessions.filter(s => s.status === 'completed').length;
 
-      // Calculate current level progress
-      const currentLevelExpectedSessions = sessionsPerLevel[latestLevel];
-      currentProgress = (completedCurrentSessions / currentLevelExpectedSessions) * 100;
-
       // Calculate sessions for completed previous levels
       let completedPreviousSessions = 0;
       for (let i = 0; i < latestLevelIndex; i++) {
@@ -72,7 +74,7 @@ const calculateGroupProgress = (groupCourses, sessions) => {
       overallProgress = (totalCompletedSessions / totalExpectedSessions) * 100;
 
       // Check if the group is complete (B1.2 is complete)
-      if (latestLevel === 'B1.2' && completedCurrentSessions === currentLevelExpectedSessions) {
+      if (latestLevel === 'B1.2' && completedCurrentSessions === sessionsPerLevel[latestLevel]) {
         isGroupComplete = true;
       }
     }
@@ -83,13 +85,13 @@ const calculateGroupProgress = (groupCourses, sessions) => {
 
   return {
     currentCourse,
-    currentProgress,
     isGroupComplete,
-    overallProgress
+    overallProgress,
+    latestSessionNumber
   };
 };
 
-const GroupProgressList = ({ courseGroups, sessions, teachers }) => { // Add teachers prop
+const GroupProgressList = ({ courseGroups, sessions, teachers }) => {
   const navigate = useNavigate();
 
   if (Object.keys(courseGroups).length === 0) {
@@ -159,11 +161,11 @@ const GroupProgressList = ({ courseGroups, sessions, teachers }) => { // Add tea
             </div>
             
             <div className="progress-stats">
-              <span>{Math.round(group.overallProgress)}%</span>
               {group.currentCourse && !group.isGroupComplete && (
                 <>
-                  <span className="progress-divider"></span>
                   <span className="current-level">{group.currentCourse.level}</span>
+                  <span className="progress-divider"></span>
+                  <span className="session-tag">Tag {group.latestSessionNumber}</span>
                 </>
               )}
             </div>
@@ -175,13 +177,6 @@ const GroupProgressList = ({ courseGroups, sessions, teachers }) => { // Add tea
             showLabel={false}
             height="10px"
           />
-
-          {group.currentCourse && !group.isGroupComplete && (
-            <div className="current-course-info">
-              <span>Current course progress:</span>
-              <span>{Math.round(group.currentProgress)}%</span>
-            </div>
-          )}
         </div>
       ))}
     </div>
