@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../../common/ProgressBar';
 
 const calculateGroupProgress = (groupCourses, sessions) => {
@@ -87,6 +88,8 @@ const calculateGroupProgress = (groupCourses, sessions) => {
 };
 
 const GroupProgressList = ({ courseGroups, sessions }) => {
+  const navigate = useNavigate(); // Add this to get the navigate function
+
   if (Object.keys(courseGroups).length === 0) {
     return <div className="empty-message">Keine Kurse im letzten Monat.</div>;
   }
@@ -100,10 +103,20 @@ const GroupProgressList = ({ courseGroups, sessions }) => {
     };
   }).sort((a, b) => b.overallProgress - a.overallProgress);
 
+  // Handle click on a group progress card
+  const handleGroupClick = (groupName) => {
+    navigate(`/courses/group/${groupName}`);
+  };
+
   return (
     <div className="group-progress-list">
       {groupsWithProgress.map(group => (
-        <div className="progress-card" key={group.groupName}>
+        <div 
+          className="progress-card clickable" // Add clickable class for styling
+          key={group.groupName}
+          onClick={() => handleGroupClick(group.groupName)} // Add click handler
+          style={{ cursor: 'pointer' }} // Add cursor style
+        >
           <div className="progress-card-header">
             <div className="progress-title">{group.groupName}</div>
             <div className="progress-stats">
