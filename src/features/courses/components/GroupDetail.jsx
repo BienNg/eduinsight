@@ -83,19 +83,24 @@ const GroupDetail = ({
                     </div>
 
                     <div className="group-detail-course-info-card">
-                        <h3>Kurse in dieser Gruppe</h3>
                         {selectedGroupCourses && selectedGroupCourses.length > 0 ? (
                             <div className="group-detail-course-badges-container">
-                                {selectedGroupCourses.map(course => (
-                                    <div key={course.id}>
-                                        <CourseBadge
-                                            course={course}
-                                            groupName={selectedGroup.name}
-                                            onClick={() => onSelectCourse(course)}
-                                            sessions={sessions.filter(session => session.courseId === course.id)}
-                                        />
-                                    </div>
-                                ))}
+                                {selectedGroupCourses && selectedGroupCourses.length > 0 ? (
+                                    [...selectedGroupCourses]
+                                        .sort((a, b) => a.name.localeCompare(b.name)) // Sort by name ascending
+                                        .map(course => (
+                                            <div key={course.id}>
+                                                <CourseBadge
+                                                    course={course}
+                                                    groupName={selectedGroup.name}
+                                                    onClick={() => onSelectCourse(course)}
+                                                    sessions={sessions.filter(session => session.courseId === course.id)}
+                                                />
+                                            </div>
+                                        ))
+                                ) : (
+                                    <p className="group-detail-no-courses-hint">Keine Kurse in dieser Gruppe gefunden</p>
+                                )}
                             </div>
                         ) : (
                             <p className="group-detail-no-courses-hint">Keine Kurse in dieser Gruppe gefunden</p>
