@@ -139,3 +139,40 @@
         /* Show 1 card at once */
     }
 }
+
+.horizontal-courses-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sync-all-button {
+  display: flex;
+  align-items: center;
+  background-color: #0088FE;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sync-all-button:hover {
+  background-color: #0066CC;
+}
+
+.sync-all-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.sync-all-button .spinning {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

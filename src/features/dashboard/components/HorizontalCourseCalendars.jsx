@@ -1,59 +1,79 @@
 // src/features/dashboard/components/HorizontalCourseCalendars.jsx
 import { useState, useEffect } from 'react';
-import { getAllRecords } from '../../firebase/database';
-import { isCourseCompleted } from '../../utils/courseCompletionUtils';
-import CourseCalendar from '../../courses/CourseDetail/components/CourseCalendar/CourseCalendar';
-import '../../styles/HorizontalCourseCalendars.css';
+import { getAllRecords } from '../firebase/database';
+import { isCourseCompleted } from '../utils/courseCompletionUtils';
+import CourseCalendar from '../courses/CourseDetail/components/CourseCalendar/CourseCalendar';
+import { syncIncompleteCourses } from '../utils/syncUtils';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSync } from '@fortawesome/free-solid-svg-icons';
+import '../styles/HorizontalCourseCalendars.css';
 
 const HorizontalCourseCalendars = () => {
   const [courses, setCourses] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Fetch all courses and sessions
-        const coursesData = await getAllRecords('courses');
-        const sessionsData = await getAllRecords('sessions');
-        
-        // Store sessions
-        setSessions(sessionsData);
-        
-        // Filter courses to only include incomplete ones
-        const incompleteCourses = coursesData.filter(course => {
-          const courseSessions = sessionsData.filter(session => 
-            session.courseId === course.id
-          );
-          return !isCourseCompleted(courseSessions);
-        });
-        
-        // Sort courses by start date (if available) or name
-        const sortedCourses = [...incompleteCourses].sort((a, b) => {
-          // If dates available, sort by date
-          if (a.startDate && b.startDate) {
-            return new Date(a.startDate) - new Date(b.startDate);
-          }
-          // Otherwise sort by name
-          return (a.name || '').localeCompare(b.name || '');
-        });
-        
-        setCourses(sortedCourses);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching course data:', error);
-        setIsLoading(false);
-      }
-    };
-    
     fetchData();
   }, []);
+  
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch all courses and sessions
+      const coursesData = await getAllRecords('courses');
+      const sessionsData = await getAllRecords('sessions');
+      
+      // Store sessions
+      setSessions(sessionsData);
+      
+      // Filter courses to only include incomplete ones
+      const incompleteCourses = coursesData.filter(course => {
+        const courseSessions = sessionsData.filter(session => 
+          session.courseId === course.id
+        );
+        return !isCourseCompleted(courseSessions);
+      });
+      
+      // Sort courses by start date (if available) or name
+      const sortedCourses = [...incompleteCourses].sort((a, b) => {
+        // If dates available, sort by date
+        if (a.startDate && b.startDate) {
+          return new Date(a.startDate) - new Date(b.startDate);
+        }
+        // Otherwise sort by name
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      
+      setCourses(sortedCourses);
+    } catch (error) {
+      console.error('Error fetching course data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Filter sessions for a specific course
   const getCourseSessions = (courseId) => {
     return sessions.filter(session => session.courseId === courseId);
+  };
+  
+  // Handle sync button click
+  const handleSyncAllCourses = async () => {
+    if (isSyncing) return;
+    
+    try {
+      setIsSyncing(true);
+      await syncIncompleteCourses(courses, setIsSyncing);
+      // Refresh data after sync
+      await fetchData();
+    } catch (error) {
+      console.error('Error syncing courses:', error);
+    } finally {
+      setIsSyncing(false);
+    }
   };
   
   if (isLoading) {
@@ -76,15 +96,30 @@ const HorizontalCourseCalendars = () => {
     <div className="horizontal-courses-container">
       <div className="horizontal-courses-header">
         <h2>Laufende Kurse</h2>
-        <span className="courses-count">{courses.length} Kurse</span>
+        <div className="horizontal-courses-actions">
+          <span className="courses-count">{courses.length} Kurse</span>
+          <button 
+            className="sync-all-button"
+            onClick={handleSyncAllCourses}
+            disabled={isSyncing}
+            title="Sync all courses with Google Sheets"
+          >
+            <FontAwesomeIcon 
+              icon={faSync} 
+              className={isSyncing ? "spinning" : ""} 
+            />
+            {isSyncing ? ' Syncing...' : ' Sync All'}
+          </button>
+        </div>
       </div>
       
       <div className="horizontal-courses-scrollable">
-        {courses.map(course => (
+        {[...courses].sort((a,b) => b.name.localeCompare(a.name)).map(course => (
           <div key={course.id} className="horizontal-course-card">
             <CourseCalendar 
               course={course}
               sessions={getCourseSessions(course.id)}
+              customTitle={course.name || `Kurs ${course.id}`}
             />
           </div>
         ))}
