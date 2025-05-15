@@ -58,11 +58,11 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
       }
       return 0;
     });
-    
+
   const currentMonthCourses = courses.filter(course =>
     currentMonthSessions.some(session => session.courseId === course.id)
   );
-  
+
   const currentMonthTeachers = teachers.filter(teacher =>
     currentMonthSessions.some(session => session.teacherId === teacher.id)
   );
@@ -79,21 +79,21 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
             <h3 className="panel-title">Lehrer ({currentMonthTeachers.length})</h3>
           </div>
           <div className="panel-content">
-            <TeachersList 
-              teachers={currentMonthTeachers} 
-              sessions={currentMonthSessions} 
-              onTeacherHover={handleTeacherHover} 
+            <TeachersList
+              teachers={currentMonthTeachers}
+              sessions={currentMonthSessions}
+              onTeacherHover={handleTeacherHover}
             />
           </div>
         </div>
 
         {/* Center Column - Analytics and Courses */}
         <div className="overview-column">
-          <CourseAnalytics 
-            courses={currentMonthCourses} 
-            monthDetails={monthDetails} 
+          <CourseAnalytics
+            courses={currentMonthCourses}
+            monthDetails={monthDetails}
           />
-          
+
           <div className="overview-panel">
             <div className="panel-header">
               <h3 className="panel-title">
@@ -101,9 +101,10 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
               </h3>
             </div>
             <div className="panel-content">
-              <GroupProgressList 
-                courseGroups={courseGroups} 
-                sessions={sessions} 
+              <GroupProgressList
+                courseGroups={courseGroups}
+                sessions={sessions}
+                teachers={teachers}
               />
             </div>
           </div>
@@ -115,10 +116,10 @@ const OverviewTab = ({ currentMonthId, monthDetails, sessions, courses, teachers
             <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
           </div>
           <div className="panel-content">
-            <SessionsList 
-              sessions={currentMonthSessions} 
-              courses={courses} 
-              teachers={teachers} 
+            <SessionsList
+              sessions={currentMonthSessions}
+              courses={courses}
+              teachers={teachers}
             />
           </div>
         </div>

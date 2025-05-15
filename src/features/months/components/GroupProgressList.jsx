@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../../common/ProgressBar';
+import TeacherBadge from '../../common/TeacherBadge';
+import '../../styles/GroupProgressList.css';
 
 const calculateGroupProgress = (groupCourses, sessions) => {
   // Define the course structure with expected sessions
@@ -43,7 +45,7 @@ const calculateGroupProgress = (groupCourses, sessions) => {
   if (latestActiveIndex >= 0) {
     // Current course is the one that has the most recent completed sessions
     currentCourse = groupCourses[latestActiveIndex];
-    
+
     // Get the latest level this group has
     const latestLevel = currentCourse ? currentCourse.level : null;
     const latestLevelIndex = latestLevel ? courseLevels.indexOf(latestLevel) : -1;
@@ -87,18 +89,39 @@ const calculateGroupProgress = (groupCourses, sessions) => {
   };
 };
 
-const GroupProgressList = ({ courseGroups, sessions }) => {
-  const navigate = useNavigate(); // Add this to get the navigate function
+const GroupProgressList = ({ courseGroups, sessions, teachers }) => { // Add teachers prop
+  const navigate = useNavigate();
 
   if (Object.keys(courseGroups).length === 0) {
     return <div className="empty-message">Keine Kurse im letzten Monat.</div>;
   }
 
+  // Find teachers for each group based on course teachers
+  const getGroupTeachers = (groupCourses) => {
+    const teacherIds = new Set();
+    
+    groupCourses.forEach(course => {
+      // Get teacher IDs from each course
+      if (course.teacherId) teacherIds.add(course.teacherId);
+      if (course.teacherIds && Array.isArray(course.teacherIds)) {
+        course.teacherIds.forEach(id => teacherIds.add(id));
+      }
+    });
+    
+    // Map IDs to teacher objects
+    return Array.from(teacherIds)
+      .map(id => teachers.find(t => t.id === id))
+      .filter(Boolean); // Remove any null/undefined entries
+  };
+
   // Calculate progress for each group
   const groupsWithProgress = Object.entries(courseGroups).map(([groupName, groupCourses]) => {
     const progress = calculateGroupProgress(groupCourses, sessions);
+    const groupTeachers = getGroupTeachers(groupCourses);
+    
     return {
       groupName,
+      teachers: groupTeachers,
       ...progress
     };
   }).sort((a, b) => b.overallProgress - a.overallProgress);
@@ -112,13 +135,29 @@ const GroupProgressList = ({ courseGroups, sessions }) => {
     <div className="group-progress-list">
       {groupsWithProgress.map(group => (
         <div 
-          className="progress-card clickable" // Add clickable class for styling
+          className="progress-card clickable"
           key={group.groupName}
-          onClick={() => handleGroupClick(group.groupName)} // Add click handler
-          style={{ cursor: 'pointer' }} // Add cursor style
+          onClick={() => handleGroupClick(group.groupName)}
         >
           <div className="progress-card-header">
-            <div className="progress-title">{group.groupName}</div>
+            <div className="progress-title-section">
+              <div className="progress-title">{group.groupName}</div>
+              
+              {/* Teacher Badges in same row */}
+              {group.teachers && group.teachers.length > 0 && (
+                <div className="teacher-badge-container">
+                  {group.teachers.slice(0, 2).map(teacher => (
+                    <TeacherBadge key={teacher.id} teacher={teacher} />
+                  ))}
+                  {group.teachers.length > 2 && (
+                    <span className="teacher-more-badge">
+                      +{group.teachers.length - 2}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            
             <div className="progress-stats">
               <span>{Math.round(group.overallProgress)}%</span>
               {group.currentCourse && !group.isGroupComplete && (
