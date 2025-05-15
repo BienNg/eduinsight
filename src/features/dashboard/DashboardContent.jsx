@@ -80,7 +80,7 @@ const HorizontalCourseCalendars = () => {
       </div>
       
       <div className="horizontal-courses-scrollable">
-        {courses.map(course => (
+        {[...courses].sort((a,b) => b.name.localeCompare(a.name)).map(course => (
           <div key={course.id} className="horizontal-course-card">
             <CourseCalendar 
               course={course}
