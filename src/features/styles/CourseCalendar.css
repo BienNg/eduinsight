@@ -344,3 +344,46 @@
   margin: 0 auto;
   color: white;
 }
+
+.calendar-title-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-source-url {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #8a8a8a;
+  /* Subtle gray */
+  font-size: 14px;
+  /* Smaller size for minimalism */
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  opacity: 0.75;
+  /* Slightly transparent */
+  background-color: transparent;
+}
+
+.calendar-source-url:hover {
+  color: var(--primary-blue, #0066cc);
+  opacity: 1;
+  background-color: #f0f7ff;
+  /* Very light blue background on hover */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  /* Subtle shadow */
+  transform: translateY(-1px);
+}
+
+/* Smooth transition for the icon itself */
+.calendar-source-url svg {
+  transition: transform 0.2s ease;
+}
+
+.calendar-source-url:hover svg {
+  transform: scale(1.1);
+}

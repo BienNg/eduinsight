@@ -16,7 +16,7 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
   // State to track the weekday pattern locally
   const [localWeekdayPattern, setLocalWeekdayPattern] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // Initialize the local state from course data
   useEffect(() => {
     if (course?.weekdays?.pattern) {
@@ -26,24 +26,24 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
 
   // Function to toggle a weekday in the pattern
   const handleToggleWeekday = async (weekday) => {
-    console.log(`Toggling weekday ${weekday}`, { 
+    console.log(`Toggling weekday ${weekday}`, {
       currentPattern: localWeekdayPattern,
       isUpdating,
       courseId: course?.id
     });
-    
+
     // Prevent multiple rapid updates
     if (isUpdating) {
       console.log('Update already in progress, ignoring click');
       return;
     }
-    
+
     try {
       setIsUpdating(true);
-      
+
       // Create a new array to avoid mutating state directly
       let newPattern;
-      
+
       if (localWeekdayPattern.includes(weekday)) {
         // Remove the weekday if it's already in the pattern
         console.log(`Removing ${weekday} from pattern`);
@@ -53,30 +53,30 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
         console.log(`Adding ${weekday} to pattern`);
         newPattern = [...localWeekdayPattern, weekday];
       }
-      
+
       console.log('New pattern:', newPattern);
-      
+
       // Update local state immediately for UI responsiveness
       setLocalWeekdayPattern(newPattern);
-      
+
       // Convert array to object format for Firebase
       const patternObject = {};
       newPattern.forEach((day, index) => {
         patternObject[index] = day;
       });
-      
+
       console.log('Updating Firebase with pattern:', patternObject);
-      
+
       // Update Firebase - Use the correct Realtime Database reference
       if (course?.id) {
         // Create a reference to the course in the Realtime Database
         const courseRef = ref(database, `courses/${course.id}`);
-        
+
         // Create an update object that only updates the weekdays.pattern field
         const updates = {
           'weekdays/pattern': patternObject
         };
-        
+
         // Update the database
         await update(courseRef, updates);
         console.log('Weekday pattern updated successfully');
@@ -118,24 +118,25 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
 
   return (
     <div className="course-calendar overview-panel animate-card">
-      <CalendarHeader 
-        startDateStr={startDateStr} 
-        endDateStr={endDateStr} 
+      <CalendarHeader
+        startDateStr={startDateStr}
+        endDateStr={endDateStr}
         formatShortDate={formatShortDate}
         startDate={startDate}
         // Pass the custom title to CalendarHeader
         customTitle={customTitle}
+        sourceUrl={course?.sourceUrl}
       />
-      
-      <CalendarSummary 
+
+      <CalendarSummary
         startDateStr={startDateStr}
         lastCompletedDate={lastCompletedDate}
         completedSessions={completedSessions}
         totalSessions={totalSessions}
         formatShortDate={formatShortDate}
       />
-      
-      <CalendarTabNavigation 
+
+      <CalendarTabNavigation
         monthTabs={monthTabs}
         activeTab={activeTab}
         isAnimating={isAnimating}
@@ -143,9 +144,9 @@ const CourseCalendar = ({ course, sessions = [], customTitle }) => {
         handleNextTab={handleNextTab}
         handleTabClick={handleTabClick}
       />
-      
+
       <div className="calendar-content">
-        <CalendarGrid 
+        <CalendarGrid
           activeTab={activeTab}
           previousTab={previousTab}
           isAnimating={isAnimating}
