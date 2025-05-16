@@ -2,6 +2,7 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
+import Chip from '../../../components/Chip'; // Import the Chip component
 
 const CalendarHeader = ({ 
   startDateStr, 
@@ -9,7 +10,8 @@ const CalendarHeader = ({
   formatShortDate, 
   startDate, 
   customTitle = "Kurs Kalender",
-  sourceUrl // Add this new prop
+  sourceUrl,
+  mode // Add this prop to receive the group mode
 }) => {
   const currentYear = startDate ? startDate.getFullYear() : new Date().getFullYear();
   
@@ -26,6 +28,7 @@ const CalendarHeader = ({
       <div className="calendar-title-section">
         <div className="calendar-title-container">
           <h2 className="calendar-title">{customTitle}</h2>
+          {mode && <Chip label={mode} type={mode} />}
           {sourceUrl && (
             <span 
               className="calendar-source-url" 
