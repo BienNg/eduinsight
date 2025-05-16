@@ -2,19 +2,15 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
-import Chip from '../../../components/Chip'; // Import the Chip component
+import Chip from '../../../components/Chip'; 
+import TeacherBadge from '../../../../common/TeacherBadge'; // Import TeacherBadge
 
 const CalendarHeader = ({ 
-  startDateStr, 
-  endDateStr, 
-  formatShortDate, 
-  startDate, 
   customTitle = "Kurs Kalender",
   sourceUrl,
-  mode // Add this prop to receive the group mode
+  mode, 
+  teachers = [] // Add teachers prop with default empty array
 }) => {
-  const currentYear = startDate ? startDate.getFullYear() : new Date().getFullYear();
-  
   // Function to handle URL click
   const handleUrlClick = (e) => {
     e.stopPropagation(); // Prevent event bubbling
@@ -39,11 +35,17 @@ const CalendarHeader = ({
             </span>
           )}
         </div>
-        <span className="calendar-date-range">
-          {startDateStr !== "N/A" && endDateStr !== "N/A" 
-            ? `From ${formatShortDate(startDateStr)} - ${formatShortDate(endDateStr)}, ${currentYear}`
-            : startDateStr !== "N/A" ? `From ${formatShortDate(startDateStr)}` : "No sessions scheduled"}
-        </span>
+        
+        {/* Replace date range with teacher badges */}
+        <div className="calendar-teachers">
+          {teachers.length > 0 ? (
+            teachers.map(teacher => (
+              <TeacherBadge key={teacher.id} teacher={teacher} />
+            ))
+          ) : (
+            <span className="no-teachers">No teachers assigned</span>
+          )}
+        </div>
       </div>
     </div>
   );

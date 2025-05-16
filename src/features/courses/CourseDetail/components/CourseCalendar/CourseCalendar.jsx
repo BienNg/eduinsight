@@ -24,7 +24,7 @@ const CourseCalendar = ({
   const [localWeekdayPattern, setLocalWeekdayPattern] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [groupMode, setGroupMode] = useState(null);
-
+  const [teachers, setTeachers] = useState([]);
 
   // Initialize the local state from course data
   useEffect(() => {
@@ -48,6 +48,39 @@ const CourseCalendar = ({
 
     fetchGroupData();
   }, [course, groupMode]);
+
+  // Add effect to fetch teachers for the course
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      if (course?.teacherIds && course.teacherIds.length > 0) {
+        try {
+          const teachersData = await Promise.all(
+            course.teacherIds.map(id => getRecordById('teachers', id))
+          );
+          // Filter out any null results
+          setTeachers(teachersData.filter(teacher => teacher !== null));
+        } catch (error) {
+          console.error('Error fetching teachers:', error);
+          setTeachers([]);
+        }
+      } else if (course?.teacherId) {
+        // Handle case where there's a single teacherId instead of an array
+        try {
+          const teacher = await getRecordById('teachers', course.teacherId);
+          if (teacher) {
+            setTeachers([teacher]);
+          }
+        } catch (error) {
+          console.error('Error fetching teacher:', error);
+          setTeachers([]);
+        }
+      } else {
+        setTeachers([]);
+      }
+    };
+
+    fetchTeachers();
+  }, [course]);
 
   // Function to toggle a weekday in the pattern
   const handleToggleWeekday = async (weekday) => {
@@ -168,6 +201,7 @@ const CourseCalendar = ({
         customTitle={customTitle}
         sourceUrl={course?.sourceUrl}
         mode={groupMode}
+        teachers={teachers}
       />
 
       <CalendarSummary
