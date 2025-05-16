@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllRecords } from '../firebase/database';
 import { isCourseCompleted } from '../utils/courseCompletionUtils';
+import { getTeachersMap } from '../utils/teacherFetchUtils';
+
 import CourseCalendar from '../courses/CourseDetail/components/CourseCalendar/CourseCalendar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSync } from '@fortawesome/free-solid-svg-icons';
@@ -23,6 +25,19 @@ const HorizontalCourseCalendars = () => {
     fetchData();
   }, []);
   
+  useEffect(() => {
+  // Preload teacher data when the dashboard loads
+  const preloadTeachers = async () => {
+    try {
+      await getTeachersMap(true); // Force refresh the cache
+    } catch (error) {
+      console.error('Error preloading teachers:', error);
+    }
+  };
+  
+  preloadTeachers();
+}, []);
+
   const fetchData = async () => {
     try {
       setIsLoading(true);

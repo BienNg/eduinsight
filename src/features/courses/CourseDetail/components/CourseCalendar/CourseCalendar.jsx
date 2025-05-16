@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { ref, update } from 'firebase/database';
 import { database } from '../../../../firebase/config';
-import { getRecordById } from '../../../../firebase/database'; 
+import { getRecordById } from '../../../../firebase/database';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import CalendarHeader from './CalendarHeader';
@@ -10,6 +10,8 @@ import CalendarSummary from './CalendarSummary';
 import CalendarTabNavigation from './CalendarTabNavigation';
 import CalendarGrid from './CalendarGrid';
 import { useCalendarData } from './hooks/useCalendarData';
+import { getTeachersByIds } from '../../../../utils/teacherFetchUtils';
+
 import '../../../../styles/CourseCalendar.css';
 
 const { useState, useEffect } = React;
@@ -25,6 +27,7 @@ const CourseCalendar = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [groupMode, setGroupMode] = useState(null);
   const [teachers, setTeachers] = useState([]);
+  const [isLoadingTeachers, setIsLoadingTeachers] = useState(true);
 
   // Initialize the local state from course data
   useEffect(() => {
@@ -52,30 +55,40 @@ const CourseCalendar = ({
   // Add effect to fetch teachers for the course
   useEffect(() => {
     const fetchTeachers = async () => {
-      if (course?.teacherIds && course.teacherIds.length > 0) {
-        try {
-          const teachersData = await Promise.all(
-            course.teacherIds.map(id => getRecordById('teachers', id))
-          );
-          // Filter out any null results
-          setTeachers(teachersData.filter(teacher => teacher !== null));
-        } catch (error) {
-          console.error('Error fetching teachers:', error);
-          setTeachers([]);
-        }
-      } else if (course?.teacherId) {
-        // Handle case where there's a single teacherId instead of an array
-        try {
-          const teacher = await getRecordById('teachers', course.teacherId);
-          if (teacher) {
-            setTeachers([teacher]);
-          }
-        } catch (error) {
-          console.error('Error fetching teacher:', error);
-          setTeachers([]);
-        }
-      } else {
+      if (!course) {
         setTeachers([]);
+        setIsLoadingTeachers(false);
+        return;
+      }
+
+      setIsLoadingTeachers(true);
+
+      try {
+        let teacherIds = [];
+
+        // Collect all teacher IDs from both arrays and single IDs
+        if (course.teacherIds && Array.isArray(course.teacherIds)) {
+          teacherIds = [...course.teacherIds];
+        }
+        if (course.teacherId && !teacherIds.includes(course.teacherId)) {
+          teacherIds.push(course.teacherId);
+        }
+
+        // If no teachers, return empty array
+        if (teacherIds.length === 0) {
+          setTeachers([]);
+          setIsLoadingTeachers(false);
+          return;
+        }
+
+        // Use the batch utility to get teachers
+        const teachersData = await getTeachersByIds(teacherIds);
+        setTeachers(teachersData);
+      } catch (error) {
+        console.error('Error fetching teachers:', error);
+        setTeachers([]);
+      } finally {
+        setIsLoadingTeachers(false);
       }
     };
 
@@ -202,6 +215,7 @@ const CourseCalendar = ({
         sourceUrl={course?.sourceUrl}
         mode={groupMode}
         teachers={teachers}
+        isLoadingTeachers={isLoadingTeachers}
       />
 
       <CalendarSummary

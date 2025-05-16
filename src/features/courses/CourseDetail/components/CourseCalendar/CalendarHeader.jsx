@@ -2,14 +2,15 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink } from '@fortawesome/free-solid-svg-icons';
-import Chip from '../../../components/Chip'; 
+import Chip from '../../../components/Chip';
 import TeacherBadge from '../../../../common/TeacherBadge'; // Import TeacherBadge
 
-const CalendarHeader = ({ 
+const CalendarHeader = ({
   customTitle = "Kurs Kalender",
   sourceUrl,
-  mode, 
-  teachers = [] // Add teachers prop with default empty array
+  mode,
+  teachers = [],
+  isLoadingTeachers = false // Add isLoadingTeachers prop
 }) => {
   // Function to handle URL click
   const handleUrlClick = (e) => {
@@ -18,7 +19,7 @@ const CalendarHeader = ({
       window.open(sourceUrl, '_blank', 'noopener,noreferrer');
     }
   };
-  
+
   return (
     <div className="calendar-header">
       <div className="calendar-title-section">
@@ -26,8 +27,8 @@ const CalendarHeader = ({
           <h2 className="calendar-title">{customTitle}</h2>
           {mode && <Chip label={mode} type={mode} />}
           {sourceUrl && (
-            <span 
-              className="calendar-source-url" 
+            <span
+              className="calendar-source-url"
               onClick={handleUrlClick}
               title="Open Google Sheet"
             >
@@ -35,10 +36,16 @@ const CalendarHeader = ({
             </span>
           )}
         </div>
-        
-        {/* Replace date range with teacher badges */}
+
+        {/* Teachers section with loading indicator */}
         <div className="calendar-teachers">
-          {teachers.length > 0 ? (
+          {isLoadingTeachers ? (
+            <div className="teacher-loading">
+              <span className="teacher-loading-dot"></span>
+              <span className="teacher-loading-dot"></span>
+              <span className="teacher-loading-dot"></span>
+            </div>
+          ) : teachers.length > 0 ? (
             teachers.map(teacher => (
               <TeacherBadge key={teacher.id} teacher={teacher} />
             ))
