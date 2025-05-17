@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import '../styles/Dashboard.css';
 import DashboardContent from './DashboardContent';
-import MonatContent from '../months/MonatContent';
+import MonthContent from '../months/MonthContent';
 import CourseContent from '../courses/CourseContent';
 import SchulerContent from './SchulerContent';
 import TeacherContent from '../teachers/TeacherContent';
@@ -60,7 +60,7 @@ const Dashboard = () => {
       case 'dashboard':
         return <DashboardContent />;
       case 'monat':
-        return <MonatContent />;
+        return <MonthContent />;
       case 'klassen':
         return <CourseContent />;
       case 'lehrer':

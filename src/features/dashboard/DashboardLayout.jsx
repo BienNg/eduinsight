@@ -6,7 +6,7 @@ import '../styles/Dashboard.css';
 // Content components
 import DashboardContent from './DashboardContent';
 import ImportContent from './ImportContent';
-import MonatContent from '../months/MonatContent';
+import MonthContent from '../months/MonthContent';
 import KlassenContent from '../courses/CourseContent';
 import SchulerContent from './SchulerContent';
 import LehrerContent from '../teachers/TeacherContent';
@@ -149,8 +149,8 @@ const DashboardLayout = () => {
             <Route path="/import" element={<ImportContent />} />
 
             {/* Month routes */}
-            <Route path="/months" element={<MonatContent />} />
-            <Route path="/months/:id" element={<MonatContent />} />
+            <Route path="/months" element={<MonthContent />} />
+            <Route path="/months/:id" element={<MonthContent />} />
 
             {/* Course routes */}
             <Route path="/courses" element={<KlassenContent />} />
