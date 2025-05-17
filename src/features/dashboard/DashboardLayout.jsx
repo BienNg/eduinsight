@@ -16,6 +16,9 @@ import DatabaseView from '../database/DatabaseView';
 import TeacherDetail from '../teachers/TeacherDetail';
 import CourseDetail from '../courses/CourseDetail';
 import StudentDetail from '../students/StudentDetail';
+import PrototypeDashboard from '../../prototype/dashboard/PrototypeDashboard';
+
+
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -162,9 +165,12 @@ const DashboardLayout = () => {
             {/* Student routes */}
             <Route path="/students" element={<SchulerContent />} />
             <Route path="/students/:id" element={<StudentDetail />} />
-            
+
             {/* Add the new route for database view */}
             <Route path="/database" element={<DatabaseView />} />
+
+            {/* Add the prototype dashboard route */}
+            <Route path="/prototype/dashboard" element={<PrototypeDashboard />} />
           </Routes>
         </div>
       </div>
