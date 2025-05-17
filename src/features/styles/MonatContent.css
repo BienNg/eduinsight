@@ -50,3 +50,72 @@
 .overview-tab-content .overview-heading {
   display: none; /* Hide duplicate titles in the tab content */
 }
+
+/* Make the main container take full viewport height */
+.monat-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.monat-content .month-header-container {
+  flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.monat-content .month-content-area {
+  flex-grow: 1;
+  overflow: hidden;
+  padding: 0 10px 10px;
+}
+
+.monat-content .overview-tab-content {
+  height: 100%;
+}
+
+.monat-content .three-column-overview-grid {
+  height: 100%;
+  margin: 0 -38px; /* Keep your existing margin */
+  padding: 10px 30px; /* Keep your existing padding */
+}
+
+.monat-content .overview-column {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+/* Make panels take appropriate heights and be scrollable */
+.monat-content .overview-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+.monat-content .panel-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* Specific adjustments for analytics in the center column */
+.monat-content .overview-column .analytics-card {
+  flex-shrink: 0;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.monat-content .overview-column .overview-panel {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+/* Component-specific scrolling */
+.monat-content .compact-teacher-list,
+.monat-content .compact-session-list,
+.monat-content .group-progress-list {
+  height: 100%;
+  overflow-y: auto;
+}
