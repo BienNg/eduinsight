@@ -164,27 +164,7 @@
     color: #666;
 }
 
-/* Layout grids */
-.compact-overview-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
 
-.three-column-overview-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr 1fr; /* Middle column larger */
-    gap: 12px; /* Reduced gap to bring cards closer */
-    margin: 0 -38px; /* Negative margin to extend toward edges */
-    padding: 10px 30px;
-}
-
-.overview-column {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    height: 100%;
-}
 
 /* Compact Teacher List */
 .compact-teacher-list {
@@ -195,56 +175,57 @@
 .compact-teacher-item {
     display: flex;
     flex-direction: column;
-    padding: 16px; /* Increased padding for higher items */
+    padding: 16px;
+    /* Increased padding for higher items */
     border-bottom: 1px solid #eee;
     transition: background-color 0.2s;
-  }
-  
-  .compact-teacher-item:hover {
+}
+
+.compact-teacher-item:hover {
     background-color: #f9f9f9;
-  }
-  
-  .teacher-profile {
+}
+
+.teacher-profile {
     display: flex;
     align-items: center;
     margin-bottom: 8px;
-  }
-  
-  .teacher-icon {
+}
+
+.teacher-icon {
     color: #0088FE;
     font-size: 1.2rem;
     margin-right: 10px;
-  }
-  
-  .teacher-info {
+}
+
+.teacher-info {
     display: flex;
     flex-direction: column;
-  }
-  
-  .teacher-name {
+}
+
+.teacher-name {
     font-size: 1rem;
     font-weight: bold;
-  }
-  
-  .teacher-subtitle {
+}
+
+.teacher-subtitle {
     font-size: 0.8rem;
     color: #666;
     margin-top: 2px;
-  }
-  
-  .teacher-meta {
+}
+
+.teacher-meta {
     display: flex;
     justify-content: space-between;
     font-size: 0.85rem;
     color: #666;
     margin-top: 4px;
     margin-bottom: 8px;
-  }
-  
-  .teacher-group-badges {
+}
+
+.teacher-group-badges {
     display: flex;
     flex-wrap: wrap;
-  }
+}
 
 .compact-teacher-item:last-child {
     border-bottom: none;
@@ -414,7 +395,7 @@
     .analytics-row {
         grid-template-columns: 1fr;
     }
-    
+
     .analytics-card {
         height: 250px;
     }
@@ -430,9 +411,8 @@
     .compact-stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .compact-overview-grid {
         grid-template-columns: 1fr;
     }
 }
-

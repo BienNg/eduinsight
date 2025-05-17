@@ -42,13 +42,15 @@
 }
 
 .month-tabs-section .app-tab-panel {
-  display: none; /* Hide the panel within the header section */
+  display: none;
+  /* Hide the panel within the header section */
 }
 
 /* Make sure your OverviewTab no longer includes the title */
 .overview-tab-content .overview-description,
 .overview-tab-content .overview-heading {
-  display: none; /* Hide duplicate titles in the tab content */
+  display: none;
+  /* Hide duplicate titles in the tab content */
 }
 
 /* Make the main container take full viewport height */
@@ -60,7 +62,8 @@
 }
 
 .monat-content .month-header-container {
-  flex-shrink: 0; /* Prevent header from shrinking */
+  flex-shrink: 0;
+  /* Prevent header from shrinking */
 }
 
 .monat-content .month-content-area {
@@ -73,13 +76,28 @@
   height: 100%;
 }
 
-.monat-content .three-column-overview-grid {
-  height: 100%;
-  margin: 0 -38px; /* Keep your existing margin */
-  padding: 10px 30px; /* Keep your existing padding */
+
+/* Layout grids */
+.compact-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
-.monat-content .overview-column {
+.three-column-overview-grid {
+  display: grid;
+  grid-template-columns: 0.6fr 1.5fr 1fr;
+  /* Middle column larger */
+  gap: 12px;
+  /* Reduced gap to bring cards closer */
+  height: 100%;
+  margin: 0 -38px;
+  /* Keep your existing margin */
+  padding: 10px 30px;
+  /* Keep your existing padding */
+}
+
+.overview-column {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -89,6 +107,7 @@
 
 /* Make panels take appropriate heights and be scrollable */
 .monat-content .overview-panel {
+  padding: 10px 5px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -118,4 +137,13 @@
 .monat-content .group-progress-list {
   height: 100%;
   overflow-y: auto;
+}
+
+.monat-content .compact-teacher-item{
+padding-bottom: 0;
+}
+
+.monat-content .panel-header {
+  padding-top: 16px;
+  padding-bottom: 0;
 }
