@@ -1,15 +1,25 @@
-// Modify MonatContent.jsx
+// src/features/months/MonthContent.jsx
 import React, { useState, useEffect } from 'react';
 import '../styles/MonatContent.css';
 import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
+import '../styles/Content.css';
+import useTooltip from '../hooks/useTooltip';
 
-import OverviewTab from './tabs/MonthOverviewTab';
-import useMonthData from '../dashboard/hooks/useMonthData';
+// Components
+import TeachersList from './components/TeachersList';
+import CourseAnalytics from './components/CourseAnalytics';
+import SessionsList from './components/SessionsList';
+import TeacherTooltip from './components/TeacherTooltip';
+import GroupProgressList from './components/GroupProgressList';
 import TabComponent from '../common/TabComponent';
+import useMonthData from '../dashboard/hooks/useMonthData';
 
-const getMonthName = (monthId) => {
+// Utilities
+import { getMonthName, groupCoursesByGroup } from './utils/monthUtils';
+
+const getMonthNameFromId = (monthId) => {
   const [year, month] = monthId.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1, 1);
   const monthNames = [
@@ -35,6 +45,15 @@ const MonatContent = () => {
     filterMonths
   } = useMonthData();
 
+  const {
+    isTooltipVisible,
+    tooltipPosition,
+    tooltipData,
+    showTooltip,
+    hideTooltip,
+    cancelHideTooltip
+  } = useTooltip();
+
   // Set initial active tab to the most recent month
   const [activeTab, setActiveTab] = useState('');
 
@@ -51,8 +70,20 @@ const MonatContent = () => {
   // Create tabs for all available months
   const tabs = sortedMonths.map(month => ({
     id: month.id,
-    label: getMonthName(month.id)
+    label: getMonthNameFromId(month.id)
   }));
+
+  // Helper function to get group name by groupId
+  const getGroupName = (groupId) => {
+    const group = groups.find(g => g.id === groupId);
+    return group ? group.name : 'Ungrouped';
+  };
+
+  // Handle showing the teacher tooltip
+  const handleTeacherHover = (teacher, event) => {
+    const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
+    showTooltip({ teacher, sessions: teacherSessions }, event);
+  };
 
   if (loading) {
     return <div>Daten werden geladen...</div>;
@@ -70,13 +101,40 @@ const MonatContent = () => {
     );
   }
 
+  // Get month details and filter data for currently selected month
+  const details = activeTab && monthDetails[activeTab] ? monthDetails[activeTab] : null;
+  const currentMonthSessions = sessions
+    .filter(session => session.monthId === activeTab)
+    .sort((a, b) => {
+      if (!a.date || !b.date) return 0;
+      const partsA = a.date.split('.');
+      const partsB = b.date.split('.');
+      if (partsA.length === 3 && partsB.length === 3) {
+        const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+        const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+        return dateB - dateA;
+      }
+      return 0;
+    });
+
+  const currentMonthCourses = courses.filter(course =>
+    currentMonthSessions.some(session => session.courseId === course.id)
+  );
+
+  const currentMonthTeachers = teachers.filter(teacher =>
+    currentMonthSessions.some(session => session.teacherId === teacher.id)
+  );
+
+  // Group courses by groupId
+  const courseGroups = groupCoursesByGroup(currentMonthCourses, getGroupName);
+
   return (
     <div className="monat-content">
       <div className="month-header-container">
         <div className="month-title-section">
           <p className="overview-description">Alle wichtigen Daten auf einem Blick</p>
           <h1 className="overview-heading">
-            Übersicht für {activeTab ? getMonthName(activeTab) : ''}
+            Übersicht für {activeTab ? getMonthNameFromId(activeTab) : ''}
           </h1>
         </div>
         <div className="month-tabs-section">
@@ -90,14 +148,80 @@ const MonatContent = () => {
 
       <div className="month-content-area">
         {activeTab && (
-          <OverviewTab
-            currentMonthId={activeTab}
-            monthDetails={monthDetails}
-            sessions={sessions}
-            courses={courses}
-            teachers={teachers}
-            groups={groups}
-          />
+          <div className="overview-tab-content">
+            <div className="three-column-overview-grid">
+              {/* Teachers Column */}
+              <div className="overview-panel">
+                <div className="panel-header">
+                  <h3 className="panel-title">Lehrer ({currentMonthTeachers.length})</h3>
+                </div>
+                <div className="panel-content">
+                  <TeachersList
+                    teachers={currentMonthTeachers}
+                    sessions={currentMonthSessions}
+                    onTeacherHover={handleTeacherHover}
+                  />
+                </div>
+              </div>
+
+              {/* Center Column - Analytics and Courses */}
+              <div className="overview-column">
+                <CourseAnalytics
+                  courses={currentMonthCourses}
+                  monthDetails={monthDetails}
+                />
+
+                <div className="overview-panel">
+                  <div className="panel-header">
+                    <h3 className="panel-title">
+                      Kurse im {getMonthNameFromId(activeTab)} ({currentMonthCourses.length})
+                    </h3>
+                  </div>
+                  <div className="panel-content">
+                    <GroupProgressList
+                      courseGroups={courseGroups}
+                      sessions={sessions}
+                      teachers={teachers}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Sessions Column */}
+              <div className="overview-panel">
+                <div className="panel-header">
+                  <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
+                </div>
+                <div className="panel-content">
+                  <SessionsList
+                    sessions={currentMonthSessions}
+                    courses={courses}
+                    teachers={teachers}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Teacher Tooltip */}
+            {isTooltipVisible && tooltipData && (
+              <div
+                className="tooltip-container"
+                style={{
+                  top: `${tooltipPosition.top}px`,
+                  left: `${tooltipPosition.left}px`
+                }}
+                onMouseEnter={cancelHideTooltip}
+                onMouseLeave={hideTooltip}
+              >
+                <TeacherTooltip
+                  teacher={tooltipData.teacher}
+                  sessions={tooltipData.sessions}
+                  courses={courses}
+                  groups={groups}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
