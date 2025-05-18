@@ -58,7 +58,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .monat-content .month-header-container {
@@ -68,12 +68,14 @@
 
 .monat-content .month-content-area {
   flex-grow: 1;
-  overflow: hidden;
+  overflow: auto;
   padding: 0 10px 10px;
 }
 
 .monat-content .overview-tab-content {
   height: 100%;
+
+  padding-bottom: 24px;
 }
 
 

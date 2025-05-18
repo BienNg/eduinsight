@@ -10,6 +10,8 @@ import '../styles/Content.css';
 import TeachersList from './components/TeachersList';
 import CourseAnalytics from './components/CourseAnalytics';
 import SessionsList, { getTotalSessionHours } from './components/SessionsList';
+import MonthCourseCalendars from './components/MonthCourseCalendars';
+
 
 import GroupProgressList from './components/GroupProgressList';
 import TabComponent from '../common/TabComponent';
@@ -255,6 +257,12 @@ const MonatContent = () => {
                 </div>
               </div>
             </div>
+
+            <MonthCourseCalendars
+              courses={currentMonthCourses}
+              sessions={currentMonthSessions}
+              selectedTeacher={selectedTeacher}
+            />
           </div>
         )}
       </div>
