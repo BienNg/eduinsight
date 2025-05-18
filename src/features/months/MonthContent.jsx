@@ -146,6 +146,19 @@ const MonatContent = () => {
 
   // Group courses by groupId
   const courseGroups = groupCoursesByGroup(currentMonthCourses, getGroupName);
+  const filteredCourseGroups = selectedTeacher
+    ? Object.fromEntries(
+      Object.entries(courseGroups).map(([groupName, groupCourses]) => [
+        groupName,
+        groupCourses.filter(course =>
+          sessions.some(session =>
+            session.courseId === course.id &&
+            session.teacherId === selectedTeacher.id
+          )
+        )
+      ]).filter(([_, courses]) => courses.length > 0)
+    )
+    : courseGroups;
 
   const buildTeacherMonthData = () => {
     if (!selectedTeacher) return null;
@@ -230,9 +243,10 @@ const MonatContent = () => {
                   </div>
                   <div className="panel-content">
                     <GroupProgressList
-                      courseGroups={courseGroups}
+                      courseGroups={filteredCourseGroups}
                       sessions={sessions}
                       teachers={teachers}
+                      selectedTeacher={selectedTeacher}
                     />
                   </div>
                 </div>

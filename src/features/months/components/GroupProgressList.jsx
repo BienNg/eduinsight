@@ -28,7 +28,7 @@ const calculateGroupProgress = (groupCourses, sessions) => {
   // Find the latest course with completed sessions
   let latestActiveIndex = -1;
   let latestSessionNumber = 0;
-  
+
   for (let i = 0; i < groupCourses.length; i++) {
     const course = groupCourses[i];
     const courseSessions = sessions.filter(s => s.courseId === course.id);
@@ -36,7 +36,7 @@ const calculateGroupProgress = (groupCourses, sessions) => {
 
     if (completedSessions.length > 0) {
       latestActiveIndex = i;
-      
+
       // Find the latest session number
       // This assumes sessions have a sessionOrder or some property indicating their sequence
       latestSessionNumber = completedSessions.length;
@@ -91,17 +91,23 @@ const calculateGroupProgress = (groupCourses, sessions) => {
   };
 };
 
-const GroupProgressList = ({ courseGroups, sessions, teachers }) => {
+const GroupProgressList = ({ courseGroups, sessions, teachers, selectedTeacher }) => {
   const navigate = useNavigate();
 
   if (Object.keys(courseGroups).length === 0) {
-    return <div className="empty-message">Keine Kurse im letzten Monat.</div>;
+    return (
+      <div className="empty-message">
+        {selectedTeacher
+          ? `Keine Kurse für ${selectedTeacher.name} in diesem Monat.`
+          : 'Keine Kurse im letzten Monat.'}
+      </div>
+    );
   }
 
   // Find teachers for each group based on course teachers
   const getGroupTeachers = (groupCourses) => {
     const teacherIds = new Set();
-    
+
     groupCourses.forEach(course => {
       // Get teacher IDs from each course
       if (course.teacherId) teacherIds.add(course.teacherId);
@@ -109,7 +115,7 @@ const GroupProgressList = ({ courseGroups, sessions, teachers }) => {
         course.teacherIds.forEach(id => teacherIds.add(id));
       }
     });
-    
+
     // Map IDs to teacher objects
     return Array.from(teacherIds)
       .map(id => teachers.find(t => t.id === id))
@@ -120,7 +126,7 @@ const GroupProgressList = ({ courseGroups, sessions, teachers }) => {
   const groupsWithProgress = Object.entries(courseGroups).map(([groupName, groupCourses]) => {
     const progress = calculateGroupProgress(groupCourses, sessions);
     const groupTeachers = getGroupTeachers(groupCourses);
-    
+
     return {
       groupName,
       teachers: groupTeachers,
@@ -136,7 +142,7 @@ const GroupProgressList = ({ courseGroups, sessions, teachers }) => {
   return (
     <div className="group-progress-list">
       {groupsWithProgress.map(group => (
-        <div 
+        <div
           className="progress-card clickable"
           key={group.groupName}
           onClick={() => handleGroupClick(group.groupName)}
@@ -144,7 +150,7 @@ const GroupProgressList = ({ courseGroups, sessions, teachers }) => {
           <div className="progress-card-header">
             <div className="progress-title-section">
               <div className="progress-title">{group.groupName}</div>
-              
+
               {/* Teacher Badges in same row */}
               {group.teachers && group.teachers.length > 0 && (
                 <div className="teacher-badge-container">
@@ -159,7 +165,7 @@ const GroupProgressList = ({ courseGroups, sessions, teachers }) => {
                 </div>
               )}
             </div>
-            
+
             <div className="progress-stats">
               {group.currentCourse && !group.isGroupComplete && (
                 <>
