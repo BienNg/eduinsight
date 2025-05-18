@@ -1,6 +1,7 @@
 // src/features/months/components/TeachersList.jsx
 import React from 'react';
 import { calculateTotalHours } from '../../utils/timeUtils';
+import '../../styles/TeachersList.css'; // Import the dedicated CSS file
 
 const TeachersList = ({ teachers, sessions, onTeacherSelect, selectedTeacher }) => {
   if (!teachers.length) {

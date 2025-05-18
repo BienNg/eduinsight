@@ -1,0 +1,56 @@
+/* src/features/styles/TeachersList.css */
+
+.compact-teacher-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.compact-teacher-item {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s, border-left 0.2s ease;
+  position: relative;
+  padding-left: 19px; /* Add padding to compensate for the border when selected */
+}
+
+.compact-teacher-item.selected {
+  background-color: rgba(66, 133, 244, 0.05);
+  border-left: 3px solid #4285f4;
+  padding-left: 16px; /* Reduce padding to maintain alignment with non-selected items */
+}
+
+.compact-teacher-item:last-child {
+  border-bottom: none;
+}
+
+.teacher-name {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.teacher-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+.compact-teacher-item:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+}
+
+.compact-teacher-item.selected:hover {
+  background-color: rgba(66, 133, 244, 0.08);
+}
+
+.empty-message {
+  padding: 12px;
+  color: #888;
+  font-style: italic;
+  font-size: 13px;
+  text-align: center;
+}
