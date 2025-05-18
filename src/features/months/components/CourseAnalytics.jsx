@@ -5,17 +5,17 @@ import { prepareLevelData, prepareChartData, CHART_COLORS } from '../utils/month
 const CourseAnalytics = ({ courses, monthDetails }) => {
   const chartData = prepareChartData(new Date(), monthDetails);
   const levelData = prepareLevelData(courses);
-  
+
   // Custom tooltip formatter to show percentage
   const customTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const totalValue = levelData.reduce((sum, item) => sum + item.value, 0);
       const percentage = ((payload[0].value / totalValue) * 100).toFixed(1);
-      
+
       return (
-        <div className="custom-tooltip" style={{ 
-          backgroundColor: '#fff', 
-          padding: '10px', 
+        <div className="custom-tooltip" style={{
+          backgroundColor: '#fff',
+          padding: '10px',
           border: '1px solid #ccc',
           borderRadius: '4px'
         }}>
@@ -56,13 +56,13 @@ const CourseAnalytics = ({ courses, monthDetails }) => {
               <Tooltip content={customTooltip} animationDuration={200} animationEasing="ease-in-out" />
               <Legend
                 wrapperStyle={{
-                  paddingTop: '20px',
+                  paddingLeft: '10px', // Changed from paddingTop
                   opacity: 1,
                   transition: 'opacity 0.5s ease-in'
                 }}
-                layout="horizontal"
-                align="center"
-                verticalAlign="bottom"
+                layout="vertical" // Changed from horizontal
+                align="left"      // Changed from center
+                verticalAlign="middle" // Changed from bottom
                 iconType="circle"
               />
             </PieChart>

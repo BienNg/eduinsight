@@ -72,4 +72,4 @@ export const groupCoursesByGroup = (courses, getGroupName) => {
     return courseGroups;
 };
 
-export const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+export const CHART_COLORS = ['#579BFE', '#0088FE', '#8884d8', '#7366BD', '#FE9A65', '#FF8131'];
