@@ -27,6 +27,7 @@ const CourseContent = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedCourseStudents, setSelectedCourseStudents] = useState([]);
   const [selectedCourseSessions, setSelectedCourseSessions] = useState([]);
+  const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -60,27 +61,42 @@ const CourseContent = () => {
     const fetchCourseDetails = async () => {
       if (courseId) {
         try {
+          setCourseDetailsLoading(true);
+
+          // Fetch course data
           const courseData = await getRecordById('courses', courseId);
           if (courseData) {
             setSelectedCourse(courseData);
 
-            // Fetch students for this course
+            // Prepare a batch query for students
             if (courseData.studentIds && courseData.studentIds.length > 0) {
-              const studentPromises = courseData.studentIds.map(sid =>
-                getRecordById('students', sid)
-              );
-              const students = await Promise.all(studentPromises);
-              setSelectedCourseStudents(students.filter(s => s !== null));
+              // Create chunks of 10 students for better performance
+              const studentChunks = [];
+              for (let i = 0; i < courseData.studentIds.length; i += 10) {
+                studentChunks.push(courseData.studentIds.slice(i, i + 10));
+              }
+
+              // Fetch students in batches
+              const students = [];
+              for (const chunk of studentChunks) {
+                const chunkPromises = chunk.map(sid => getRecordById('students', sid));
+                const chunkResults = await Promise.all(chunkPromises);
+                students.push(...chunkResults.filter(s => s !== null));
+              }
+
+              setSelectedCourseStudents(students);
             } else {
               setSelectedCourseStudents([]);
             }
 
-            // Filter sessions for this course
+            // Filter sessions client-side instead of re-fetching
             const courseSessions = sessions.filter(s => s.courseId === courseId);
             setSelectedCourseSessions(courseSessions);
           }
         } catch (err) {
           console.error("Error fetching course details:", err);
+        } finally {
+          setCourseDetailsLoading(false);
         }
       } else {
         setSelectedCourse(null);
@@ -91,6 +107,7 @@ const CourseContent = () => {
 
     fetchCourseDetails();
   }, [courseId, sessions]);
+
 
   // Process groups with additional data
   const processedGroups = useMemo(() => {
@@ -247,7 +264,7 @@ const CourseContent = () => {
             course={selectedCourse}
             students={selectedCourseStudents}
             sessions={selectedCourseSessions}
-            loading={loading && courseId && !selectedCourse}
+            loading={loading || courseDetailsLoading || (!selectedCourse && courseId)}
             setCourses={setCourses}
             group={selectedGroup}
           />

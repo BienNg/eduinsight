@@ -40,6 +40,8 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
   const currentCourseId = useRef(course?.id);
   // Track active toast ID
   const toastId = useRef(null);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+
 
   const handleOpenCourseDetail = (e) => {
     e.stopPropagation();
@@ -73,57 +75,77 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
   }, [course?.id]);
 
   useEffect(() => {
-    const fetchTeacherData = async () => {
-      if (course && course.teacherIds && course.teacherIds.length > 0) {
-        try {
-          // Use the first teacher ID from the array
-          const teacherId = course.teacherIds[0];
-          const teacherRecord = await getRecordById('teachers', teacherId);
-          if (teacherRecord && teacherRecord.name) {
-            setTeacherName(teacherRecord.name);
-          }
-        } catch (err) {
-          console.error("Error fetching teacher data:", err);
-        }
-      } else {
-        setTeacherName('Nicht zugewiesen');
-      }
-    };
-
-    fetchTeacherData();
-  }, [course]);
-
-  // Fetch teachers for sessions
-  useEffect(() => {
-    const fetchSessionTeachers = async () => {
+    const fetchTeachersData = async () => {
       if (!sessions || sessions.length === 0) return;
 
-      const teacherMap = {};
+      try {
+        setTeachersLoading(true);
 
-      for (const session of sessions) {
-        if (session.teacherId) {
-          try {
-            // Check if we already fetched this teacher
-            if (!teacherMap[session.teacherId]) {
-              const teacherRecord = await getRecordById('teachers', session.teacherId);
-              teacherMap[session.teacherId] = teacherRecord && teacherRecord.name ?
-                teacherRecord.name : 'Nicht zugewiesen';
-            }
-          } catch (err) {
-            console.error(`Error fetching teacher for session ${session.id}:`, err);
-            teacherMap[session.teacherId] = 'Nicht zugewiesen';
-          }
-        } else {
-          // If no teacher ID is provided, use the course's teacher
-          teacherMap[session.id] = teacherName;
+        // Collect all unique teacher IDs from course and sessions
+        const uniqueTeacherIds = new Set();
+
+        // Add course teacher if available
+        if (course && course.teacherIds && course.teacherIds.length > 0) {
+          course.teacherIds.forEach(id => uniqueTeacherIds.add(id));
+        } else if (course && course.teacherId) {
+          uniqueTeacherIds.add(course.teacherId);
         }
-      }
 
-      setSessionTeachers(teacherMap);
+        // Add session teachers
+        sessions.forEach(session => {
+          if (session.teacherId) {
+            uniqueTeacherIds.add(session.teacherId);
+          }
+        });
+
+        if (uniqueTeacherIds.size === 0) {
+          setTeacherName('Nicht zugewiesen');
+          setSessionTeachers({});
+          return;
+        }
+
+        // Fetch all teachers in a single batch
+        const teacherPromises = Array.from(uniqueTeacherIds).map(teacherId =>
+          getRecordById('teachers', teacherId)
+        );
+
+        const teachersData = await Promise.all(teacherPromises);
+        const teachersMap = {};
+
+        // Map teacher data by ID
+        teachersData.forEach(teacher => {
+          if (teacher && teacher.id) {
+            teachersMap[teacher.id] = teacher.name || 'Nicht zugewiesen';
+          }
+        });
+
+        // Set the course's main teacher name
+        if (course && course.teacherIds && course.teacherIds.length > 0) {
+          setTeacherName(teachersMap[course.teacherIds[0]] || 'Nicht zugewiesen');
+        } else if (course && course.teacherId) {
+          setTeacherName(teachersMap[course.teacherId] || 'Nicht zugewiesen');
+        } else {
+          setTeacherName('Nicht zugewiesen');
+        }
+
+        // Create a mapping for session teachers
+        const sessionTeachersMapping = {};
+        sessions.forEach(session => {
+          if (session.teacherId) {
+            sessionTeachersMapping[session.teacherId] = teachersMap[session.teacherId] || 'Nicht zugewiesen';
+          }
+        });
+
+        setSessionTeachers(sessionTeachersMapping);
+      } catch (error) {
+        console.error("Error fetching teachers data:", error);
+      } finally {
+        setTeachersLoading(false);
+      }
     };
 
-    fetchSessionTeachers();
-  }, [sessions, teacherName]);
+    fetchTeachersData();
+  }, [course, sessions]);
 
   // In the CourseDetailPanel component, before the return statement
   const sortedAndGroupedSessions = React.useMemo(() => {
@@ -298,6 +320,8 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
     return (
       <div className="course-detail-panel">
         <div className="course-detail-panel-loading">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading course details...</p>
           <div className="course-detail-panel-skeleton"></div>
           <div className="course-detail-panel-skeleton"></div>
           <div className="course-detail-panel-skeleton"></div>
