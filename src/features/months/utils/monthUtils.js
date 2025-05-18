@@ -36,7 +36,7 @@ export const prepareLevelData = (courses) => {
     }));
 };
 
-export const prepareChartData = (currentDate, monthDetails) => {
+export const prepareChartData = (currentDate, monthDetails, teacherMonthData = null) => {
     const last4Months = Array.from({ length: 4 }, (_, i) => {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - (3 - i), 1);
         return {
@@ -53,9 +53,23 @@ export const prepareChartData = (currentDate, monthDetails) => {
     return last4Months.map(({ year, month }) => {
         const monthId = `${year}-${month.toString().padStart(2, '0')}`;
         const details = monthDetails[monthId];
+
+        // If no teacher filter is applied, show all courses
+        if (!teacherMonthData) {
+            return {
+                month: monthNames[month - 1].substring(0, 3),
+                courses: details ? details.courseCount : 0
+            };
+        }
+
+        // If teacher filter is applied, count only courses taught by this teacher
+        const teacherCourses = teacherMonthData && teacherMonthData[monthId]
+            ? teacherMonthData[monthId].length
+            : 0;
+
         return {
             month: monthNames[month - 1].substring(0, 3),
-            courses: details ? details.courseCount : 0
+            courses: teacherCourses
         };
     });
 };

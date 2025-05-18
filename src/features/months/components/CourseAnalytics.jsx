@@ -3,18 +3,32 @@ import React from 'react';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { prepareLevelData, prepareChartData, CHART_COLORS } from '../utils/monthUtils';
 
-const CourseAnalytics = ({ courses, monthDetails, selectedTeacher, sessions }) => {
+const CourseAnalytics = ({ courses, monthDetails, selectedTeacher, sessions, teacherMonthData }) => {
   // Filter courses if a teacher is selected
-  const filteredCourses = selectedTeacher 
-    ? courses.filter(course => 
-        sessions.some(session => 
-          session.courseId === course.id && 
-          session.teacherId === selectedTeacher.id
-        )
+  const filteredCourses = selectedTeacher
+    ? courses.filter(course =>
+      sessions.some(session =>
+        session.courseId === course.id &&
+        session.teacherId === selectedTeacher.id
       )
+    )
     : courses;
 
-  const chartData = prepareChartData(new Date(), monthDetails);
+  // Create a set of course IDs that the selected teacher teaches
+  const teacherCourseIds = selectedTeacher
+    ? new Set(sessions
+      .filter(session => session.teacherId === selectedTeacher.id)
+      .map(session => session.courseId))
+    : null;
+
+  // Prepare chart data - filter by teacher if one is selected
+  const chartData = prepareChartData(
+    new Date(),
+    monthDetails,
+    teacherMonthData
+  );
+
+
   const levelData = prepareLevelData(filteredCourses);
 
   // Custom tooltip formatter to show percentage
@@ -42,8 +56,8 @@ const CourseAnalytics = ({ courses, monthDetails, selectedTeacher, sessions }) =
     <div className="analytics-row">
       <div className="analytics-card animate-card">
         <h3>
-          {selectedTeacher 
-            ? `Kurse von ${selectedTeacher.name} nach Niveau` 
+          {selectedTeacher
+            ? `Kurse von ${selectedTeacher.name} nach Niveau`
             : 'Kurse nach Niveau'}
         </h3>
         <div style={{ width: '100%', height: '200px' }}>
@@ -84,9 +98,13 @@ const CourseAnalytics = ({ courses, monthDetails, selectedTeacher, sessions }) =
           </ResponsiveContainer>
         </div>
       </div>
-      {/* Rest of your component remains the same */}
+      {/* Line chart with filtered data */}
       <div className="analytics-card animate-card">
-        <h3>Anzahl Kurse pro Monat</h3>
+        <h3>
+          {selectedTeacher
+            ? `Anzahl Kurse pro Monat (${selectedTeacher.name})`
+            : 'Anzahl Kurse pro Monat'}
+        </h3>
         <div style={{ width: '100%', height: '200px' }}>
           <ResponsiveContainer>
             <LineChart

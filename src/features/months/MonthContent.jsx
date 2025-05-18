@@ -147,6 +147,33 @@ const MonatContent = () => {
   // Group courses by groupId
   const courseGroups = groupCoursesByGroup(currentMonthCourses, getGroupName);
 
+  const buildTeacherMonthData = () => {
+    if (!selectedTeacher) return null;
+
+    // Get all sessions for the selected teacher
+    const teacherSessions = sessions.filter(s => s.teacherId === selectedTeacher.id);
+
+    // Create a mapping of month to array of course IDs
+    const teacherMonthData = {};
+    teacherSessions.forEach(session => {
+      if (session.monthId && session.courseId) {
+        if (!teacherMonthData[session.monthId]) {
+          teacherMonthData[session.monthId] = new Set();
+        }
+        teacherMonthData[session.monthId].add(session.courseId);
+      }
+    });
+
+    // Convert sets to arrays for each month
+    Object.keys(teacherMonthData).forEach(monthId => {
+      teacherMonthData[monthId] = Array.from(teacherMonthData[monthId]);
+    });
+
+    return teacherMonthData;
+  };
+
+  const teacherMonthData = buildTeacherMonthData();
+
   return (
     <div className="monat-content">
       <div className="month-header-container">
@@ -192,6 +219,7 @@ const MonatContent = () => {
                   monthDetails={monthDetails}
                   selectedTeacher={selectedTeacher}
                   sessions={currentMonthSessions}
+                  teacherMonthData={teacherMonthData}
                 />
 
                 <div className="overview-panel">
