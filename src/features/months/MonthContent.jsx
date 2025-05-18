@@ -222,7 +222,7 @@ const MonatContent = () => {
                 <div className="overview-panel">
                   <div className="panel-header">
                     <h3 className="panel-title">
-                      Kurse im {getMonthNameFromId(activeTab)} ({currentMonthCourses.length})
+                      Gruppen im {getMonthNameFromId(activeTab)} ({Object.keys(filteredCourseGroups).length})
                     </h3>
                   </div>
                   <div className="panel-content">
