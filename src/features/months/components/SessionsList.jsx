@@ -12,20 +12,33 @@ const SessionsList = ({ sessions, courses, teachers }) => {
   const [prevSessions, setPrevSessions] = useState(sessions);
   const [isSyncing, setIsSyncing] = useState(false);
   
+  // Filter out future sessions
+  const filteredSessions = sessions.filter(session => {
+    if (!session.date) return false;
+    
+    // Parse date from DD.MM.YYYY format
+    const [day, month, year] = session.date.split('.').map(Number);
+    const sessionDate = new Date(year, month - 1, day);
+    const today = new Date();
+    
+    // Only include sessions that have already occurred
+    return sessionDate <= today;
+  });
+  
   // Detect when sessions change to trigger animation
   useEffect(() => {
-    if (JSON.stringify(sessions.map(s => s.id)) !== JSON.stringify(prevSessions.map(s => s.id))) {
+    if (JSON.stringify(filteredSessions.map(s => s.id)) !== JSON.stringify(prevSessions.map(s => s.id))) {
       setAnimating(true);
       
       // After a short delay, update the previous sessions
       const timer = setTimeout(() => {
-        setPrevSessions(sessions);
+        setPrevSessions(filteredSessions);
         setAnimating(false);
       }, 300); // This should match the CSS transition duration
       
       return () => clearTimeout(timer);
     }
-  }, [sessions, prevSessions]);
+  }, [filteredSessions, prevSessions]);
 
   // Handle sync button click
   const handleSyncAllCourses = async () => {
@@ -35,7 +48,7 @@ const SessionsList = ({ sessions, courses, teachers }) => {
       setIsSyncing(true);
       // Filter courses to only include those with sessions in this list
       const relevantCourses = courses.filter(course => 
-        sessions.some(session => session.courseId === course.id)
+        filteredSessions.some(session => session.courseId === course.id)
       );
       
       await syncIncompleteCourses(relevantCourses, setIsSyncing);
@@ -48,13 +61,13 @@ const SessionsList = ({ sessions, courses, teachers }) => {
     }
   };
 
-  if (!sessions.length) {
-    return <div className="empty-message">Keine Lektionen in diesem Monat.</div>;
+  if (!filteredSessions.length) {
+    return <div className="empty-message">Keine abgeschlossenen Lektionen in diesem Monat.</div>;
   }
 
   // Group sessions by course
   const sessionsByCourse = {};
-  sessions.forEach(session => {
+  filteredSessions.forEach(session => {
     const course = courses.find(c => c.id === session.courseId);
     if (course) {
       const courseName = course.name || 'Unbekannter Kurs';
@@ -71,7 +84,7 @@ const SessionsList = ({ sessions, courses, teachers }) => {
   return (
     <div className={`sessions-list-container ${animating ? 'animating' : ''}`}>
       <div className="sessions-list-header">
-        <div className="sessions-list-title">Sessions</div>
+        <div className="sessions-list-title">Abgeschlossene Sessions</div>
         <button 
           className="sync-all-button"
           onClick={handleSyncAllCourses}
