@@ -2,7 +2,7 @@
 import React from 'react';
 import { calculateTotalHours } from '../../utils/timeUtils';
 
-const TeachersList = ({ teachers, sessions, onTeacherHover, onTeacherSelect, selectedTeacher }) => {
+const TeachersList = ({ teachers, sessions, onTeacherSelect, selectedTeacher }) => {
   if (!teachers.length) {
     return <div className="empty-message">Keine Lehrer in diesem Monat.</div>;
   }
@@ -18,8 +18,6 @@ const TeachersList = ({ teachers, sessions, onTeacherHover, onTeacherSelect, sel
           <div
             className={`compact-teacher-item ${isSelected ? 'selected' : ''}`}
             key={teacher.id}
-            onMouseEnter={(e) => onTeacherHover(teacher, e)}
-            onMouseLeave={() => {}}
             onClick={() => onTeacherSelect(teacher)}
           >
             <div className="teacher-name">{teacher.name}</div>

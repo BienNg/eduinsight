@@ -5,14 +5,12 @@ import '../styles/MonthDetail.css';
 import '../styles/MonthTabs.css';
 import '../common/Tabs.css';
 import '../styles/Content.css';
-import useTooltip from '../hooks/useTooltip';
 
 // Components
 import TeachersList from './components/TeachersList';
 import CourseAnalytics from './components/CourseAnalytics';
 import SessionsList, { getTotalSessionHours } from './components/SessionsList';
 
-import TeacherTooltip from './components/TeacherTooltip';
 import GroupProgressList from './components/GroupProgressList';
 import TabComponent from '../common/TabComponent';
 import useMonthData from '../dashboard/hooks/useMonthData';
@@ -46,15 +44,6 @@ const MonatContent = () => {
     filterMonths
   } = useMonthData();
 
-  const {
-    isTooltipVisible,
-    tooltipPosition,
-    tooltipData,
-    showTooltip,
-    hideTooltip,
-    cancelHideTooltip
-  } = useTooltip();
-
   // Set initial active tab to the most recent month
   const [activeTab, setActiveTab] = useState('');
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -80,12 +69,6 @@ const MonatContent = () => {
   const getGroupName = (groupId) => {
     const group = groups.find(g => g.id === groupId);
     return group ? group.name : 'Ungrouped';
-  };
-
-  // Handle showing the teacher tooltip
-  const handleTeacherHover = (teacher, event) => {
-    const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
-    showTooltip({ teacher, sessions: teacherSessions }, event);
   };
 
   // Handle teacher selection/deselection
@@ -218,7 +201,6 @@ const MonatContent = () => {
                   <TeachersList
                     teachers={currentMonthTeachers}
                     sessions={currentMonthSessions}
-                    onTeacherHover={handleTeacherHover}
                     onTeacherSelect={handleTeacherSelect}
                     selectedTeacher={selectedTeacher}
                   />
@@ -272,28 +254,7 @@ const MonatContent = () => {
                   />
                 </div>
               </div>
-
             </div>
-
-            {/* Teacher Tooltip */}
-            {isTooltipVisible && tooltipData && (
-              <div
-                className="tooltip-container"
-                style={{
-                  top: `${tooltipPosition.top}px`,
-                  left: `${tooltipPosition.left}px`
-                }}
-                onMouseEnter={cancelHideTooltip}
-                onMouseLeave={hideTooltip}
-              >
-                <TeacherTooltip
-                  teacher={tooltipData.teacher}
-                  sessions={tooltipData.sessions}
-                  courses={courses}
-                  groups={groups}
-                />
-              </div>
-            )}
           </div>
         )}
       </div>
