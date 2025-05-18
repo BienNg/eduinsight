@@ -122,3 +122,47 @@
 .panel-header.animating .tooltip-summary {
   opacity: 0;
 }
+
+.sessions-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 8px;
+}
+
+.sessions-list-title {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.sync-all-button {
+  background: none;
+  border: none;
+  color: #1e88e5;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.sync-all-button:hover {
+  background-color: rgba(30, 136, 229, 0.1);
+}
+
+.sync-all-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
