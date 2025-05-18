@@ -1,12 +1,13 @@
 // src/features/courses/CourseDetail/components/CourseCalendar/CalendarSummary.jsx
 import React from 'react';
 
-const CalendarSummary = ({ 
-  startDateStr, 
-  lastCompletedDate, 
-  completedSessions, 
+const CalendarSummary = ({
+  startDateStr,
+  lastCompletedDate,
+  completedSessions,
   totalSessions,
-  formatShortDate
+  formatShortDate,
+  isCompleted
 }) => {
   return (
     <div className="calendar-summary">
@@ -23,7 +24,9 @@ const CalendarSummary = ({
         <div className="metric-label">Sessions</div>
       </div>
       <div className="status-indicator">
-        <div className="status-circle"></div>
+        <div
+          className={`status-circle ${isCompleted ? 'completed' : ''}`}
+        ></div>
       </div>
     </div>
   );

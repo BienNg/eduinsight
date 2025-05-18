@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { ref, update } from 'firebase/database';
 import { database } from '../../../../firebase/config';
-import { getRecordById } from '../../../../firebase/database';
+import { getRecordById, getAllRecords } from '../../../../firebase/database';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import CalendarHeader from './CalendarHeader';
@@ -11,6 +11,7 @@ import CalendarTabNavigation from './CalendarTabNavigation';
 import CalendarGrid from './CalendarGrid';
 import { useCalendarData } from './hooks/useCalendarData';
 import { getTeachersByIds } from '../../../../utils/teacherFetchUtils';
+import { isCourseCompletedSync } from '../../../../utils/courseCompletionUtils';
 
 import '../../../../styles/CourseCalendar.css';
 
@@ -28,6 +29,8 @@ const CourseCalendar = ({
   const [groupMode, setGroupMode] = useState(null);
   const [teachers, setTeachers] = useState([]);
   const [isLoadingTeachers, setIsLoadingTeachers] = useState(true);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [allSessions, setAllSessions] = useState([]);
 
   // Initialize the local state from course data
   useEffect(() => {
@@ -51,6 +54,32 @@ const CourseCalendar = ({
 
     fetchGroupData();
   }, [course, groupMode]);
+
+  // Fetch all sessions and determine course completion status
+  useEffect(() => {
+    const fetchAllSessions = async () => {
+      if (course?.id) {
+        try {
+          const allSessionsData = await getAllRecords('sessions');
+          setAllSessions(allSessionsData);
+
+          // Check completion status using all sessions
+          const courseCompleted = isCourseCompletedSync(course.id, allSessionsData);
+          setIsCompleted(courseCompleted);
+          
+          console.log('Course completion check:', {
+            courseId: course.id,
+            courseName: course.name,
+            isCompleted: courseCompleted
+          });
+        } catch (error) {
+          console.error('Error fetching all sessions:', error);
+        }
+      }
+    };
+
+    fetchAllSessions();
+  }, [course?.id]);
 
   // Add effect to fetch teachers for the course
   useEffect(() => {
@@ -224,6 +253,7 @@ const CourseCalendar = ({
         completedSessions={completedSessions}
         totalSessions={totalSessions}
         formatShortDate={formatShortDate}
+        isCompleted={isCompleted}
       />
 
       <CalendarTabNavigation
