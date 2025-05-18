@@ -4,6 +4,7 @@
 .sessions-list-container {
   transition: opacity 0.3s ease-in-out;
   position: relative;
+  padding: 15px;
 }
 
 .sessions-list-container.animating {

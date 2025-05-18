@@ -71,20 +71,3 @@
   color: #666;
   margin-top: 8px;
 }
-
-/* Override the badge width to fit better in the layout */
-.progress-title-section .teacher-badge {
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* For teacher badges that show +X more */
-.teacher-more-badge {
-  background: #e2e8f0;
-  color: #4a5568;
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 500;
-}
