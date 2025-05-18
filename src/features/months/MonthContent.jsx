@@ -10,7 +10,8 @@ import useTooltip from '../hooks/useTooltip';
 // Components
 import TeachersList from './components/TeachersList';
 import CourseAnalytics from './components/CourseAnalytics';
-import SessionsList from './components/SessionsList';
+import SessionsList, { getTotalSessionHours } from './components/SessionsList';
+
 import TeacherTooltip from './components/TeacherTooltip';
 import GroupProgressList from './components/GroupProgressList';
 import TabComponent from '../common/TabComponent';
@@ -59,7 +60,7 @@ const MonatContent = () => {
 
   // Sort months in descending order (newest first)
   const sortedMonths = [...months].sort((a, b) => b.id.localeCompare(a.id));
-  
+
   // Effect to set the initial active tab after data is loaded
   useEffect(() => {
     if (sortedMonths.length > 0 && !activeTab) {
@@ -191,6 +192,9 @@ const MonatContent = () => {
               <div className="overview-panel">
                 <div className="panel-header">
                   <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
+                  <div className="tooltip-summary">
+                    <span>Total: {getTotalSessionHours(currentMonthSessions).toFixed(1)}h</span>
+                  </div>
                 </div>
                 <div className="panel-content">
                   <SessionsList

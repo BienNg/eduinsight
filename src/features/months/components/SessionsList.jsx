@@ -60,4 +60,9 @@ const SessionsList = ({ sessions, courses, teachers }) => {
   );
 };
 
+// Calculate total hours across all sessions
+export const getTotalSessionHours = (sessions) => {
+  return calculateTotalHours(sessions);
+};
+
 export default SessionsList;
