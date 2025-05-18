@@ -190,6 +190,8 @@ const MonatContent = () => {
                 <CourseAnalytics
                   courses={currentMonthCourses}
                   monthDetails={monthDetails}
+                  selectedTeacher={selectedTeacher}
+                  sessions={currentMonthSessions}
                 />
 
                 <div className="overview-panel">

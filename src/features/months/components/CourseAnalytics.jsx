@@ -1,16 +1,27 @@
+// src/features/months/components/CourseAnalytics.jsx
 import React from 'react';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { prepareLevelData, prepareChartData, CHART_COLORS } from '../utils/monthUtils';
 
-const CourseAnalytics = ({ courses, monthDetails }) => {
+const CourseAnalytics = ({ courses, monthDetails, selectedTeacher, sessions }) => {
+  // Filter courses if a teacher is selected
+  const filteredCourses = selectedTeacher 
+    ? courses.filter(course => 
+        sessions.some(session => 
+          session.courseId === course.id && 
+          session.teacherId === selectedTeacher.id
+        )
+      )
+    : courses;
+
   const chartData = prepareChartData(new Date(), monthDetails);
-  const levelData = prepareLevelData(courses);
+  const levelData = prepareLevelData(filteredCourses);
 
   // Custom tooltip formatter to show percentage
   const customTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const totalValue = levelData.reduce((sum, item) => sum + item.value, 0);
-      const percentage = ((payload[0].value / totalValue) * 100).toFixed(1);
+      const percentage = totalValue > 0 ? ((payload[0].value / totalValue) * 100).toFixed(1) : '0.0';
 
       return (
         <div className="custom-tooltip" style={{
@@ -30,7 +41,11 @@ const CourseAnalytics = ({ courses, monthDetails }) => {
   return (
     <div className="analytics-row">
       <div className="analytics-card animate-card">
-        <h3>Kurse nach Niveau</h3>
+        <h3>
+          {selectedTeacher 
+            ? `Kurse von ${selectedTeacher.name} nach Niveau` 
+            : 'Kurse nach Niveau'}
+        </h3>
         <div style={{ width: '100%', height: '200px' }}>
           <ResponsiveContainer>
             <PieChart>
@@ -56,13 +71,13 @@ const CourseAnalytics = ({ courses, monthDetails }) => {
               <Tooltip content={customTooltip} animationDuration={200} animationEasing="ease-in-out" />
               <Legend
                 wrapperStyle={{
-                  paddingLeft: '10px', // Changed from paddingTop
+                  paddingLeft: '10px',
                   opacity: 1,
                   transition: 'opacity 0.5s ease-in'
                 }}
-                layout="vertical" // Changed from horizontal
-                align="left"      // Changed from center
-                verticalAlign="middle" // Changed from bottom
+                layout="vertical"
+                align="left"
+                verticalAlign="middle"
                 iconType="circle"
               />
             </PieChart>
