@@ -8,43 +8,84 @@ import { sortLanguageLevels } from '../utils/levelSorting';
 import SearchBar from '../common/SearchBar';
 import GroupsList from './components/GroupsList';
 import GroupDetail from './components/GroupDetail';
-import CourseDetailPanel from './components/CourseDetailPanel'; // We'll create this
+import CourseDetailPanel from './components/CourseDetailPanel';
 
 // Importing styles
 import '../styles/Content.css';
 import '../styles/CourseContent.css';
 
+// New function to get sessions by courseId
+const getSessionsByCourseId = async (courseId) => {
+  if (!courseId) return [];
+  
+  try {
+    console.time(`Firebase:getSessionsByCourseId:${courseId}`);
+    
+    // Import necessary functions directly here
+    const { ref, query, orderByChild, equalTo, get } = require('firebase/database');
+    const { database } = require('../firebase/config');
+    
+    // Create a query that only returns sessions for this course
+    const sessionsQuery = query(
+      ref(database, 'sessions'),
+      orderByChild('courseId'),
+      equalTo(courseId)
+    );
+    
+    const snapshot = await get(sessionsQuery);
+    const sessions = snapshot.exists() ? Object.values(snapshot.val()) : [];
+    
+    console.timeEnd(`Firebase:getSessionsByCourseId:${courseId}`);
+    console.log(`Retrieved ${sessions.length} sessions for course ${courseId}`);
+    
+    return sessions;
+  } catch (error) {
+    console.error(`Error getting sessions for course ${courseId}:`, error);
+    return [];
+  }
+};
+
 const CourseContent = () => {
   const navigate = useNavigate();
-  const { groupName, courseId } = useParams(); // Add courseId parameter
+  const { groupName, courseId } = useParams();
   const [courses, setCourses] = useState([]);
   const [groups, setGroups] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [sessions, setSessions] = useState([]);
+  const [sessions, setSessions] = useState([]); // This will be used less now
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedCourseStudents, setSelectedCourseStudents] = useState([]);
   const [selectedCourseSessions, setSelectedCourseSessions] = useState([]);
+  const [selectedGroupSessions, setSelectedGroupSessions] = useState([]);
   const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
 
-  // Fetch all data on component mount
+  // Fetch core data on component mount (groups, courses, teachers only - NOT sessions)
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [groupsData, coursesData, teachersData, sessionsData] = await Promise.all([
+        console.time('CourseContent:fetchEssentialData');
+        
+        // Only fetch groups, courses, and teachers initially (NOT sessions)
+        const [groupsData, coursesData, teachersData] = await Promise.all([
           getAllRecords('groups'),
           getAllRecords('courses'),
-          getAllRecords('teachers'),
-          getAllRecords('sessions')
+          getAllRecords('teachers')
         ]);
-
+        
+        console.log('Core data fetched:', {
+          groupsCount: groupsData.length,
+          coursesCount: coursesData.length,
+          teachersCount: teachersData.length
+        });
+        
         setGroups(groupsData);
         setCourses(coursesData);
         setTeachers(teachersData);
-        setSessions(sessionsData);
+        
+        console.timeEnd('CourseContent:fetchEssentialData');
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to load data. Please try again later.");
@@ -56,43 +97,92 @@ const CourseContent = () => {
     fetchData();
   }, []);
 
+  // Handle group session loading
+  const loadGroupSessions = async (groupId, groupName) => {
+    if (!groupId && !groupName) return;
+    
+    try {
+      console.time('CourseContent:loadGroupSessions');
+      
+      // Find all courses in this group
+      const groupCourses = courses.filter(course => 
+        (course.groupId === groupId) || (course.group === groupName)
+      );
+      
+      const courseIds = groupCourses.map(c => c.id);
+      
+      if (courseIds.length === 0) {
+        setSelectedGroupSessions([]);
+        return;
+      }
+      
+      // Load sessions for each course in parallel
+      const sessionPromises = courseIds.map(cid => getSessionsByCourseId(cid));
+      const sessionsArrays = await Promise.all(sessionPromises);
+      
+      // Combine all the session arrays
+      const allGroupSessions = sessionsArrays.flat();
+      setSelectedGroupSessions(allGroupSessions);
+      
+      console.timeEnd('CourseContent:loadGroupSessions');
+    } catch (error) {
+      console.error("Error loading group sessions:", error);
+    }
+  };
+
   // Fetch course details when courseId changes
   useEffect(() => {
     const fetchCourseDetails = async () => {
       if (courseId) {
         try {
           setCourseDetailsLoading(true);
+          console.time('CourseContent:fetchCourseDetails');
 
           // Fetch course data
+          console.time('CourseContent:fetchCourseById');
           const courseData = await getRecordById('courses', courseId);
+          console.timeEnd('CourseContent:fetchCourseById');
+          
           if (courseData) {
+            console.time('CourseContent:setCourseData');
             setSelectedCourse(courseData);
+            console.timeEnd('CourseContent:setCourseData');
 
-            // Prepare a batch query for students
+            // Fetch students for this course
             if (courseData.studentIds && courseData.studentIds.length > 0) {
-              // Create chunks of 10 students for better performance
-              const studentChunks = [];
-              for (let i = 0; i < courseData.studentIds.length; i += 10) {
-                studentChunks.push(courseData.studentIds.slice(i, i + 10));
+              console.time('CourseContent:fetchStudents');
+              
+              // Create batches for better performance
+              const batchSize = 10;
+              const studentBatches = [];
+              
+              for (let i = 0; i < courseData.studentIds.length; i += batchSize) {
+                studentBatches.push(courseData.studentIds.slice(i, i + batchSize));
               }
-
-              // Fetch students in batches
-              const students = [];
-              for (const chunk of studentChunks) {
-                const chunkPromises = chunk.map(sid => getRecordById('students', sid));
-                const chunkResults = await Promise.all(chunkPromises);
-                students.push(...chunkResults.filter(s => s !== null));
+              
+              // Process batches sequentially
+              const allStudents = [];
+              
+              for (const batch of studentBatches) {
+                const batchPromises = batch.map(sid => getRecordById('students', sid));
+                const batchResults = await Promise.all(batchPromises);
+                allStudents.push(...batchResults.filter(s => s !== null));
               }
-
-              setSelectedCourseStudents(students);
+              
+              setSelectedCourseStudents(allStudents);
+              console.timeEnd('CourseContent:fetchStudents');
             } else {
               setSelectedCourseStudents([]);
             }
 
-            // Filter sessions client-side instead of re-fetching
-            const courseSessions = sessions.filter(s => s.courseId === courseId);
+            // Directly fetch only sessions for this course
+            console.time('CourseContent:filterSessions');
+            const courseSessions = await getSessionsByCourseId(courseId);
             setSelectedCourseSessions(courseSessions);
+            console.timeEnd('CourseContent:filterSessions');
           }
+          
+          console.timeEnd('CourseContent:fetchCourseDetails');
         } catch (err) {
           console.error("Error fetching course details:", err);
         } finally {
@@ -106,13 +196,23 @@ const CourseContent = () => {
     };
 
     fetchCourseDetails();
-  }, [courseId, sessions]);
+  }, [courseId]);
 
+  // Load sessions when group changes
+  useEffect(() => {
+    if (groupName && courses.length > 0) {
+      const selectedGroup = processedGroups.find(g => g.name === groupName);
+      if (selectedGroup) {
+        loadGroupSessions(selectedGroup.id, groupName);
+      }
+    }
+  }, [groupName, courses]);
 
   // Process groups with additional data
   const processedGroups = useMemo(() => {
+    console.time('CourseContent:processGroups');
     // Your existing group processing code
-    return groups.map(group => {
+    const processed = groups.map(group => {
       // Get courses for this group using groupId instead of name
       const groupCourses = courses.filter(course => {
         // Check both group name and groupId to ensure we catch all matches
@@ -122,7 +222,6 @@ const CourseContent = () => {
       // Calculate statistics
       let totalStudents = 0;
       const uniqueStudentIds = new Set();
-      let totalSessions = 0;
       const levels = new Set();
       const teacherIds = new Set();
 
@@ -139,10 +238,6 @@ const CourseContent = () => {
         if (course.teacherIds && Array.isArray(course.teacherIds)) {
           course.teacherIds.forEach(id => teacherIds.add(id));
         }
-
-        // Count sessions associated with this course
-        const courseSessions = sessions.filter(s => s.courseId === course.id);
-        totalSessions += courseSessions.length;
       });
 
       // Get teacher names
@@ -152,6 +247,12 @@ const CourseContent = () => {
           return teacher ? teacher.name : null;
         })
         .filter(Boolean);
+
+      // Calculate total sessions - this now uses the count of sessions from selectedGroupSessions
+      // only if this is the currently selected group
+      const totalSessions = group.name === groupName
+        ? selectedGroupSessions.length
+        : 0; // We'll only count sessions for the selected group
 
       return {
         ...group,
@@ -163,7 +264,9 @@ const CourseContent = () => {
         progress: calculateGroupProgress(Array.from(levels))
       };
     });
-  }, [groups, courses, teachers, sessions]);
+    console.timeEnd('CourseContent:processGroups');
+    return processed;
+  }, [groups, courses, teachers, groupName, selectedGroupSessions]);
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {
@@ -197,13 +300,6 @@ const CourseContent = () => {
     );
   }, [groupName, selectedGroup, courses]);
 
-  // Get sessions for the selected group's courses
-  const selectedGroupSessions = useMemo(() => {
-    if (!selectedGroupCourses.length) return [];
-    const courseIds = selectedGroupCourses.map(c => c.id);
-    return sessions.filter(session => courseIds.includes(session.courseId));
-  }, [selectedGroupCourses, sessions]);
-
   // Handle group selection
   const handleSelectGroup = useCallback((group) => {
     navigate(`/courses/group/${group.name}`);
@@ -235,8 +331,8 @@ const CourseContent = () => {
         <div className="column groups-column">
           <GroupsList
             groups={filteredGroups}
-            courses={courses} // Add this line to pass courses data
-            sessions={sessions} // Add this line to pass sessions data
+            courses={courses}
+            sessions={selectedGroupSessions}
             loading={loading}
             error={error}
             searchQuery={searchQuery}
@@ -254,7 +350,7 @@ const CourseContent = () => {
             loading={loading}
             onSelectCourse={handleSelectCourse}
             selectedCourseId={courseId}
-            sessions={sessions}
+            sessions={selectedGroupSessions}
           />
         </div>
 
@@ -269,7 +365,6 @@ const CourseContent = () => {
             group={selectedGroup}
           />
         </div>
-
       </div>
     </div>
   );
@@ -277,7 +372,6 @@ const CourseContent = () => {
 
 // Helper function to calculate progress based on course levels
 const calculateGroupProgress = (levels) => {
-  // Your existing function
   if (!levels || levels.length === 0) return 0;
 
   // Define the course structure with expected levels
