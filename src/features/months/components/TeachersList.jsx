@@ -1,7 +1,8 @@
+// src/features/months/components/TeachersList.jsx
 import React from 'react';
 import { calculateTotalHours } from '../../utils/timeUtils';
 
-const TeachersList = ({ teachers, sessions, onTeacherHover }) => {
+const TeachersList = ({ teachers, sessions, onTeacherHover, onTeacherSelect, selectedTeacher }) => {
   if (!teachers.length) {
     return <div className="empty-message">Keine Lehrer in diesem Monat.</div>;
   }
@@ -11,12 +12,15 @@ const TeachersList = ({ teachers, sessions, onTeacherHover }) => {
       {teachers.map(teacher => {
         const teacherSessions = sessions.filter(s => s.teacherId === teacher.id);
         const teacherHours = calculateTotalHours(teacherSessions);
+        const isSelected = selectedTeacher?.id === teacher.id;
+        
         return (
           <div
-            className="compact-teacher-item"
+            className={`compact-teacher-item ${isSelected ? 'selected' : ''}`}
             key={teacher.id}
             onMouseEnter={(e) => onTeacherHover(teacher, e)}
             onMouseLeave={() => {}}
+            onClick={() => onTeacherSelect(teacher)}
           >
             <div className="teacher-name">{teacher.name}</div>
             <div className="teacher-meta">

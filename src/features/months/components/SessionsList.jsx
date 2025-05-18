@@ -1,8 +1,27 @@
 // src/features/months/components/SessionsList.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { calculateTotalHours } from '../../utils/timeUtils';
+import '../../styles/SessionsList.css'; // Import our new CSS file
 
 const SessionsList = ({ sessions, courses, teachers }) => {
+  const [animating, setAnimating] = useState(false);
+  const [prevSessions, setPrevSessions] = useState(sessions);
+  
+  // Detect when sessions change to trigger animation
+  useEffect(() => {
+    if (JSON.stringify(sessions.map(s => s.id)) !== JSON.stringify(prevSessions.map(s => s.id))) {
+      setAnimating(true);
+      
+      // After a short delay, update the previous sessions
+      const timer = setTimeout(() => {
+        setPrevSessions(sessions);
+        setAnimating(false);
+      }, 300); // This should match the CSS transition duration
+      
+      return () => clearTimeout(timer);
+    }
+  }, [sessions, prevSessions]);
+
   if (!sessions.length) {
     return <div className="empty-message">Keine Lektionen in diesem Monat.</div>;
   }
@@ -24,22 +43,24 @@ const SessionsList = ({ sessions, courses, teachers }) => {
   const sortedCourses = Object.keys(sessionsByCourse).sort();
 
   return (
-    <div className="tooltip-content">
+    <div className={`sessions-list-container ${animating ? 'animating' : ''}`}>
       {sortedCourses.map(courseName => {
         const courseSessions = sessionsByCourse[courseName];
-        // Calculate total sessions count for this course
         const sessionCount = courseSessions.length;
-        // Calculate total hours using the utility function
         const totalHours = calculateTotalHours(courseSessions);
         
         return (
-          <div key={courseName} className="tooltip-group">
+          <div key={courseName} className="sessions-group">
             <div className="group-name">{courseName}</div>
             <div className="group-sessions">
-              {courseSessions.map(session => {
+              {courseSessions.map((session, index) => {
                 const teacher = teachers.find(t => t.id === session.teacherId) || {};
                 return (
-                  <div key={session.id} className="session-item">
+                  <div 
+                    key={session.id} 
+                    className="session-item"
+                    style={{ '--index': index }} // Add index for staggered animation
+                  >
                     <span className="session-date">{session.date}</span>
                     <span className="session-title">{session.title}</span>
                     <span className="session-course">{teacher.name || 'Unbekannter Lehrer'}</span>

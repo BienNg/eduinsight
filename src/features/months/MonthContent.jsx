@@ -57,6 +57,8 @@ const MonatContent = () => {
 
   // Set initial active tab to the most recent month
   const [activeTab, setActiveTab] = useState('');
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Sort months in descending order (newest first)
   const sortedMonths = [...months].sort((a, b) => b.id.localeCompare(a.id));
@@ -84,6 +86,17 @@ const MonatContent = () => {
   const handleTeacherHover = (teacher, event) => {
     const teacherSessions = currentMonthSessions.filter(s => s.teacherId === teacher.id);
     showTooltip({ teacher, sessions: teacherSessions }, event);
+  };
+
+  // Handle teacher selection/deselection
+  const handleTeacherSelect = (teacher) => {
+    setIsAnimating(true);
+
+    // After a short delay, change the selected teacher
+    setTimeout(() => {
+      setSelectedTeacher(selectedTeacher?.id === teacher.id ? null : teacher);
+      setIsAnimating(false);
+    }, 150);
   };
 
   if (loading) {
@@ -117,6 +130,11 @@ const MonatContent = () => {
       }
       return 0;
     });
+
+  // Filter sessions based on selected teacher
+  const filteredSessions = selectedTeacher
+    ? currentMonthSessions.filter(session => session.teacherId === selectedTeacher.id)
+    : currentMonthSessions;
 
   const currentMonthCourses = courses.filter(course =>
     currentMonthSessions.some(session => session.courseId === course.id)
@@ -161,6 +179,8 @@ const MonatContent = () => {
                     teachers={currentMonthTeachers}
                     sessions={currentMonthSessions}
                     onTeacherHover={handleTeacherHover}
+                    onTeacherSelect={handleTeacherSelect}
+                    selectedTeacher={selectedTeacher}
                   />
                 </div>
               </div>
@@ -190,20 +210,25 @@ const MonatContent = () => {
 
               {/* Sessions Column */}
               <div className="overview-panel">
-                <div className="panel-header">
-                  <h3 className="panel-title">Lektionen ({currentMonthSessions.length})</h3>
+                <div className={`panel-header ${isAnimating ? 'animating' : ''}`}>
+                  <h3 className="panel-title">
+                    {selectedTeacher
+                      ? `Lektionen von ${selectedTeacher.name} (${filteredSessions.length})`
+                      : `Lektionen (${currentMonthSessions.length})`}
+                  </h3>
                   <div className="tooltip-summary">
-                    <span>Total: {getTotalSessionHours(currentMonthSessions).toFixed(1)}h</span>
+                    <span>Total: {getTotalSessionHours(filteredSessions).toFixed(1)}h</span>
                   </div>
                 </div>
                 <div className="panel-content">
                   <SessionsList
-                    sessions={currentMonthSessions}
+                    sessions={filteredSessions}
                     courses={courses}
                     teachers={teachers}
                   />
                 </div>
               </div>
+
             </div>
 
             {/* Teacher Tooltip */}
