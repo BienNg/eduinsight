@@ -256,6 +256,7 @@ export const useCalendarData = (sessions = []) => {
     startDateStr,
     endDateStr,
     lastCompletedDate,
+    lastCompletedSession,
     completedSessions,
     totalSessions,
     generateCalendarData,

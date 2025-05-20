@@ -229,6 +229,7 @@ const CourseCalendar = ({
     startDateStr,
     endDateStr,
     lastCompletedDate,
+    lastCompletedSession,
     completedSessions,
     totalSessions,
     generateCalendarData,
@@ -264,6 +265,7 @@ const CourseCalendar = ({
       <CalendarSummary
         startDateStr={startDateStr}
         lastCompletedDate={lastCompletedDate}
+        lastCompletedSession={lastCompletedSession}
         completedSessions={completedSessions}
         totalSessions={totalSessions}
         formatShortDate={formatShortDate}

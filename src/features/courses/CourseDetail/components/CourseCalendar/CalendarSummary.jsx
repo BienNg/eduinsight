@@ -4,11 +4,15 @@ import React from 'react';
 const CalendarSummary = ({
   startDateStr,
   lastCompletedDate,
+  lastCompletedSession,
   completedSessions,
   totalSessions,
   formatShortDate,
   isCompleted
 }) => {
+  // Get the session title or use a fallback
+  const sessionTitle = lastCompletedSession?.title || 'Keine Stunde';
+
   return (
     <div className="calendar-summary">
       <div className="calendar-metric">
@@ -17,7 +21,7 @@ const CalendarSummary = ({
       </div>
       <div className="calendar-metric">
         <div className="metric-value">{formatShortDate(lastCompletedDate)}</div>
-        <div className="metric-label">Letzte Stunde</div>
+        <div className="metric-label">{sessionTitle}</div>
       </div>
       <div className="calendar-metric">
         <div className="metric-value">{`${completedSessions}/${totalSessions}`}</div>
