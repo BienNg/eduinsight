@@ -339,23 +339,23 @@ export const mergeStudents = async (primaryStudentId, secondaryStudentId) => {
 
 export const getSessionsByCourseId = async (courseId) => {
   if (!courseId) return [];
-  
+
   try {
     console.time(`Firebase:getSessionsByCourseId:${courseId}`);
-    
+
     // Create a query that only returns sessions for this course
     const sessionsQuery = query(
       ref(database, 'sessions'),
       orderByChild('courseId'),
       equalTo(courseId)
     );
-    
+
     const snapshot = await get(sessionsQuery);
     const sessions = snapshot.exists() ? Object.values(snapshot.val()) : [];
-    
+
     console.timeEnd(`Firebase:getSessionsByCourseId:${courseId}`);
     console.log(`Retrieved ${sessions.length} sessions for course ${courseId}`);
-    
+
     return sessions;
   } catch (error) {
     console.error(`Error getting sessions for course ${courseId}:`, error);

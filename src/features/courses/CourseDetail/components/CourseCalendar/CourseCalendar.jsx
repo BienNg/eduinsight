@@ -60,14 +60,28 @@ const CourseCalendar = ({
     const fetchAllSessions = async () => {
       if (course?.id) {
         try {
+          // Check if we already have sessions for this course
+          if (sessions.length > 0) {
+            // Just update completion status without fetching sessions again
+            const courseCompleted = isCourseCompletedSync(course.id, sessions);
+            setIsCompleted(courseCompleted);
+
+            console.log('Course completion check (from provided sessions):', {
+              courseId: course.id,
+              courseName: course.name,
+              isCompleted: courseCompleted
+            });
+            return;
+          }
+
           const allSessionsData = await getAllRecords('sessions');
           setAllSessions(allSessionsData);
 
           // Check completion status using all sessions
           const courseCompleted = isCourseCompletedSync(course.id, allSessionsData);
           setIsCompleted(courseCompleted);
-          
-          console.log('Course completion check:', {
+
+          console.log('Course completion check (from fetched sessions):', {
             courseId: course.id,
             courseName: course.name,
             isCompleted: courseCompleted
@@ -79,7 +93,7 @@ const CourseCalendar = ({
     };
 
     fetchAllSessions();
-  }, [course?.id]);
+  }, [course?.id, sessions]);
 
   // Add effect to fetch teachers for the course
   useEffect(() => {
