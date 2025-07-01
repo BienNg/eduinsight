@@ -7,7 +7,7 @@ import ErrorMessage from './components/common/ErrorMessage';
 import '../styles/Content.css';
 
 const DatabaseView = () => {
-  const { data, loading, error } = useDataFetching();
+  const { data, loading, error, refreshTeachers } = useDataFetching();
 
   if (loading) {
     return <LoadingIndicator />;
@@ -20,7 +20,7 @@ const DatabaseView = () => {
   return (
     <div className="database-content">
       <h2>Database Overview</h2>
-      <TabsContainer data={data} />
+      <TabsContainer data={data} refreshTeachers={refreshTeachers} />
     </div>
   );
 };

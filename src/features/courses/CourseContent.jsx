@@ -173,12 +173,15 @@ const CourseContent = () => {
         })
         .filter(Boolean);
 
+      // Remove duplicate teacher names (in case there are multiple teacher records with the same name)
+      const uniqueTeacherNames = [...new Set(teacherNames)];
+
       return {
         ...group,
         coursesCount: groupCourses.length,
         totalStudents: uniqueStudentIds.size,
         levels: Array.from(levels),
-        teachers: teacherNames,
+        teachers: uniqueTeacherNames,
         progress: calculateGroupProgress(Array.from(levels))
       };
     });

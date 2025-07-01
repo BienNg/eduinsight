@@ -9,7 +9,7 @@ import TeachersTab from '../tabs/TeachersTab';
 import StudentsTab from '../tabs/StudentsTab';
 import '../../styles/MonthTabs.css';
 
-const TabsContainer = ({ data }) => {
+const TabsContainer = ({ data, refreshTeachers }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const { courses, groups, months, sessions, teachers, students } = data;
 
@@ -63,7 +63,7 @@ const TabsContainer = ({ data }) => {
             </TabPanel>
 
             <TabPanel className="month-tab-panel">
-                <TeachersTab teachers={teachers} />
+                <TeachersTab teachers={teachers} onTeachersChange={refreshTeachers} />
             </TabPanel>
 
             <TabPanel className="month-tab-panel">
