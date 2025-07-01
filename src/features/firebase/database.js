@@ -362,3 +362,112 @@ export const getSessionsByCourseId = async (courseId) => {
     return [];
   }
 };
+
+// Bulk fetch students by IDs with optimized batching
+export const getBulkStudentsByIds = async (studentIds, batchSize = 20) => {
+  if (!studentIds || studentIds.length === 0) return [];
+
+  try {
+    console.time(`Firebase:getBulkStudents:${studentIds.length}ids`);
+
+    // Create batches for better performance
+    const batches = [];
+    for (let i = 0; i < studentIds.length; i += batchSize) {
+      batches.push(studentIds.slice(i, i + batchSize));
+    }
+
+    // Process all batches in parallel
+    const batchPromises = batches.map(batch => 
+      Promise.all(batch.map(studentId => getRecordById('students', studentId)))
+    );
+
+    const batchResults = await Promise.all(batchPromises);
+    
+    // Flatten and filter results
+    const students = batchResults
+      .flat()
+      .filter(student => student !== null);
+
+    console.timeEnd(`Firebase:getBulkStudents:${studentIds.length}ids`);
+    console.log(`Bulk fetched ${students.length} students from ${studentIds.length} IDs`);
+
+    return students;
+  } catch (error) {
+    console.error(`Error bulk fetching students:`, error);
+    return [];
+  }
+};
+
+// Bulk fetch teachers by IDs using cached approach
+export const getBulkTeachersByIds = async (teacherIds) => {
+  if (!teacherIds || teacherIds.length === 0) return [];
+
+  try {
+    console.time(`Firebase:getBulkTeachers:${teacherIds.length}ids`);
+
+    // Use cached teacher map for better performance
+    const { getTeachersMap } = await import('../utils/teacherFetchUtils');
+    const teachersMap = await getTeachersMap();
+    
+    const teachers = teacherIds
+      .map(teacherId => teachersMap[teacherId])
+      .filter(teacher => teacher !== undefined);
+
+    console.timeEnd(`Firebase:getBulkTeachers:${teacherIds.length}ids`);
+    console.log(`Bulk fetched ${teachers.length} teachers from cache`);
+
+    return teachers;
+  } catch (error) {
+    console.error(`Error bulk fetching teachers:`, error);
+    return [];
+  }
+};
+
+// Prefetch course data for better performance
+export const prefetchCourseData = async (courseId) => {
+  if (!courseId) return null;
+
+  try {
+    console.time(`Firebase:prefetchCourse:${courseId}`);
+
+    // Fetch course data and sessions in parallel
+    const [courseData, sessionsData] = await Promise.all([
+      getRecordById('courses', courseId),
+      getSessionsByCourseId(courseId)
+    ]);
+
+    if (!courseData) {
+      console.log(`Course ${courseId} not found during prefetch`);
+      return null;
+    }
+
+    // Prefetch related data in parallel
+    const prefetchPromises = [];
+
+    // Prefetch group if available
+    if (courseData.groupId) {
+      prefetchPromises.push(getRecordById('groups', courseData.groupId));
+    }
+
+    // Prefetch students
+    if (courseData.studentIds?.length > 0) {
+      prefetchPromises.push(getBulkStudentsByIds(courseData.studentIds));
+    }
+
+    // Prefetch teachers
+    const teacherIds = courseData.teacherIds || (courseData.teacherId ? [courseData.teacherId] : []);
+    if (teacherIds.length > 0) {
+      prefetchPromises.push(getBulkTeachersByIds(teacherIds));
+    }
+
+    await Promise.all(prefetchPromises);
+
+    console.timeEnd(`Firebase:prefetchCourse:${courseId}`);
+    console.log(`Prefetched course ${courseId} data successfully`);
+
+    return true;
+  } catch (error) {
+    console.error(`Error prefetching course ${courseId}:`, error);
+    return false;
+  }
+};

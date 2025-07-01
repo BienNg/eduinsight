@@ -331,12 +331,20 @@ const updateExistingCourseWithNewSessions = async (
   }
 
 
+  // Handle case where no sessions were updated
   if (updatedSessions.length === 0) {
-    throw new Error(
-      `No sessions were updated for course "${existingCourse.name}". ` +
-      `The course already exists with ${existingSessions.length} sessions. ` +
-      `The latest session recorded is on ${existingCourse.latestSessionDate || 'unknown date'}.`
-    );
+    // Instead of throwing an error, return a result indicating no updates were needed
+    const noUpdateMessage = `Course "${existingCourse.name}" is already up to date with ${existingSessions.length} sessions (latest: ${existingCourse.latestSessionDate || 'unknown date'})`;
+    
+    return {
+      ...existingCourse,
+      updatedSessionsCount: 0,
+      updatedSessionTitles: [],
+      updateMessage: noUpdateMessage,
+      monthIds: [],
+      lastUpdated: formattedDateTime,
+      noUpdatesNeeded: true // Special flag to indicate this scenario
+    };
   }
 
   // Update the course's lastUpdated timestamp

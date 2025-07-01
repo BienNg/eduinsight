@@ -1,8 +1,9 @@
 // src/features/courses/CourseContent.jsx
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getAllRecords, getRecordById } from '../firebase/database';
+import { getAllRecords, getSessionsByCourseId } from '../firebase/database';
 import { sortLanguageLevels } from '../utils/levelSorting';
+import { useCourseData } from './CourseDetail/hooks/useCourseData';
 
 // Importing components
 import SearchBar from '../common/SearchBar';
@@ -14,38 +15,15 @@ import CourseDetailPanel from './components/CourseDetailPanel';
 import '../styles/Content.css';
 import '../styles/CourseContent.css';
 
-// New function to get sessions by courseId
-const getSessionsByCourseId = async (courseId) => {
-  if (!courseId) return [];
-  
-  try {
-    console.time(`Firebase:getSessionsByCourseId:${courseId}`);
-    
-    // Import necessary functions directly here
-    const { ref, query, orderByChild, equalTo, get } = require('firebase/database');
-    const { database } = require('../firebase/config');
-    
-    // Create a query that only returns sessions for this course
-    const sessionsQuery = query(
-      ref(database, 'sessions'),
-      orderByChild('courseId'),
-      equalTo(courseId)
-    );
-    
-    const snapshot = await get(sessionsQuery);
-    const sessions = snapshot.exists() ? Object.values(snapshot.val()) : [];
-    
-    console.timeEnd(`Firebase:getSessionsByCourseId:${courseId}`);
-    console.log(`Retrieved ${sessions.length} sessions for course ${courseId}`);
-    
-    return sessions;
-  } catch (error) {
-    console.error(`Error getting sessions for course ${courseId}:`, error);
-    return [];
-  }
-};
+
+
+// Simple cache for group sessions to avoid re-fetching
+const groupSessionsCache = new Map();
+const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes
 
 const CourseContent = () => {
+  console.log('CourseContent component initializing...'); // Debug log to verify component loads
+  
   const navigate = useNavigate();
   const { groupName, courseId } = useParams();
   const [courses, setCourses] = useState([]);
@@ -55,11 +33,16 @@ const CourseContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedCourseStudents, setSelectedCourseStudents] = useState([]);
-  const [selectedCourseSessions, setSelectedCourseSessions] = useState([]);
   const [selectedGroupSessions, setSelectedGroupSessions] = useState([]);
-  const [courseDetailsLoading, setCourseDetailsLoading] = useState(false);
+  
+  // Use the optimized course data hook instead of manual fetching
+  const {
+    course: selectedCourse,
+    students: selectedCourseStudents,
+    sessions: selectedCourseSessions,
+    loading: courseDetailsLoading,
+    error: courseDetailsError
+  } = useCourseData(courseId);
 
   // Fetch core data on component mount (groups, courses, teachers only - NOT sessions)
   useEffect(() => {
@@ -97,12 +80,23 @@ const CourseContent = () => {
     fetchData();
   }, []);
 
-  // Handle group session loading
+  // Handle group session loading - OPTIMIZED WITH CACHING
   const loadGroupSessions = async (groupId, groupName) => {
     if (!groupId && !groupName) return;
     
     try {
-      console.time('CourseContent:loadGroupSessions');
+      const cacheKey = `group_${groupId}_${groupName}`;
+      const now = Date.now();
+      
+      // Check cache first
+      const cachedData = groupSessionsCache.get(cacheKey);
+      if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+        console.log(`Using cached group sessions for ${groupName}`);
+        setSelectedGroupSessions(cachedData.sessions);
+        return;
+      }
+      
+      console.time(`CourseContent:loadGroupSessions:${groupName}`);
       
       // Find all courses in this group
       const groupCourses = courses.filter(course => 
@@ -113,6 +107,7 @@ const CourseContent = () => {
       
       if (courseIds.length === 0) {
         setSelectedGroupSessions([]);
+        console.timeEnd(`CourseContent:loadGroupSessions:${groupName}`);
         return;
       }
       
@@ -124,94 +119,24 @@ const CourseContent = () => {
       const allGroupSessions = sessionsArrays.flat();
       setSelectedGroupSessions(allGroupSessions);
       
-      console.timeEnd('CourseContent:loadGroupSessions');
+      // Cache the results
+      groupSessionsCache.set(cacheKey, {
+        sessions: allGroupSessions,
+        timestamp: now
+      });
+      
+      console.log(`Loaded ${allGroupSessions.length} sessions for group ${groupName} from ${courseIds.length} courses`);
+      console.timeEnd(`CourseContent:loadGroupSessions:${groupName}`);
     } catch (error) {
       console.error("Error loading group sessions:", error);
     }
   };
 
-  // Fetch course details when courseId changes
-  useEffect(() => {
-    const fetchCourseDetails = async () => {
-      if (courseId) {
-        try {
-          setCourseDetailsLoading(true);
-          console.time('CourseContent:fetchCourseDetails');
+  // Course details are now handled by the useCourseData hook above
 
-          // Fetch course data
-          console.time('CourseContent:fetchCourseById');
-          const courseData = await getRecordById('courses', courseId);
-          console.timeEnd('CourseContent:fetchCourseById');
-          
-          if (courseData) {
-            console.time('CourseContent:setCourseData');
-            setSelectedCourse(courseData);
-            console.timeEnd('CourseContent:setCourseData');
-
-            // Fetch students for this course
-            if (courseData.studentIds && courseData.studentIds.length > 0) {
-              console.time('CourseContent:fetchStudents');
-              
-              // Create batches for better performance
-              const batchSize = 10;
-              const studentBatches = [];
-              
-              for (let i = 0; i < courseData.studentIds.length; i += batchSize) {
-                studentBatches.push(courseData.studentIds.slice(i, i + batchSize));
-              }
-              
-              // Process batches sequentially
-              const allStudents = [];
-              
-              for (const batch of studentBatches) {
-                const batchPromises = batch.map(sid => getRecordById('students', sid));
-                const batchResults = await Promise.all(batchPromises);
-                allStudents.push(...batchResults.filter(s => s !== null));
-              }
-              
-              setSelectedCourseStudents(allStudents);
-              console.timeEnd('CourseContent:fetchStudents');
-            } else {
-              setSelectedCourseStudents([]);
-            }
-
-            // Directly fetch only sessions for this course
-            console.time('CourseContent:filterSessions');
-            const courseSessions = await getSessionsByCourseId(courseId);
-            setSelectedCourseSessions(courseSessions);
-            console.timeEnd('CourseContent:filterSessions');
-          }
-          
-          console.timeEnd('CourseContent:fetchCourseDetails');
-        } catch (err) {
-          console.error("Error fetching course details:", err);
-        } finally {
-          setCourseDetailsLoading(false);
-        }
-      } else {
-        setSelectedCourse(null);
-        setSelectedCourseStudents([]);
-        setSelectedCourseSessions([]);
-      }
-    };
-
-    fetchCourseDetails();
-  }, [courseId]);
-
-  // Load sessions when group changes
-  useEffect(() => {
-    if (groupName && courses.length > 0) {
-      const selectedGroup = processedGroups.find(g => g.name === groupName);
-      if (selectedGroup) {
-        loadGroupSessions(selectedGroup.id, groupName);
-      }
-    }
-  }, [groupName, courses]);
-
-  // Process groups with additional data
-  const processedGroups = useMemo(() => {
+  // Process groups with additional data - OPTIMIZED (removed selectedGroupSessions dependency)
+  const baseProcessedGroups = useMemo(() => {
     console.time('CourseContent:processGroups');
-    // Your existing group processing code
     const processed = groups.map(group => {
       // Get courses for this group using groupId instead of name
       const groupCourses = courses.filter(course => {
@@ -220,7 +145,6 @@ const CourseContent = () => {
       });
 
       // Calculate statistics
-      let totalStudents = 0;
       const uniqueStudentIds = new Set();
       const levels = new Set();
       const teacherIds = new Set();
@@ -248,17 +172,10 @@ const CourseContent = () => {
         })
         .filter(Boolean);
 
-      // Calculate total sessions - this now uses the count of sessions from selectedGroupSessions
-      // only if this is the currently selected group
-      const totalSessions = group.name === groupName
-        ? selectedGroupSessions.length
-        : 0; // We'll only count sessions for the selected group
-
       return {
         ...group,
         coursesCount: groupCourses.length,
         totalStudents: uniqueStudentIds.size,
-        totalSessions,
         levels: Array.from(levels),
         teachers: teacherNames,
         progress: calculateGroupProgress(Array.from(levels))
@@ -266,7 +183,26 @@ const CourseContent = () => {
     });
     console.timeEnd('CourseContent:processGroups');
     return processed;
-  }, [groups, courses, teachers, groupName, selectedGroupSessions]);
+  }, [groups, courses, teachers]);
+
+  // Add session counts separately to avoid recalculating everything
+  const processedGroups = useMemo(() => {
+    return baseProcessedGroups.map(group => ({
+      ...group,
+      // Only calculate session count for the currently selected group
+      totalSessions: group.name === groupName ? selectedGroupSessions.length : 0
+    }));
+  }, [baseProcessedGroups, groupName, selectedGroupSessions]);
+
+  // Load sessions when group changes - OPTIMIZED (using baseProcessedGroups to avoid circular dependency)
+  useEffect(() => {
+    if (groupName && courses.length > 0) {
+      const selectedGroup = baseProcessedGroups.find(g => g.name === groupName);
+      if (selectedGroup) {
+        loadGroupSessions(selectedGroup.id, groupName);
+      }
+    }
+  }, [groupName, courses, baseProcessedGroups]);
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {
@@ -307,6 +243,8 @@ const CourseContent = () => {
 
   // Handle course selection
   const handleSelectCourse = useCallback((course) => {
+    console.log(`🎯 Navigating to course ${course.id}`);
+    // Navigate to the course - the useCourseData hook will handle loading
     navigate(`/courses/group/${groupName}/course/${course.id}`);
   }, [navigate, groupName]);
 
@@ -360,7 +298,7 @@ const CourseContent = () => {
             course={selectedCourse}
             students={selectedCourseStudents}
             sessions={selectedCourseSessions}
-            loading={loading || courseDetailsLoading || (!selectedCourse && courseId)}
+            loading={courseDetailsLoading}
             setCourses={setCourses}
             group={selectedGroup}
           />

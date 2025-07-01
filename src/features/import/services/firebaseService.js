@@ -249,9 +249,30 @@ export const normalizeTeacherName = (name) => {
   return name
     .trim()
     .toLowerCase()
-    .normalize('NFD') // Decompose accented characters
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-    .replace(/\s+/g, ' '); // Collapse multiple spaces
+    // Normalize Unicode to handle different character encodings consistently
+    .normalize('NFC')
+    // Collapse multiple spaces into single spaces
+    .replace(/\s+/g, ' ')
+    // Remove leading/trailing spaces again after space normalization
+    .trim();
+};
+
+// More aggressive normalization for finding similar names
+const normalizeForComparison = (name) => {
+  if (typeof name !== 'string') {
+    name = name ? String(name) : '';
+  }
+
+  return name
+    .trim()
+    .toLowerCase()
+    // Normalize Unicode
+    .normalize('NFD')
+    // Remove diacritics/accents for comparison only
+    .replace(/[\u0300-\u036f]/g, '')
+    // Collapse multiple spaces
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 export const createTeacherRecord = async (teacherName) => {
@@ -280,8 +301,11 @@ export const createTeacherRecord = async (teacherName) => {
       return null;
     }
 
-    // Normalize the teacher name
+    // Normalize the teacher name for storage (preserves Vietnamese characters)
     const normalizedName = normalizeTeacherName(teacherName);
+    
+    // Normalize for comparison (removes diacritics for matching)
+    const normalizedForComparison = normalizeForComparison(teacherName);
 
     // Reject if after normalization it's empty or just digits
     if (normalizedName === '' || /^\d+(\.\d+)?$/.test(normalizedName)) {
@@ -289,19 +313,34 @@ export const createTeacherRecord = async (teacherName) => {
       return null;
     }
 
-    // Check if teacher already exists (case-insensitive search)
+    // Check if teacher already exists using both exact and fuzzy matching
     const teachers = await getAllRecords('teachers');
-    const existingTeacher = teachers.find(t =>
+    
+    // First try exact match (preserving characters)
+    let existingTeacher = teachers.find(t =>
       normalizeTeacherName(t.name) === normalizedName
     );
+
+    // If no exact match, try fuzzy matching (without diacritics)
+    if (!existingTeacher) {
+      existingTeacher = teachers.find(t =>
+        normalizeForComparison(t.name) === normalizedForComparison
+      );
+      
+      if (existingTeacher) {
+        console.log(`Found similar teacher: "${existingTeacher.name}" matches "${teacherName}" (fuzzy match)`);
+      }
+    }
 
     if (existingTeacher) {
       return existingTeacher;
     }
 
-    // Create new teacher with normalized name
+    // Create new teacher with normalized name (preserving original formatting)
+    const cleanedName = teacherName.trim().replace(/\s+/g, ' ');
+    
     return await createRecord('teachers', {
-      name: teacherName.trim(),
+      name: cleanedName,
       country: '', // Default country
       courseIds: [] // Will be updated when courses are created
     });

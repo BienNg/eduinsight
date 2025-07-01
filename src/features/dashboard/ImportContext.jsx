@@ -205,10 +205,38 @@ export const ImportProvider = ({ children }) => {
             // Process Google Sheet data that was already fetched
             updateProgress(30);
 
-            // Validate the data
-            const validationResult = await validateExcelFile(currentFile.arrayBuffer, currentFile.name);
+            // Validate the data with metadata for context
+            const validationResult = await validateExcelFile(
+              currentFile.arrayBuffer, 
+              currentFile.name,
+              { metadata: currentFile.metadata }
+            );
 
             updateProgress(50);
+
+            // Check if this sheet appears to have not started yet
+            if (validationResult.appearsNotStarted) {
+              // Skip this sheet with a gentle info message
+              toast.info(`Skipped ${currentFile.name}`, {
+                id: toastId,
+                duration: 4000,
+                description: "This sheet hasn't started yet (no students enrolled)",
+                onClick: navigateToImport
+              });
+
+              // Add to completed files with a special status
+              setCompletedFiles(prev => [...prev, {
+                ...currentFile,
+                status: 'skipped',
+                progress: 100,
+                warning: 'Sheet has not started yet'
+              }]);
+
+              // Remove from processing queue and continue
+              setProcessingQueue(prev => prev.slice(1));
+              setLoading(false);
+              return;
+            }
 
             // Check for validation errors
             if (validationResult.errors && validationResult.errors.length > 0) {
@@ -233,7 +261,7 @@ export const ImportProvider = ({ children }) => {
 
             try {
               // Process the file - pass metadata if available
-              await processB1CourseFileWithColors(
+              const result = await processB1CourseFileWithColors(
                 currentFile.arrayBuffer,
                 currentFile.name,
                 {
@@ -241,6 +269,31 @@ export const ImportProvider = ({ children }) => {
                   metadata: currentFile.metadata // Pass the metadata
                 }
               );
+
+              // Check if no updates were needed (similar to skipped sheets)
+              if (result.noUpdatesNeeded) {
+                // Show friendly info message instead of success
+                toast.info(`No updates needed for ${currentFile.name}`, {
+                  id: toastId,
+                  duration: 4000,
+                  description: result.updateMessage || "Course is already up to date",
+                  onClick: navigateToImport
+                });
+
+                // Add to completed files with special status
+                setCompletedFiles(prev => [...prev, {
+                  ...currentFile,
+                  status: 'no-updates',
+                  progress: 100,
+                  warning: result.updateMessage || 'Course is already up to date'
+                }]);
+
+                // Remove from processing queue and continue
+                setProcessingQueue(prev => prev.slice(1));
+                setLoading(false);
+                return;
+              }
+
               updateProgress(100);
             } catch (processingError) {
               // If the error is about missing group info, provide a clearer message
@@ -401,7 +454,7 @@ export const ImportProvider = ({ children }) => {
             // const { validateExcelFile, processB1CourseFileWithColors } = await import('./ImportContent');
 
             // Validate the file
-            const validationResult = await validateExcelFile(arrayBuffer, file.name);
+            const validationResult = await validateExcelFile(arrayBuffer, file.name, {});
 
             console.log('Validation result:', validationResult); // Debug log
             updateProgress(30);
@@ -439,6 +492,30 @@ export const ImportProvider = ({ children }) => {
 
             // Process the file
             const result = await processB1CourseFileWithColors(arrayBuffer, file.name, {});
+
+            // Check if no updates were needed
+            if (result.noUpdatesNeeded) {
+              // Show friendly info message instead of success
+              toast.info(`No updates needed for ${file.name}`, {
+                id: toastId,
+                duration: 4000,
+                description: result.updateMessage || "Course is already up to date",
+                onClick: () => navigateToImport()
+              });
+
+              // Add to completed files with special status
+              setCompletedFiles(prev => [...prev, {
+                id: Date.now() + Math.random().toString(36).substr(2, 9),
+                name: file.name,
+                status: 'no-updates',
+                progress: 100,
+                warning: result.updateMessage || 'Course is already up to date'
+              }]);
+
+              updateProgress(90);
+              resolve();
+              return;
+            }
 
             // Show appropriate success message based on whether it was an update or new import
             const successMessage = result.updateMessage || `Successfully imported ${file.name}`;

@@ -167,27 +167,18 @@ export const processSessionData = async (
             // For valid teacher values, create the teacher record
             try {
               const teacherRecord = await createTeacherRecord(teacherValue);
-              teacherId = teacherRecord.id;
-              teacherIds.add(teacherRecord.id);
+              if (teacherRecord) {
+                teacherId = teacherRecord.id;
+                teacherIds.add(teacherRecord.id);
 
-              // If this is the first teacher we've found, set it as the course's teacher
-              if (!courseRecord.teacherId) {
-                courseRecord.teacherId = teacherId;
+                // If this is the first teacher we've found, set it as the course's teacher
+                if (!courseRecord.teacherId) {
+                  courseRecord.teacherId = teacherId;
+                }
               }
             } catch (error) {
               console.error(`Error creating teacher record for value: ${teacherValue}`, error);
             }
-          }
-        }
-
-        if (teacherValue) {
-          const teacherRecord = await createTeacherRecord(teacherValue);
-          teacherId = teacherRecord.id;
-          teacherIds.add(teacherRecord.id);
-
-          // If this is the first teacher we've found, set it as the course's teacher
-          if (!courseRecord.teacherId) {
-            courseRecord.teacherId = teacherId;
           }
         }
 

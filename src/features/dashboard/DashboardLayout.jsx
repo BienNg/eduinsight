@@ -18,8 +18,6 @@ import CourseDetail from '../courses/CourseDetail';
 import StudentDetail from '../students/StudentDetail';
 import PrototypeDashboard from '../../prototype/dashboard/PrototypeDashboard';
 
-
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChartLine,
@@ -74,19 +72,35 @@ const DashboardLayout = () => {
   const getPageTitle = () => {
     const path = location.pathname;
 
-    if (path === '/') return 'Dashboard';
+    if (path === '/') return 'Dashboard Overview';
     if (path.startsWith('/import')) return 'Excel Import';
-    if (path.startsWith('/months')) return 'Monat';
-    if (path.startsWith('/courses')) return 'Klassen';
-    if (path.startsWith('/teachers')) return 'Lehrer';
-    if (path.startsWith('/students')) return 'Schüler';
+    if (path.startsWith('/months')) {
+      if (path === '/months') return 'Monthly Overview';
+      return 'Month Details';
+    }
+    if (path.startsWith('/courses')) {
+      if (path === '/courses') return 'Course Management';
+      return 'Course Details';
+    }
+    if (path.startsWith('/teachers')) {
+      if (path === '/teachers') return 'Teacher Management';
+      return 'Teacher Profile';
+    }
+    if (path.startsWith('/students')) {
+      if (path === '/students') return 'Student Management';
+      return 'Student Profile';
+    }
+    if (path.startsWith('/database')) return 'Database Overview';
 
     return 'Dashboard';
   };
 
+  // Check if current page is import page (needs special handling)
+  const isImportPage = location.pathname.startsWith('/import');
+
   return (
     <div className="dashboard-container">
-      {/* Sidebar - This stays consistent */}
+      {/* Modern Sidebar */}
       <div className="sidebar">
         <ul className="nav-items">
           <li
@@ -104,28 +118,28 @@ const DashboardLayout = () => {
             <FontAwesomeIcon icon={faChartLine} className="icon" />
           </li>
           <li
-            data-tooltip="Monat"
+            data-tooltip="Monthly View"
             className={location.pathname.startsWith('/months') ? 'active' : ''}
             onClick={() => handleNavigation('monat')}
           >
             <FontAwesomeIcon icon={faCalendarAlt} className="icon" />
           </li>
           <li
-            data-tooltip="Klassen"
+            data-tooltip="Courses"
             className={location.pathname.startsWith('/courses') ? 'active' : ''}
             onClick={() => handleNavigation('klassen')}
           >
             <FontAwesomeIcon icon={faChalkboardTeacher} className="icon" />
           </li>
           <li
-            data-tooltip="Lehrer"
+            data-tooltip="Teachers"
             className={location.pathname.startsWith('/teachers') ? 'active' : ''}
             onClick={() => handleNavigation('lehrer')}
           >
             <FontAwesomeIcon icon={faUserTie} className="icon" />
           </li>
           <li
-            data-tooltip="Schüler"
+            data-tooltip="Students"
             className={location.pathname.startsWith('/students') ? 'active' : ''}
             onClick={() => handleNavigation('schuler')}
           >
@@ -141,8 +155,16 @@ const DashboardLayout = () => {
         </ul>
       </div>
 
-      {/* Content Area - This updates with route changes */}
+      {/* Content Area */}
       <div className="content-area">
+        {/* Conditional Header - only show for non-import pages */}
+        {!isImportPage && (
+          <div className="content-header">
+            <h1>{getPageTitle()}</h1>
+          </div>
+        )}
+
+        {/* Content Body */}
         <div className="content-body">
           <Routes>
             <Route path="/" element={<DashboardContent />} />
@@ -166,10 +188,10 @@ const DashboardLayout = () => {
             <Route path="/students" element={<SchulerContent />} />
             <Route path="/students/:id" element={<StudentDetail />} />
 
-            {/* Add the new route for database view */}
+            {/* Database route */}
             <Route path="/database" element={<DatabaseView />} />
 
-            {/* Add the prototype dashboard route */}
+            {/* Prototype dashboard route */}
             <Route path="/prototype/dashboard" element={<PrototypeDashboard />} />
           </Routes>
         </div>

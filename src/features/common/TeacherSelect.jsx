@@ -1,7 +1,26 @@
 // src/components/common/TeacherSelect.jsx
 import { useState, useEffect } from 'react';
 import { getAllRecords, createRecord, updateRecord } from '../firebase/database';
+import { normalizeTeacherName } from '../import/services/firebaseService';
 import './TeacherSelect.css';
+
+// More aggressive normalization for finding similar names
+const normalizeForComparison = (name) => {
+  if (typeof name !== 'string') {
+    name = name ? String(name) : '';
+  }
+
+  return name
+    .trim()
+    .toLowerCase()
+    // Normalize Unicode
+    .normalize('NFD')
+    // Remove diacritics/accents for comparison only
+    .replace(/[\u0300-\u036f]/g, '')
+    // Collapse multiple spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 const TeacherSelect = ({ currentTeacherId, onTeacherChange, courseName }) => {
   const [teachers, setTeachers] = useState([]);
@@ -46,17 +65,30 @@ const TeacherSelect = ({ currentTeacherId, onTeacherChange, courseName }) => {
     try {
       setLoading(true);
       
-      // Normalize teacher name (capitalize first letter of each word)
-      const normalizedName = newTeacherName
-        .trim()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
+      // Clean the teacher name (preserve original formatting but clean spaces)
+      const cleanedName = newTeacherName.trim().replace(/\s+/g, ' ');
       
-      // Check if teacher already exists
-      const existingTeacher = teachers.find(
-        t => t.name.toLowerCase() === normalizedName.toLowerCase()
+      // Normalize for exact matching (preserves Vietnamese characters)
+      const normalizedName = normalizeTeacherName(cleanedName);
+      
+      // Normalize for fuzzy matching (removes diacritics)
+      const normalizedForComparison = normalizeForComparison(cleanedName);
+      
+      // Check if teacher already exists using both exact and fuzzy matching
+      let existingTeacher = teachers.find(t =>
+        normalizeTeacherName(t.name) === normalizedName
       );
+
+      // If no exact match, try fuzzy matching
+      if (!existingTeacher) {
+        existingTeacher = teachers.find(t =>
+          normalizeForComparison(t.name) === normalizedForComparison
+        );
+        
+        if (existingTeacher) {
+          console.log(`Found similar teacher: "${existingTeacher.name}" matches "${cleanedName}" (fuzzy match)`);
+        }
+      }
       
       if (existingTeacher) {
         onTeacherChange(existingTeacher.id);
@@ -67,7 +99,7 @@ const TeacherSelect = ({ currentTeacherId, onTeacherChange, courseName }) => {
       
       // Create new teacher
       const newTeacher = await createRecord('teachers', {
-        name: normalizedName,
+        name: cleanedName,
         country: 'Deutschland', // Default
         courseIds: [], // Will be updated by the parent component
       });

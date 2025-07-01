@@ -122,6 +122,8 @@ describe('Firebase Service Functions', () => {
   describe('normalizeTeacherName', () => {
     test('normalizes teacher names correctly', () => {
       expect(normalizeTeacherName(' John Doe ')).toBe('john doe');
+      expect(normalizeTeacherName('ĐÀITRANG')).toBe('đàitrang');
+      expect(normalizeTeacherName('  Đài   Trang  ')).toBe('đài trang');
       expect(normalizeTeacherName('MARÍA GARCÍA')).toBe('maría garcía');
     });
   });

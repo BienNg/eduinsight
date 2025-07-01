@@ -1,6 +1,10 @@
 // src/features/courses/CourseDetail/hooks/useCourseData.js
 import { useState, useEffect } from 'react';
-import { getRecordById } from '../../../firebase/database';
+import { getRecordById, getSessionsByCourseId, getBulkStudentsByIds, getBulkTeachersByIds } from '../../../firebase/database';
+
+// Simple cache for course data to avoid unnecessary re-fetches
+const courseCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const useCourseData = (courseId) => {
   const [course, setCourse] = useState(null);
@@ -15,28 +19,88 @@ export const useCourseData = (courseId) => {
     const fetchCourseDetails = async () => {
       try {
         setLoading(true);
+        console.time(`CourseData:fetchCourseDetails:${courseId}`);
 
-        // Fetch course data
+        // Check cache first
+        const cacheKey = `course_${courseId}`;
+        const cachedData = courseCache.get(cacheKey);
+        const now = Date.now();
+        
+        if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+          console.log(`Using cached data for course ${courseId}`);
+          setCourse(cachedData.course);
+          setGroup(cachedData.group);
+          setTeachers(cachedData.teachers);
+          setStudents(cachedData.students);
+          setSessions(cachedData.sessions);
+          console.timeEnd(`CourseData:fetchCourseDetails:${courseId}`);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch course data first
+        console.time(`CourseData:fetchCourse:${courseId}`);
         const courseData = await getRecordById('courses', courseId);
+        console.timeEnd(`CourseData:fetchCourse:${courseId}`);
+        
         if (!courseData) {
           throw new Error("Course not found");
         }
         setCourse(courseData);
-        
-        // Fetch group data if available
+
+        // Fetch all data in parallel for maximum performance
+        const fetchPromises = [];
+
+        // 1. Fetch group data if available
         if (courseData.groupId) {
-          const groupData = await getRecordById('groups', courseData.groupId);
-          setGroup(groupData);
+          fetchPromises.push(
+            getRecordById('groups', courseData.groupId).then(groupData => {
+              setGroup(groupData);
+              return groupData;
+            })
+          );
+        } else {
+          fetchPromises.push(Promise.resolve(null));
         }
+
+        // 2. Fetch teachers using cached approach
+        fetchPromises.push(
+          fetchTeacherDataOptimized(courseData).then(teachersData => {
+            setTeachers(teachersData);
+            return teachersData;
+          })
+        );
+
+        // 3. Fetch students in optimized batches
+        fetchPromises.push(
+          fetchStudentDataOptimized(courseData).then(studentsData => {
+            setStudents(studentsData);
+            return studentsData;
+          })
+        );
+
+        // 4. Fetch sessions using optimized query
+        fetchPromises.push(
+          fetchSessionDataOptimized(courseData).then(sessionsData => {
+            setSessions(sessionsData);
+            return sessionsData;
+          })
+        );
+
+        // Wait for all data to be fetched in parallel
+        const [groupData, teachersData, studentsData, sessionsData] = await Promise.all(fetchPromises);
         
-        // Fetch teacher data
-        await fetchTeacherData(courseData);
+        // Cache the results
+        courseCache.set(cacheKey, {
+          course: courseData,
+          group: groupData,
+          teachers: teachersData,
+          students: studentsData,
+          sessions: sessionsData,
+          timestamp: now
+        });
         
-        // Fetch student data
-        await fetchStudentData(courseData);
-        
-        // Fetch session data
-        await fetchSessionData(courseData);
+        console.timeEnd(`CourseData:fetchCourseDetails:${courseId}`);
       } catch (err) {
         console.error("Error fetching course details:", err);
         setError("Failed to load course details.");
@@ -50,46 +114,59 @@ export const useCourseData = (courseId) => {
     }
   }, [courseId]);
 
-  const fetchTeacherData = async (courseData) => {
+  const fetchTeacherDataOptimized = async (courseData) => {
     try {
+      console.time(`CourseData:fetchTeachers:${courseId}`);
+      
+      // Collect teacher IDs
+      let teacherIds = [];
       if (courseData.teacherIds && Array.isArray(courseData.teacherIds)) {
-        const teacherPromises = courseData.teacherIds.map(tid => 
-          getRecordById('teachers', tid));
-        const teacherDataArr = await Promise.all(teacherPromises);
-        setTeachers(teacherDataArr.filter(t => t));
+        teacherIds = courseData.teacherIds;
       } else if (courseData.teacherId) {
-        const teacherData = await getRecordById('teachers', courseData.teacherId);
-        setTeachers(teacherData ? [teacherData] : []);
-      } else {
-        setTeachers([]);
+        teacherIds = [courseData.teacherId];
       }
+
+      // Use bulk fetch with caching
+      const teacherData = await getBulkTeachersByIds(teacherIds);
+
+      console.timeEnd(`CourseData:fetchTeachers:${courseId}`);
+      return teacherData;
     } catch (err) {
       console.error("Error fetching teacher data:", err);
+      return [];
     }
   };
 
-  const fetchStudentData = async (courseData) => {
+  const fetchStudentDataOptimized = async (courseData) => {
     try {
-      const studentPromises = (courseData.studentIds || []).map(studentId =>
-        getRecordById('students', studentId)
-      );
-      const studentData = await Promise.all(studentPromises);
-      setStudents(studentData.filter(s => s !== null));
+      if (!courseData.studentIds || courseData.studentIds.length === 0) {
+        return [];
+      }
+
+      console.time(`CourseData:fetchStudents:${courseId}`);
+      
+      // Use the new bulk fetch function
+      const allStudents = await getBulkStudentsByIds(courseData.studentIds);
+      
+      console.timeEnd(`CourseData:fetchStudents:${courseId}`);
+      console.log(`Fetched ${allStudents.length} students for course ${courseId}`);
+      
+      return allStudents;
     } catch (err) {
       console.error("Error fetching student data:", err);
+      return [];
     }
   };
 
-  const fetchSessionData = async (courseData) => {
+  const fetchSessionDataOptimized = async (courseData) => {
     try {
-      const sessionPromises = (courseData.sessionIds || []).map(sessionId =>
-        getRecordById('sessions', sessionId)
-      );
-      const sessionData = await Promise.all(sessionPromises);
+      console.time(`CourseData:fetchSessions:${courseId}`);
       
-      // Sort sessions by sessionOrder by default
+      // Use the optimized getSessionsByCourseId instead of individual fetches
+      const sessionData = await getSessionsByCourseId(courseId);
+      
+      // Sort sessions by sessionOrder and date
       const sortedSessions = sessionData
-        .filter(s => s !== null)
         .sort((a, b) => {
           // Sort by sessionOrder by default
           const orderA = a.sessionOrder || 0;
@@ -105,12 +182,16 @@ export const useCourseData = (courseId) => {
             return dateA - dateB;
           }
           // Further fallback to string comparison
-          return a.date.localeCompare(b.date);
+          return (a.date || '').localeCompare(b.date || '');
         });
 
-      setSessions(sortedSessions);
+      console.timeEnd(`CourseData:fetchSessions:${courseId}`);
+      console.log(`Fetched ${sortedSessions.length} sessions for course ${courseId}`);
+      
+      return sortedSessions;
     } catch (err) {
       console.error("Error fetching session data:", err);
+      return [];
     }
   };
 
@@ -133,5 +214,21 @@ export const useCourseData = (courseId) => {
     sessions,
     loading,
     error
+  };
+};
+
+// Export cache management functions for external use
+export const clearCourseCache = (courseId) => {
+  if (courseId) {
+    courseCache.delete(`course_${courseId}`);
+  } else {
+    courseCache.clear();
+  }
+};
+
+export const getCacheStats = () => {
+  return {
+    size: courseCache.size,
+    keys: Array.from(courseCache.keys())
   };
 };

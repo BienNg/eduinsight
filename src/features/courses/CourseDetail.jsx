@@ -98,9 +98,44 @@ const CourseDetail = ({ onClose }) => {
     setSelectedStudent(null);
   };
 
-  if (loading) return <div className="loading">Loading course details...</div>;
-  if (error) return <div className="error">{error}</div>;
-  if (!course) return <div className="error">Course not found</div>;
+  if (loading) {
+    return (
+      <div className="course-detail-loading">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <h3>Loading Course Details</h3>
+          <p>Fetching course information, students, and sessions...</p>
+          <div className="loading-progress-bar">
+            <div className="loading-progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="course-detail-error">
+        <h3>Error Loading Course</h3>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()} className="retry-button">
+          Try Again
+        </button>
+      </div>
+    );
+  }
+  
+  if (!course) {
+    return (
+      <div className="course-detail-error">
+        <h3>Course Not Found</h3>
+        <p>The course you're looking for doesn't exist or has been removed.</p>
+        <button onClick={handleClose} className="back-button">
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="course-detail-page">

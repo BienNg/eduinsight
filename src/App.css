@@ -23,6 +23,7 @@ body {
 .App {
   height: 100vh;
   background-color: #F2F4FA;
+  overflow: auto;
 }
 
 /* In your global CSS or App.css */

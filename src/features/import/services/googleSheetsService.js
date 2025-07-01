@@ -31,9 +31,6 @@ export const fetchGoogleSheet = async (sheetsUrl) => {
       throw new Error('Failed to fetch Google Sheet data');
     }
 
-    // Extract filename from the URL or use a default name
-    const filename = `GoogleSheet_${sheetId}.xlsx`;
-
     // Parse workbook to get all sheet names
     const workbook = XLSX.read(response.data, { type: 'array' });
     const sheetNames = workbook.SheetNames;
@@ -43,6 +40,22 @@ export const fetchGoogleSheet = async (sheetsUrl) => {
 
     // Get Google Sheet title
     const sheetTitle = await fetchGoogleSheetTitle(sheetId);
+
+    // Create filename based on whether it's single or multi-sheet
+    let filename;
+    if (!isMultiSheet && sheetTitle && sheetTitle.trim() !== '') {
+      // For single sheets, use the actual Google Sheet title
+      // Sanitize the title to make it safe for use as a filename
+      const sanitizedTitle = sheetTitle.trim()
+        .replace(/[<>:"/\\|?*]/g, '_') // Replace invalid filename characters
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .substring(0, 100); // Limit length to prevent overly long filenames
+      
+      filename = `${sanitizedTitle}.xlsx`;
+    } else {
+      // For multi-sheet or when title is not available, use the sheet ID
+      filename = `GoogleSheet_${sheetId}.xlsx`;
+    }
 
     // Return the full workbook for better handling
     return {

@@ -322,6 +322,11 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
         <div className="course-detail-panel-loading">
           <div className="loading-spinner"></div>
           <p className="loading-text">Loading course details...</p>
+          <div className="loading-progress">
+            <div className="loading-step">Fetching course information</div>
+            <div className="loading-step">Loading students and sessions</div>
+            <div className="loading-step">Preparing analytics</div>
+          </div>
           <div className="course-detail-panel-skeleton"></div>
           <div className="course-detail-panel-skeleton"></div>
           <div className="course-detail-panel-skeleton"></div>
