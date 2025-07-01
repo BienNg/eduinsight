@@ -28,7 +28,8 @@ import { processB1CourseFileWithColors } from '../../import/services/dataProcess
 import { toast } from 'sonner'; // Assuming you're using sonner for toast notifications
 import '../../styles/CourseDetailPanel.css';
 
-const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, group }) => {
+const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, group, error: externalError }) => {
+  console.log(`🔧 CourseDetailPanel render: course=${course?.id}, loading=${loading}, group=${group?.name}`);
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [deletingCourseId, setDeletingCourseId] = useState(null);
@@ -399,8 +400,8 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
       </div>
 
 
-      {error && (
-        <div className="course-detail-panel-error">{error}</div>
+      {(error || externalError) && (
+        <div className="course-detail-panel-error">{error || externalError}</div>
       )}
 
       <div className="course-detail-panel-section">
@@ -418,7 +419,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
           <div className="course-detail-panel-info-item">
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faBook} className="course-detail-panel-icon" />
-              {group.type || 'Standard'}
+              {group?.type || 'Standard'}
             </span>
           </div>
           <div className="course-detail-panel-info-item">
@@ -430,7 +431,7 @@ const CourseDetailPanel = ({ course, students, sessions, loading, setCourses, gr
           <div className="course-detail-panel-info-item">
             <span className="course-detail-panel-info-value">
               <FontAwesomeIcon icon={faMapMarkerAlt} className="course-detail-panel-icon" />
-              {group.mode || 'Online'}
+              {group?.mode || 'Online'}
             </span>
           </div>
           <div className="course-detail-panel-info-item">

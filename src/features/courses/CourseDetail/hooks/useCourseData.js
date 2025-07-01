@@ -12,12 +12,15 @@ export const useCourseData = (courseId) => {
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
   const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!courseId); // Only start loading if courseId exists
   const [error, setError] = useState(null);
+
+  console.log(`🔄 useCourseData hook called with courseId: ${courseId}, initial loading: ${!!courseId}`);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
       try {
+        console.log(`🔄 useCourseData: Setting loading to true for courseId ${courseId}`);
         setLoading(true);
         console.time(`CourseData:fetchCourseDetails:${courseId}`);
 
@@ -105,12 +108,23 @@ export const useCourseData = (courseId) => {
         console.error("Error fetching course details:", err);
         setError("Failed to load course details.");
       } finally {
+        console.log(`✅ useCourseData: Setting loading to false for courseId ${courseId}`);
         setLoading(false);
       }
     };
 
     if (courseId) {
       fetchCourseDetails();
+    } else {
+      // Clear data and set loading to false when no courseId is provided
+      console.log('🧹 useCourseData: No courseId provided, clearing data');
+      setCourse(null);
+      setGroup(null);
+      setTeachers([]);
+      setStudents([]);
+      setSessions([]);
+      setLoading(false);
+      setError(null);
     }
   }, [courseId]);
 

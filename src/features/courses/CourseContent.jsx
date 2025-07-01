@@ -26,6 +26,7 @@ const CourseContent = () => {
   
   const navigate = useNavigate();
   const { groupName, courseId } = useParams();
+  console.log(`🔄 CourseContent render: groupName=${groupName}, courseId=${courseId}`);
   const [courses, setCourses] = useState([]);
   const [groups, setGroups] = useState([]);
   const [teachers, setTeachers] = useState([]);
@@ -81,7 +82,7 @@ const CourseContent = () => {
   }, []);
 
   // Handle group session loading - OPTIMIZED WITH CACHING
-  const loadGroupSessions = async (groupId, groupName) => {
+  const loadGroupSessions = useCallback(async (groupId, groupName) => {
     if (!groupId && !groupName) return;
     
     try {
@@ -130,7 +131,7 @@ const CourseContent = () => {
     } catch (error) {
       console.error("Error loading group sessions:", error);
     }
-  };
+  }, [courses]);
 
   // Course details are now handled by the useCourseData hook above
 
@@ -202,7 +203,7 @@ const CourseContent = () => {
         loadGroupSessions(selectedGroup.id, groupName);
       }
     }
-  }, [groupName, courses, baseProcessedGroups]);
+  }, [groupName, courses, baseProcessedGroups]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {
@@ -301,6 +302,7 @@ const CourseContent = () => {
             loading={courseDetailsLoading}
             setCourses={setCourses}
             group={selectedGroup}
+            error={courseDetailsError}
           />
         </div>
       </div>
