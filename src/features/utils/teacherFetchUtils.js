@@ -340,9 +340,36 @@ export const deleteTeacher = async (teacherId) => {
   }
 };
 
+/**
+ * Update teacher information and refresh cache
+ * @param {string} teacherId - The teacher ID to update
+ * @param {Object} updates - The fields to update
+ * @returns {Promise<boolean>} Success status
+ */
+export const updateTeacher = async (teacherId, updates) => {
+  try {
+    console.log(`Updating teacher ${teacherId}:`, updates);
+
+    const { updateRecord } = await import('../firebase/database');
+
+    // Update the teacher record
+    await updateRecord('teachers', teacherId, updates);
+
+    // Force refresh teacher cache to ensure consistency
+    await getTeachersMap(true);
+
+    console.log(`Successfully updated teacher ${teacherId}`);
+    return true;
+  } catch (error) {
+    console.error("Error updating teacher:", error);
+    throw error;
+  }
+};
+
 // Make debug functions available globally for console debugging
 if (typeof window !== 'undefined') {
   window.debugTeacher = debugTeacher;
   window.logDuplicateTeachers = logDuplicateTeachers;
-  console.log('🛠️ Teacher debug functions available: debugTeacher("name"), logDuplicateTeachers()');
+  window.updateTeacher = updateTeacher;
+  console.log('🛠️ Teacher debug functions available: debugTeacher("name"), logDuplicateTeachers(), updateTeacher(id, updates)');
 }

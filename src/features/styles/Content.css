@@ -206,7 +206,10 @@
 }
 
 .empty-state {
-  color: var(--modern-text-light);
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+  font-style: italic;
 }
 
 /* Filter bar styling */
@@ -468,13 +471,6 @@
   font-size: 14px;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: #6c757d;
-  font-style: italic;
-}
-
 /* Progress components */
 .progress-card {
   background: rgba(255, 255, 255, 0.95);
@@ -583,4 +579,83 @@
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid rgba(99, 102, 241, 0.1);
+}
+
+/* Teacher Name Editing Styles */
+.teacher-name-input {
+  border: 1px solid #28a745 !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  fontSize: 16px !important;
+  fontWeight: 600 !important;
+  width: 100% !important;
+  maxWidth: 200px !important;
+  background: white !important;
+  color: #333 !important;
+  outline: none !important;
+}
+
+.teacher-name-input:focus {
+  border-color: #20c997 !important;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25) !important;
+}
+
+.teacher-card.editing {
+  border-color: #28a745 !important;
+  background-color: #f0fff4 !important;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25) !important;
+}
+
+.editing-indicator {
+  color: #28a745;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.save-cancel-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.save-button {
+  background: #28a745 !important;
+  border-color: #28a745 !important;
+  color: white !important;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #218838 !important;
+  border-color: #1e7e34 !important;
+  transform: scale(1.05);
+}
+
+.cancel-button {
+  background: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #5a6268 !important;
+  border-color: #545b62 !important;
+  transform: scale(1.05);
+}
+
+.edit-button {
+  background: #007bff !important;
+  border-color: #007bff !important;
+  color: white !important;
+}
+
+.edit-button:hover:not(:disabled) {
+  background: #0056b3 !important;
+  border-color: #004085 !important;
+  transform: scale(1.05);
 }

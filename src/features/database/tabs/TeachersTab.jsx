@@ -1,8 +1,8 @@
 // src/features/database/components/tabs/TeachersTab.jsx
 import React, { useState, useEffect } from 'react';
-import { findDuplicateTeachers, mergeTeachers, deleteTeacher } from '../../utils/teacherFetchUtils';
+import { findDuplicateTeachers, mergeTeachers, deleteTeacher, updateTeacher } from '../../utils/teacherFetchUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faCodeMerge, faCheck, faTimes, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faCodeMerge, faCheck, faTimes, faExclamationTriangle, faEdit, faSave } from '@fortawesome/free-solid-svg-icons';
 
 const TeachersTab = ({ teachers, onTeachersChange }) => {
   const [duplicates, setDuplicates] = useState({});
@@ -11,6 +11,8 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
   const [mergeMode, setMergeMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [actionInProgress, setActionInProgress] = useState(null);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [editedName, setEditedName] = useState('');
 
   useEffect(() => {
     const checkForDuplicates = async () => {
@@ -38,7 +40,7 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
 
   // Handle teacher selection for merge
   const handleTeacherSelect = (teacherId) => {
-    if (!mergeMode) return;
+    if (!mergeMode || editingTeacher) return;
     
     const newSelected = new Set(selectedTeachers);
     if (newSelected.has(teacherId)) {
@@ -47,6 +49,62 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
       newSelected.add(teacherId);
     }
     setSelectedTeachers(newSelected);
+  };
+
+  // Handle edit teacher name
+  const handleStartEdit = (teacher, e) => {
+    if (e) e.stopPropagation();
+    if (mergeMode) return;
+    
+    setEditingTeacher(teacher.id);
+    setEditedName(teacher.name);
+  };
+
+  const handleCancelEdit = (e) => {
+    if (e) e.stopPropagation();
+    setEditingTeacher(null);
+    setEditedName('');
+  };
+
+  const handleSaveEdit = async (teacher, e) => {
+    if (e) e.stopPropagation();
+    
+    const trimmedName = editedName.trim();
+    if (!trimmedName) {
+      alert('Lehrername darf nicht leer sein.');
+      return;
+    }
+
+    if (trimmedName === teacher.name) {
+      // No change
+      handleCancelEdit();
+      return;
+    }
+
+    try {
+      setActionInProgress(`edit-${teacher.id}`);
+      setIsLoading(true);
+      
+      await updateTeacher(teacher.id, { name: trimmedName });
+      
+      // Refresh the teachers list
+      if (onTeachersChange) {
+        await onTeachersChange();
+      }
+      
+      // Refresh duplicates
+      const duplicateTeachers = await findDuplicateTeachers();
+      setDuplicates(duplicateTeachers);
+      
+      setEditingTeacher(null);
+      setEditedName('');
+      
+    } catch (error) {
+      alert(`Fehler beim Speichern des Lehrernamens: ${error.message}`);
+    } finally {
+      setActionInProgress(null);
+      setIsLoading(false);
+    }
   };
 
   // Handle delete teacher
@@ -148,6 +206,15 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
     setSelectedTeachers(new Set());
   };
 
+  // Handle keyboard events for editing
+  const handleKeyPress = (e, teacher) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit(teacher, e);
+    } else if (e.key === 'Escape') {
+      handleCancelEdit(e);
+    }
+  };
+
   return (
     <div>
       {/* Action Bar */}
@@ -164,22 +231,22 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
           <>
             <button 
               onClick={() => setMergeMode(true)}
-              disabled={isLoading}
+              disabled={isLoading || editingTeacher}
               style={{ 
                 padding: '8px 16px', 
                 border: '1px solid #007bff', 
                 background: '#007bff', 
                 color: 'white',
                 borderRadius: '4px',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                opacity: isLoading ? 0.6 : 1
+                cursor: (isLoading || editingTeacher) ? 'not-allowed' : 'pointer',
+                opacity: (isLoading || editingTeacher) ? 0.6 : 1
               }}
             >
               <FontAwesomeIcon icon={faCodeMerge} style={{ marginRight: '8px' }} />
               Lehrer zusammenführen
             </button>
             <span style={{ color: '#6c757d', fontSize: '14px' }}>
-              Wählen Sie "Zusammenführen" und dann 2 Lehrer aus, um Duplikate zu bereinigen
+              {editingTeacher ? 'Bearbeitung aktiv - Klicken Sie auf ✓ oder ✗ zum Speichern/Abbrechen' : 'Wählen Sie "Zusammenführen" und dann 2 Lehrer aus, um Duplikate zu bereinigen'}
             </span>
           </>
         ) : (
@@ -252,8 +319,10 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
       <div className="teacher-cards-grid">
         {displayedTeachers.map((teacher) => {
           const isSelected = selectedTeachers.has(teacher.id);
+          const isEditing = editingTeacher === teacher.id;
           const isActioningOnThis = actionInProgress && (
             actionInProgress === `delete-${teacher.id}` ||
+            actionInProgress === `edit-${teacher.id}` ||
             actionInProgress.includes(teacher.id)
           );
           
@@ -264,25 +333,52 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
               onClick={() => handleTeacherSelect(teacher.id)}
               style={{
                 border: isDuplicate(teacher) ? '2px solid #ff6b6b' : 
-                       isSelected ? '2px solid #007bff' : '1px solid #e0e0e0',
+                       isSelected ? '2px solid #007bff' : 
+                       isEditing ? '2px solid #28a745' : '1px solid #e0e0e0',
                 background: isDuplicate(teacher) ? '#fff5f5' : 
-                           isSelected ? '#e7f3ff' : 'white',
-                cursor: mergeMode ? 'pointer' : 'default',
+                           isSelected ? '#e7f3ff' : 
+                           isEditing ? '#f0fff4' : 'white',
+                cursor: mergeMode && !isEditing ? 'pointer' : 'default',
                 opacity: isActioningOnThis ? 0.6 : 1,
                 position: 'relative'
               }}
             >
               <div className="teacher-card-header">
                 <h3>
-                  {teacher.name}
-                  {isDuplicate(teacher) && (
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      onKeyDown={(e) => handleKeyPress(e, teacher)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        border: '1px solid #28a745',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        width: '100%',
+                        maxWidth: '200px'
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    teacher.name
+                  )}
+                  {isDuplicate(teacher) && !isEditing && (
                     <span style={{ color: '#ff6b6b', fontSize: '12px', marginLeft: '8px' }}>
                       (DUPLICATE)
                     </span>
                   )}
-                  {isSelected && (
+                  {isSelected && !isEditing && (
                     <span style={{ color: '#007bff', fontSize: '12px', marginLeft: '8px' }}>
                       (AUSGEWÄHLT)
+                    </span>
+                  )}
+                  {isEditing && (
+                    <span style={{ color: '#28a745', fontSize: '12px', marginLeft: '8px' }}>
+                      (BEARBEITUNG)
                     </span>
                   )}
                 </h3>
@@ -313,26 +409,84 @@ const TeachersTab = ({ teachers, onTeachersChange }) => {
                   display: 'flex',
                   gap: '4px'
                 }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTeacher(teacher);
-                    }}
-                    disabled={isLoading}
-                    style={{
-                      padding: '4px 8px',
-                      border: '1px solid #dc3545',
-                      background: '#dc3545',
-                      color: 'white',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      cursor: isLoading ? 'not-allowed' : 'pointer',
-                      opacity: isLoading ? 0.6 : 1
-                    }}
-                    title="Lehrer löschen"
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={(e) => handleSaveEdit(teacher, e)}
+                        disabled={isLoading}
+                        style={{
+                          padding: '4px 8px',
+                          border: '1px solid #28a745',
+                          background: '#28a745',
+                          color: 'white',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          cursor: isLoading ? 'not-allowed' : 'pointer',
+                          opacity: isLoading ? 0.6 : 1
+                        }}
+                        title="Speichern"
+                      >
+                        <FontAwesomeIcon icon={faSave} />
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isLoading}
+                        style={{
+                          padding: '4px 8px',
+                          border: '1px solid #6c757d',
+                          background: '#6c757d',
+                          color: 'white',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          cursor: isLoading ? 'not-allowed' : 'pointer',
+                          opacity: isLoading ? 0.6 : 1
+                        }}
+                        title="Abbrechen"
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => handleStartEdit(teacher, e)}
+                        disabled={isLoading || editingTeacher}
+                        style={{
+                          padding: '4px 8px',
+                          border: '1px solid #007bff',
+                          background: '#007bff',
+                          color: 'white',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          cursor: (isLoading || editingTeacher) ? 'not-allowed' : 'pointer',
+                          opacity: (isLoading || editingTeacher) ? 0.6 : 1
+                        }}
+                        title="Name bearbeiten"
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTeacher(teacher);
+                        }}
+                        disabled={isLoading || editingTeacher}
+                        style={{
+                          padding: '4px 8px',
+                          border: '1px solid #dc3545',
+                          background: '#dc3545',
+                          color: 'white',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          cursor: (isLoading || editingTeacher) ? 'not-allowed' : 'pointer',
+                          opacity: (isLoading || editingTeacher) ? 0.6 : 1
+                        }}
+                        title="Lehrer löschen"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
               
