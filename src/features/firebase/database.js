@@ -49,17 +49,22 @@ export const updateRecord = async (path, id, data) => {
 };
 
 
-// Delete a record with cascade cleanup
-export const deleteRecord = async (path, id) => {
+// Delete a record with optional cascade cleanup
+export const deleteRecord = async (path, id, skipCleanup = false) => {
   try {
     // Store the record before deletion to check relationships
     let recordToDelete = null;
-    if (path === 'courses') {
+    if (path === 'courses' && !skipCleanup) {
       recordToDelete = await getRecordById(path, id);
     }
 
     // Perform the standard deletion
     await remove(ref(database, `${path}/${id}`));
+
+    // Skip cleanup operations if requested (for batch operations)
+    if (skipCleanup) {
+      return true;
+    }
 
     // If we deleted a course, update student relationships
     if (path === 'courses' && recordToDelete && recordToDelete.studentIds) {
@@ -420,6 +425,50 @@ export const getBulkTeachersByIds = async (teacherIds) => {
   } catch (error) {
     console.error(`Error bulk fetching teachers:`, error);
     return [];
+  }
+};
+
+// Batch delete multiple records efficiently
+export const batchDeleteRecords = async (operations) => {
+  try {
+    console.time('Firebase:BatchDelete');
+    
+    // Execute all deletions in parallel
+    const deletePromises = operations.map(({ path, id }) => 
+      remove(ref(database, `${path}/${id}`))
+    );
+    
+    await Promise.all(deletePromises);
+    
+    console.timeEnd('Firebase:BatchDelete');
+    console.log(`Batch deleted ${operations.length} records`);
+    
+    return true;
+  } catch (error) {
+    console.error("Error in batch delete:", error);
+    throw error;
+  }
+};
+
+// Batch update multiple records efficiently  
+export const batchUpdateRecords = async (operations) => {
+  try {
+    console.time('Firebase:BatchUpdate');
+    
+    // Execute all updates in parallel
+    const updatePromises = operations.map(({ path, id, data }) => 
+      updateRecord(path, id, data)
+    );
+    
+    await Promise.all(updatePromises);
+    
+    console.timeEnd('Firebase:BatchUpdate');
+    console.log(`Batch updated ${operations.length} records`);
+    
+    return true;
+  } catch (error) {
+    console.error("Error in batch update:", error);
+    throw error;
   }
 };
 
