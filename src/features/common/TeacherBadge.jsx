@@ -15,11 +15,25 @@ const TeacherBadge = ({ teacher }) => {
       navigate(`/teachers/${teacher.id}`);
     }
   };
+
+  // Handle middle-click to open in new tab
+  const handleMouseDown = (event) => {
+    if (event.button === 1) { // Middle mouse button
+      event.preventDefault();
+      event.stopPropagation(); // Prevent event bubbling
+      
+      if (teacher && teacher.id) {
+        const url = `/teachers/${teacher.id}`;
+        window.open(url, '_blank');
+      }
+    }
+  };
   
   return (
     <div 
       className="teacher-badge" 
       onClick={handleClick}
+      onMouseDown={handleMouseDown}
       role="button"
       tabIndex={0}
     >

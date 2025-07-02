@@ -55,6 +55,35 @@ const Dashboard = () => {
     }
   };
 
+  // Helper function to get the URL for each route
+  const getRouteUrl = (route) => {
+    switch (route) {
+      case 'dashboard':
+        return '/';
+      case 'monat':
+        return '/months';
+      case 'klassen':
+        return '/courses';
+      case 'lehrer':
+        return '/teachers';
+      case 'schuler':
+        return '/students';
+      case 'import':
+        return '/import';
+      default:
+        return '/';
+    }
+  };
+
+  // Handle middle-click to open in new tab
+  const handleMouseDown = (event, route) => {
+    if (event.button === 1) { // Middle mouse button
+      event.preventDefault();
+      const url = getRouteUrl(route);
+      window.open(url, '_blank');
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -85,6 +114,7 @@ const Dashboard = () => {
             <li
               className={location.pathname === '/import' ? 'active' : ''}
               onClick={() => handleNavigation('import')}
+              onMouseDown={(e) => handleMouseDown(e, 'import')}
             >
               <FontAwesomeIcon icon={faFileExcel} className="icon" />
               {!collapsed && <span>Excel Import</span>}
@@ -98,6 +128,7 @@ const Dashboard = () => {
             <li
               className={location.pathname === '/' ? 'active' : ''}
               onClick={() => handleNavigation('dashboard')}
+              onMouseDown={(e) => handleMouseDown(e, 'dashboard')}
             >
               <FontAwesomeIcon icon={faChartLine} className="icon" />
               {!collapsed && <span>Dashboard</span>}
@@ -105,6 +136,7 @@ const Dashboard = () => {
             <li
               className={location.pathname.startsWith('/months') ? 'active' : ''}
               onClick={() => handleNavigation('monat')}
+              onMouseDown={(e) => handleMouseDown(e, 'monat')}
             >
               <FontAwesomeIcon icon={faCalendarAlt} className="icon" />
               {!collapsed && <span>Monat</span>}
@@ -112,6 +144,7 @@ const Dashboard = () => {
             <li
               className={location.pathname.startsWith('/courses') ? 'active' : ''}
               onClick={() => handleNavigation('klassen')}
+              onMouseDown={(e) => handleMouseDown(e, 'klassen')}
             >
               <FontAwesomeIcon icon={faChalkboardTeacher} className="icon" />
               {!collapsed && <span>Klassen</span>}
@@ -119,6 +152,7 @@ const Dashboard = () => {
             <li
               className={location.pathname.startsWith('/teachers') ? 'active' : ''}
               onClick={() => handleNavigation('lehrer')}
+              onMouseDown={(e) => handleMouseDown(e, 'lehrer')}
             >
               <FontAwesomeIcon icon={faUserTie} className="icon" />
               {!collapsed && <span>Lehrer</span>}
@@ -126,6 +160,7 @@ const Dashboard = () => {
             <li
               className={location.pathname.startsWith('/students') ? 'active' : ''}
               onClick={() => handleNavigation('schuler')}
+              onMouseDown={(e) => handleMouseDown(e, 'schuler')}
             >
               <FontAwesomeIcon icon={faUserGraduate} className="icon" />
               {!collapsed && <span>Schüler</span>}

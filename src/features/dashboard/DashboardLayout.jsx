@@ -68,6 +68,37 @@ const DashboardLayout = () => {
     }
   };
 
+  // Helper function to get the URL for each route
+  const getRouteUrl = (route) => {
+    switch (route) {
+      case 'dashboard':
+        return '/';
+      case 'monat':
+        return '/months';
+      case 'klassen':
+        return '/courses';
+      case 'lehrer':
+        return '/teachers';
+      case 'schuler':
+        return '/students';
+      case 'import':
+        return '/import';
+      case 'database':
+        return '/database';
+      default:
+        return '/';
+    }
+  };
+
+  // Handle middle-click to open in new tab
+  const handleMouseDown = (event, route) => {
+    if (event.button === 1) { // Middle mouse button
+      event.preventDefault();
+      const url = getRouteUrl(route);
+      window.open(url, '_blank');
+    }
+  };
+
   // Helper function to determine page title
   const getPageTitle = () => {
     const path = location.pathname;
@@ -107,6 +138,7 @@ const DashboardLayout = () => {
             data-tooltip="Excel Import"
             className={location.pathname === '/import' ? 'active' : ''}
             onClick={() => handleNavigation('import')}
+            onMouseDown={(e) => handleMouseDown(e, 'import')}
           >
             <FontAwesomeIcon icon={faFileExcel} className="icon" />
           </li>
@@ -114,6 +146,7 @@ const DashboardLayout = () => {
             data-tooltip="Dashboard"
             className={location.pathname === '/' ? 'active' : ''}
             onClick={() => handleNavigation('dashboard')}
+            onMouseDown={(e) => handleMouseDown(e, 'dashboard')}
           >
             <FontAwesomeIcon icon={faChartLine} className="icon" />
           </li>
@@ -121,6 +154,7 @@ const DashboardLayout = () => {
             data-tooltip="Monthly View"
             className={location.pathname.startsWith('/months') ? 'active' : ''}
             onClick={() => handleNavigation('monat')}
+            onMouseDown={(e) => handleMouseDown(e, 'monat')}
           >
             <FontAwesomeIcon icon={faCalendarAlt} className="icon" />
           </li>
@@ -128,6 +162,7 @@ const DashboardLayout = () => {
             data-tooltip="Courses"
             className={location.pathname.startsWith('/courses') ? 'active' : ''}
             onClick={() => handleNavigation('klassen')}
+            onMouseDown={(e) => handleMouseDown(e, 'klassen')}
           >
             <FontAwesomeIcon icon={faChalkboardTeacher} className="icon" />
           </li>
@@ -135,6 +170,7 @@ const DashboardLayout = () => {
             data-tooltip="Teachers"
             className={location.pathname.startsWith('/teachers') ? 'active' : ''}
             onClick={() => handleNavigation('lehrer')}
+            onMouseDown={(e) => handleMouseDown(e, 'lehrer')}
           >
             <FontAwesomeIcon icon={faUserTie} className="icon" />
           </li>
@@ -142,6 +178,7 @@ const DashboardLayout = () => {
             data-tooltip="Students"
             className={location.pathname.startsWith('/students') ? 'active' : ''}
             onClick={() => handleNavigation('schuler')}
+            onMouseDown={(e) => handleMouseDown(e, 'schuler')}
           >
             <FontAwesomeIcon icon={faUserGraduate} className="icon" />
           </li>
@@ -149,6 +186,7 @@ const DashboardLayout = () => {
             data-tooltip="Database"
             className={location.pathname.startsWith('/database') ? 'active' : ''}
             onClick={() => handleNavigation('database')}
+            onMouseDown={(e) => handleMouseDown(e, 'database')}
           >
             <FontAwesomeIcon icon={faDatabase} className="icon" />
           </li>
