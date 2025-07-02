@@ -1,11 +1,15 @@
 // src/features/courses/CourseDetail/hooks/useTableData.js
+import React from 'react';
 import styles from '../../../styles/modules/Table.module.css';
+import EditableDate from '../components/EditableDate';
+import '../../../styles/EditableDate.css';
 
 export const useTableData = (
   teachers,
   calculateStudentAttendance,
   calculateSessionAttendance,
-  calculateAverageAttendance
+  calculateAverageAttendance,
+  handleSessionDateUpdate
 ) => {  // Helper function to safely render any type of value
   const safelyRenderValue = (value) => {
     if (value === null || value === undefined) {
@@ -69,7 +73,13 @@ export const useTableData = (
       key: 'date',
       label: 'Date',
       sortable: true,
-      render: (session) => safelyRenderValue(session.date)
+      render: (session) => (
+        <EditableDate
+          session={session}
+          currentDate={session.date}
+          onDateUpdate={handleSessionDateUpdate}
+        />
+      )
     },
     {
       key: 'teacherId',

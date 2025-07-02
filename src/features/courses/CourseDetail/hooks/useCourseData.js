@@ -220,6 +220,33 @@ export const useCourseData = (courseId) => {
     return new Date(parts[2], parts[1] - 1, parts[0]);
   };
 
+  // Function to refetch sessions data
+  const refetchSessions = async () => {
+    if (!course) return;
+    
+    try {
+      console.log(`Refetching sessions for course ${courseId}`);
+      const sessionData = await fetchSessionDataOptimized(course);
+      setSessions(sessionData);
+      
+      // Clear cache to ensure fresh data on next full fetch
+      clearCourseCache(courseId);
+    } catch (err) {
+      console.error("Error refetching sessions:", err);
+    }
+  };
+
+  // Function to update a session locally for immediate UI feedback
+  const updateSessionLocally = (sessionId, updates) => {
+    setSessions(prevSessions => 
+      prevSessions.map(session => 
+        session.id === sessionId 
+          ? { ...session, ...updates }
+          : session
+      )
+    );
+  };
+
   return {
     course, 
     group,
@@ -227,7 +254,9 @@ export const useCourseData = (courseId) => {
     students,
     sessions,
     loading,
-    error
+    error,
+    refetchSessions,
+    updateSessionLocally
   };
 };
 

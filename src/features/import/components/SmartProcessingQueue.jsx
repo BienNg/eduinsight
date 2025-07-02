@@ -326,7 +326,7 @@ const SmartProcessingQueue = ({
   if (!hasContent) return null;
 
   return (
-    <div style={{ marginTop: '2rem' }}>
+    <div className="smart-processing-queue">
       {/* Processing Queue */}
       {queue.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>

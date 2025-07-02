@@ -36,11 +36,11 @@
 
 /* Central focus container - Hick's Law */
 .import-focus-container {
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   position: relative;
   z-index: 1;
-  padding-bottom: 2rem;
+  padding: 0 2rem 2rem 2rem;
 }
 
 /* Hero section with single clear action */
@@ -114,9 +114,10 @@
 /* Main content grid */
 .import-content-grid {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr 2fr 1fr;
   gap: 2rem;
   margin-top: 2rem;
+  width: 100%;
 }
 
 /* PRIMARY IMPORT SECTION - Google Sheets */
@@ -487,6 +488,20 @@
   top: 2rem;
   max-height: calc(100vh - 4rem);
   overflow-y: auto;
+  min-width: 0; /* Prevent overflow in grid */
+}
+
+/* Smart Processing Queue styling */
+.smart-processing-queue {
+  background: var(--import-card);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  min-width: 0; /* Prevent overflow in grid */
 }
 
 .activity-header {
@@ -693,6 +708,14 @@
   letter-spacing: 0.05em;
 }
 
+/* Tablet responsiveness */
+@media (max-width: 1200px) {
+  .import-content-grid {
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
 /* Mobile responsiveness */
 @media (max-width: 1024px) {
   .import-content-grid {
@@ -703,7 +726,17 @@
   .activity-feed {
     position: static;
     max-height: none;
+    order: 1;
+  }
+  
+  .import-main-area {
     order: 2;
+  }
+  
+  .smart-processing-queue {
+    position: static;
+    max-height: none;
+    order: 3;
   }
   
   .google-sheets-benefits {

@@ -42,7 +42,9 @@ const CourseDetail = ({ onClose }) => {
     teachers,
     students,
     sessions,
-    loading
+    loading,
+    refetchSessions,
+    updateSessionLocally
   } = useCourseData(id);
 
   const {
@@ -51,6 +53,22 @@ const CourseDetail = ({ onClose }) => {
     calculateAverageAttendance
   } = useAttendance(students, sessions);
 
+  // Handle session date updates
+  const handleSessionDateUpdate = async (sessionId, newDate) => {
+    // Update local sessions state immediately for better UX
+    if (updateSessionLocally) {
+      updateSessionLocally(sessionId, { date: newDate });
+    }
+    
+    // Also refresh the data to ensure consistency
+    if (refetchSessions) {
+      // Small delay to allow the database update to complete
+      setTimeout(() => {
+        refetchSessions();
+      }, 500);
+    }
+  };
+
   const {
     studentColumns,
     sessionColumns
@@ -58,7 +76,8 @@ const CourseDetail = ({ onClose }) => {
     teachers,
     calculateStudentAttendance,
     calculateSessionAttendance,
-    calculateAverageAttendance // Pass this function as well
+    calculateAverageAttendance,
+    handleSessionDateUpdate // Pass the update handler
   );
   const handleClose = () => {
     if (groupName) {

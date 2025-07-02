@@ -1,0 +1,144 @@
+/* src/features/styles/EditableDate.css */
+
+.editable-date-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  position: relative;
+}
+
+.editable-date-container .date-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.edit-date-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.editable-date-container:hover .edit-date-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.edit-date-btn:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.editable-date-container.editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.date-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.save-btn,
+.cancel-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.save-btn {
+  color: #16a34a;
+}
+
+.save-btn:hover {
+  background-color: #dcfce7;
+}
+
+.cancel-btn {
+  color: #dc2626;
+}
+
+.cancel-btn:hover {
+  background-color: #fef2f2;
+}
+
+.save-btn:disabled,
+.cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit-error {
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .editable-date-container {
+    min-width: 100px;
+  }
+  
+  .date-input {
+    min-width: 100px;
+    font-size: 13px;
+  }
+  
+  .edit-date-btn {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation for smooth transitions */
+.editable-date-container.editing .date-input-wrapper {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

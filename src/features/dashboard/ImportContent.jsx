@@ -122,7 +122,14 @@ const ImportContent = () => {
         {/* Main Content - Only show after getting started */}
         {isStarted && (
           <div className="import-content-grid">
-            {/* Left Column - Main Import Area */}
+            {/* Left Column - Activity Feed */}
+            <ActivityFeed 
+              processingQueue={processingQueue}
+              completedFiles={completedFiles}
+              failedFiles={failedFiles}
+            />
+
+            {/* Center Column - Main Import Area */}
             <div className="import-main-area">
               {/* Primary: Google Sheets Import - Prominent and always visible */}
               <div className="primary-import-section">
@@ -186,22 +193,15 @@ const ImportContent = () => {
                   </div>
                 )}
               </div>
-
-              {/* Processing Queue */}
-              <SmartProcessingQueue 
-                queue={processingQueue}
-                completedFiles={completedFiles}
-                failedFiles={failedFiles}
-                onClearCompleted={clearCompletedFiles}
-                onClearFailed={clearFailedFiles}
-              />
             </div>
 
-            {/* Right Column - Activity Feed */}
-            <ActivityFeed 
-              processingQueue={processingQueue}
+            {/* Right Column - Processing Queue Status */}
+            <SmartProcessingQueue 
+              queue={processingQueue}
               completedFiles={completedFiles}
               failedFiles={failedFiles}
+              onClearCompleted={clearCompletedFiles}
+              onClearFailed={clearFailedFiles}
             />
           </div>
         )}
